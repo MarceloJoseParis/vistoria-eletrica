@@ -69,7 +69,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 main{max-width:760px;margin:0 auto;padding:14px 12px;display:grid;gap:14px}
 
 /* navegação */
-.bn{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--panel);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding-bottom:env(safe-area-inset-bottom)}
+.bn{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--panel);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);padding-bottom:env(safe-area-inset-bottom)}
 .bn button{border:0;background:none;height:var(--nav-h);display:grid;place-items:center;align-content:center;gap:2px;font-size:11.5px;color:var(--muted);cursor:pointer;position:relative}
 .bn button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .bn button[aria-current="true"]{color:var(--ink);font-weight:600}
@@ -146,6 +146,25 @@ details.card > summary small{font-family:var(--f-body);font-weight:400;font-size
 .et-b{display:none;border-top:1px solid var(--line)}
 .et[data-open="true"] .et-b{display:block}
 .et-off{padding:4px 14px 12px}
+.qd{border-bottom:1px solid var(--line)}
+.qd-lead{padding:10px 14px 0;margin:0}
+.qd-h{width:100%;border:0;background:var(--soft);display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;padding:12px 14px;text-align:left;cursor:pointer;min-height:52px;color:var(--ink);font:inherit}
+.qd-h .n{font-family:var(--f-mono);font-size:12px;padding:3px 7px;border-radius:7px;background:var(--accent-soft);color:var(--accent-ink);font-weight:600}
+.qd.done .qd-h .n{background:var(--ok-soft);color:var(--ok)}
+.qd-h .tt{font-family:var(--f-display);font-weight:600;font-size:15.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qd-h .cnt{font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.qd-h .chev{color:var(--muted);transition:transform .2s}
+.qd[data-open="true"] .qd-h .chev{transform:rotate(180deg)}
+.qd[data-open="true"] .qd-h{border-bottom:1px solid var(--line)}
+.qd-b{border-left:4px solid var(--accent-soft)}
+.qd-nome{display:flex;gap:10px;align-items:flex-end;padding:12px 14px;border-bottom:1px solid var(--line)}
+.qd-nome label{flex:1}
+.qd-add{padding:12px 14px}
+.qd-med{padding:12px 14px;display:grid;gap:10px;border-bottom:1px solid var(--line);background:var(--bg)}
+.qd-med .lead{margin:0}
+#secCor .mc{margin-bottom:8px}
+.qd-add .btn{width:100%}
+
 .it{padding:12px 14px;border-bottom:1px solid var(--line);display:grid;gap:10px;border-left:5px solid transparent}
 .it:last-child{border-bottom:0}
 .it[data-s="C"]{border-left-color:var(--ok)} .it[data-s="NC"]{border-left-color:var(--crit);background:linear-gradient(90deg,var(--crit-soft),transparent 40%)} .it[data-s="NA"],.it[data-s="NV"]{border-left-color:var(--na)}
@@ -413,7 +432,7 @@ function novaVistoria(cfg){
     ident:{convenio:"",processo:"",municipio:"",escola:"",objeto:"",executora:"",rt:"",art:"",data:hojeISO(),horaIni:"",horaFim:"",
       fiscal:(cfg&&cfg.fiscal)||"Marcelo Jose Paris",cargo:(cfg&&cfg.cargo)||"Engenheiro Eletricista – Fiscal de Convênio SEDUC-MT (CIPI-SNP)",acompanhantes:"",clima:"",tAmb:"",funcionamento:"",etapaObra:""},
     instr:{alicate:{modelo:"",serie:"",calib:""}, termo:{modelo:"",serie:"",calib:"",emiss:"0,95",faixa:""}, obsLimit:""},
-    aplica:{"2":false,"7":true,"8":false}, local:{endereco:"",coords:"",lat:null,lon:null,fonte:""}, carimbo:true, check:{}, correntes:[], termo:[], fotosGerais:[], notas:[], pend:{},
+    aplica:{"2":false,"7":true,"8":false}, local:{endereco:"",coords:"",lat:null,lon:null,fonte:""}, carimbo:true, check:{}, correntes:[], termo:[], fotosGerais:[], notas:[], quadros:[{id:"qg",nome:""}], pend:{},
     cfg:{deseq:10}, rel:{texto:"",geradoEm:0,fonte:""} };
 }
 function getPath(o,p){ return p.split(".").reduce((a,k)=>a==null?a:a[k],o); }
@@ -455,10 +474,10 @@ function calcTermo(r){
   }
   return {dt,sev,txt,acao,carga,baixaCarga:(carga!=null && carga<40)};
 }
-function itensAtivos(v){ const out=[]; ETAPAS.forEach(e=>{ if(e.opc && !v.aplica[e.id]) return; e.itens.forEach(([id,m,t])=>out.push({e,id,m,t,st:v.check[id]||{}})); }); return out; }
+function itensAtivos(v){ const out=[]; ETAPAS.forEach(e=>{ if(e.opc && !v.aplica[e.id]) return; itensDaEtapa(v,e).forEach(x=>out.push(Object.assign({e,st:v.check[x.id]||{}},x))); }); return out; }
 function pendencias(v){
   const L=[];
-  itensAtivos(v).forEach(x=>{ if(x.st.s==="NC") L.push({key:"chk:"+x.id, origem:"Inspeção – etapa "+x.e.id, desc:x.t+(x.st.obs? " — "+x.st.obs:""), sug:"Moderada"}); });
+  itensAtivos(v).forEach(x=>{ if(x.st.s==="NC") L.push({key:"chk:"+x.id, origem:"Inspeção – etapa "+x.e.id+(x.qn?" – "+x.qn:""), desc:(x.qn?x.base.toUpperCase()+" ("+x.qn+"): ":"")+x.t+(x.st.obs? " — "+x.st.obs:""), sug:"Moderada"}); });
   v.correntes.forEach(r=>{ const c=calcCorrente(r,v.cfg.deseq); c.flags.forEach(f=>L.push({key:"cor:"+r.id+":"+f.k, origem:"Correntes – "+(r.quadro||"quadro")+" / "+(r.circuito||"circuito"), desc:f.txt, sug:f.sev==="crit"?"Grave":"Moderada"})); });
   v.termo.forEach(r=>{ const c=calcTermo(r); if(c.sev>=2) L.push({key:"ter:"+r.id, origem:"Termografia – "+(r.local||"ponto"), desc:(r.componente||"Componente")+": ΔT = "+fmt(c.dt,1)+" °C ("+(r.refTipo==="ambiente"?"vs. ambiente":"vs. similar")+") – "+c.txt, sug:c.sev>=3?"Grave":"Moderada"}); });
   return L.map(p=>{ const s=v.pend[p.key]||{}; return Object.assign(p,{classe:s.classe||p.sug, prov:s.prov||"", prazo:s.prazo||""}); });
@@ -541,7 +560,7 @@ async function carregar(){
   S.v = lista.find(x=>x.id===cur) || lista[0] || novaVistoria();
   normalizar(S.v);
 }
-function normalizar(v){ const b=novaVistoria(); for(const k of Object.keys(b)){ if(v[k]==null) v[k]=b[k]; } ["ident","instr","cfg","rel","aplica","local"].forEach(k=>{ v[k]=Object.assign({},b[k],v[k]); }); }
+function normalizar(v){ const semQd=!Array.isArray(v.quadros); const b=novaVistoria(); for(const k of Object.keys(b)){ if(v[k]==null) v[k]=b[k]; } ["ident","instr","cfg","rel","aplica","local"].forEach(k=>{ v[k]=Object.assign({},b[k],v[k]); }); if(semQd) migrarQuadros(v); if(!v.quadros.length) v.quadros.push({id:"qg",nome:""}); vincularMedicoes(v); }
 async function salvar(){
   if(S.saving){ S.pendingSave=true; return; }
   S.saving=true;
@@ -594,10 +613,11 @@ function dadosParaClaude(v){
   const fotos=listaFotos(v); const fotosDe=ref=>fotos.filter(f=>f.ref===ref).map(f=>"Foto "+f.num);
   return {
     identificacao:v.ident,
+    quadros_inspecionados:(v.quadros||[]).map((q,i)=>nomeQd(q,i)),
     instrumentos:{alicate:v.instr.alicate, camera_termografica:v.instr.termo},
     outras_limitacoes:v.instr.obsLimit,
     inspecao_visual: ETAPAS.map(e=>({etapa:e.id+" – "+e.t, aplica:(!e.opc||!!v.aplica[e.id]),
-      itens:(!e.opc||v.aplica[e.id])? e.itens.map(([id,m,t])=>{ const s=v.check[id]||{}; return {item:id.toUpperCase(), metodo:METODO[m], descricao:t, situacao:s.s||"sem registro", obs:s.obs||"", fotos:fotosDe("chk:"+id)}; }):[] })),
+      itens:(!e.opc||v.aplica[e.id])? itensDaEtapa(v,e).map(({id,m,t,qn})=>{ const s=v.check[id]||{}; return {item:codItem(id,v), quadro:qn||undefined, metodo:METODO[m], descricao:t, situacao:s.s||"sem registro", obs:s.obs||"", fotos:fotosDe("chk:"+id)}; }):[] })),
     medicoes_corrente: v.correntes.map(r=>{ const c=calcCorrente(r,v.cfg.deseq); return {quadro:r.quadro,circuito:r.circuito,disjuntor_In_A:r.disjIn,cabo:r.cabo,Iz_A:r.iz,fase_A:r.ia,fase_B:r.ib,fase_C:r.ic,neutro:r.ineutro,pct_In:c.pctIn!=null?+c.pctIn.toFixed(0):null,desequilibrio_pct:c.deseq!=null?+c.deseq.toFixed(1):null,alertas:c.flags.map(f=>f.txt),obs:r.obs}; }),
     limite_desequilibrio_adotado_pct:v.cfg.deseq,
     termografia: v.termo.map(r=>{ const c=calcTermo(r); return {local:r.local,componente:r.componente,Tmax_C:r.tmax,Tref_C:r.tref,referencia:r.refTipo==="ambiente"?"ar ambiente":"componente similar",deltaT_C:c.dt!=null?+c.dt.toFixed(1):null,classificacao_NETA:c.txt,acao:c.acao,carga_pct:c.carga!=null?+c.carga.toFixed(0):null,carga_abaixo_40:!!c.baixaCarga,obs:r.obs,fotos:fotosDe("ter:"+r.id)}; }),
@@ -622,6 +642,7 @@ Regras obrigatórias:
 9. Frases curtas e objetivas, tom de manifestação técnica.
 11. "relatos_em_audio" são falas do fiscal gravadas no local, vinculadas a uma foto, medição ou ponto termográfico. Use as transcrições nas constatações da respectiva seção, sem citar que vieram de áudio. Se algum relato estiver PENDENTE de transcrição, liste-o ao final, fora do relatório, para o fiscal providenciar.
 10. Na metodologia, informe que as fotos levam carimbo com data, hora, coordenadas, endereço e identificação, e que a origem de cada dado (metadados da câmera ou informado pelo fiscal) consta no próprio carimbo. Endereço da unidade: ${v.local.endereco||"não informado"}. Coordenadas: ${v.local.lat!=null?fmtCoord(v.local.lat,v.local.lon)+" ("+(v.local.fonte||"")+")":"não informadas"}.
+12. Na etapa 3 cada quadro ("quadros_inspecionados") tem seus próprios itens, identificados pelo nome do quadro entre parênteses. Na seção 5, agrupe as constatações da etapa 3 por quadro.
 
 Texto de escopo:
 """${ESCOPO_TXT}"""
@@ -651,11 +672,11 @@ function rascunhoAuto(v){
   H("5. CONSTATAÇÕES DA INSPEÇÃO VISUAL");
   const fotos=listaFotos(v); const fr=ref=>{ const x=fotos.filter(f=>f.ref===ref).map(f=>"Foto "+f.num); return x.length?" ("+x.join(", ")+")":""; };
   ETAPAS.forEach(e=>{ if(e.opc && !v.aplica[e.id]) return;
-    const its=e.itens.map(([id,m,tx])=>({id,tx,s:(v.check[id]||{}).s,obs:(v.check[id]||{}).obs}));
+    const its=itensDaEtapa(v,e).map(({id,t:tx})=>({id,tx,s:(v.check[id]||{}).s,obs:(v.check[id]||{}).obs}));
     const c=its.filter(x=>x.s==="C").length, nc=its.filter(x=>x.s==="NC"), nv=its.filter(x=>!x.s||x.s==="NV").length;
-    P("Etapa "+e.id+" – "+e.t+": "+c+" conforme(s), "+nc.length+" não conforme(s), "+nv+" não verificado(s).");
-    nc.forEach(x=>P("- "+x.id.toUpperCase()+" não conforme: "+x.tx+(x.obs?". "+x.obs:"")+fr("chk:"+x.id)));
-    its.filter(x=>x.s==="C"&&x.obs).forEach(x=>P("- "+x.id.toUpperCase()+": "+x.obs+fr("chk:"+x.id)));
+    P("Etapa "+e.id+" – "+e.t+(e.id==="3"?" ("+(v.quadros||[]).map((q,i)=>nomeQd(q,i)).join("; ")+")":"")+": "+c+" conforme(s), "+nc.length+" não conforme(s), "+nv+" não verificado(s).");
+    nc.forEach(x=>P("- "+codItem(x.id,v)+" não conforme: "+x.tx+(x.obs?". "+x.obs:"")+fr("chk:"+x.id)));
+    its.filter(x=>x.s==="C"&&x.obs).forEach(x=>P("- "+codItem(x.id,v)+": "+x.obs+fr("chk:"+x.id)));
   });
   if((v.notas||[]).length){ P("Registros de campo:"); v.notas.forEach((nt,k)=>P("- Registro "+(k+1)+" ("+dtBR(new Date(nt.t)).slice(0,16)+"): "+(nt.txt||"sem anotação")+fr("nota:"+nt.id))); }
   { const au=todosAudios(v).filter(x=>x.a.txt); if(au.length){ P("Relatos registrados em campo:"); au.forEach(x=>P("- "+x.rot+": "+x.a.txt)); } }
@@ -770,7 +791,7 @@ function atualizarRede(){ const el=document.getElementById("netSt"); if(!el) ret
 
 /* ============================== Estado ============================== */
 const S = { v:null, list:[], idb:null, gps:null, gpsWatch:null, swReg:null, store:"none", tab:"visual",
-  saveTimer:null, saving:false, pendingSave:false, urls:{}, openEt:null, openCor:null, openTer:null, obsOpen:new Set(), novaVersao:false, fabMode:null, vw:null };
+  saveTimer:null, saving:false, pendingSave:false, urls:{}, openEt:null, openQd:null, openCor:null, openTer:null, obsOpen:new Set(), novaVersao:false, fabMode:null, vw:null };
 const ICON = {
   dados:'<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM8.5 11h7M8.5 15h5"/></svg>',
   visual:'<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/></svg>',
@@ -781,21 +802,51 @@ const ICON = {
   obs:'<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
   mic:'<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>'
 };
-const TABS = [["dados","Dados"],["visual","Inspeção"],["cor","Medições"],["rel","Relatório"]];
+const TABS = [["dados","Dados"],["visual","Inspeção"],["rel","Relatório"]];
 
 function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function vib(){ try{ navigator.vibrate && navigator.vibrate(8); }catch(e){} }
 
+/* ============================== Quadros (etapa 3) ============================== */
+/* A etapa 3 se repete por quadro: o item q1 do quadro "k3f9a" vira "q1_k3f9a". As demais etapas mantêm os ids simples. */
+function nomeQd(q,i){ return String((q&&q.nome)||"").trim() || "Quadro "+(i+1); }
+function itensDaEtapa(v,e){ if(e.id!=="3") return e.itens.map(([id,m,t])=>({id,base:id,m,t,qn:"",qid:""}));
+  const out=[]; (v.quadros||[]).forEach((q,i)=>{ const qn=nomeQd(q,i); e.itens.forEach(([b,m,t])=>out.push({id:b+"_"+q.id,base:b,m,t,qn,qid:q.id})); }); return out; }
+function infoItem(id,v){ v=v||S.v; const [b,qid]=String(id).split("_"); const e=ETAPAS.find(e=>e.itens.some(x=>x[0]===b)); if(!e) return null;
+  const it=e.itens.find(x=>x[0]===b); const qi=qid?(v.quadros||[]).findIndex(q=>q.id===qid):-1;
+  return {e,id,base:b,m:it[1],t:it[2],qid:qid||"",qn:qi>=0?nomeQd(v.quadros[qi],qi):(qid?"quadro excluído":"")}; }
+function codItem(id,v){ const x=infoItem(id,v); if(!x) return String(id).toUpperCase(); return x.base.toUpperCase()+(x.qn?" ("+x.qn+")":""); }
+function migrarQuadros(v){ const e=ETAPAS.find(e=>e.id==="3"); let tem=false; v.quadros=[{id:"qg",nome:""}];
+  e.itens.forEach(([b])=>{ const nv=b+"_qg";
+    if(v.check&&v.check[b]){ v.check[nv]=v.check[b]; delete v.check[b]; tem=true; }
+    if(v.pend&&v.pend["chk:"+b]){ v.pend["chk:"+nv]=v.pend["chk:"+b]; delete v.pend["chk:"+b]; }
+    (v.termo||[]).forEach(r=>{ if(r.item===b){ r.item=nv; tem=true; } }); });
+  if(tem) v.quadros[0].nome="Quadro geral"; }
+function infoQd(q){ const e=ETAPAS.find(e=>e.id==="3"); const its=e.itens.map(([b])=>(S.v.check[b+"_"+q.id]||{}).s||"");
+  const ms=S.v.correntes.filter(r=>r.qd===q.id); let al=0; ms.forEach(r=>al+=calcCorrente(r,S.v.cfg.deseq).flags.length);
+  return {feitos:its.filter(Boolean).length,total:its.length,nc:its.filter(s=>s==="NC").length,med:ms.length,al}; }
+function cntQd(x){ return (x.nc?`<span class="pill crit">${x.nc} NC</span> `:"")+(x.al?`<span class="pill warn">${x.al} alerta</span> `:"")+x.feitos+"/"+x.total+(x.med?" · "+x.med+(x.med>1?" medições":" medição"):""); }
+function qdAberto(){ if(S.openQd!=null) return S.openQd; const q=(S.v.quadros||[]).find(q=>{ const x=infoQd(q); return x.feitos<x.total; }); return q?q.id:""; }
+function rQuadros(e){ const qs=S.v.quadros||[]; const ab=qdAberto();
+  return `<p class="lead qd-lead">Registre cada quadro separadamente: QGBT, quadros de distribuição dos blocos, cozinha, quadra…</p>`
+   + qs.map((q,i)=>{ const x=infoQd(q); const open=q.id===ab; const its=itensDaEtapa(S.v,e).filter(y=>y.qid===q.id);
+    return `<div class="qd ${x.feitos===x.total?"done":""}" id="qd_${q.id}" data-open="${open}">
+      <button class="qd-h" type="button" data-act="toggleQd" data-qd="${q.id}" aria-expanded="${open}"><span class="n">Q${i+1}</span><span class="tt" id="qdn_${q.id}">${esc(nomeQd(q,i))}</span><span class="cnt" id="qdc_${q.id}">${cntQd(x)}</span><span class="chev">▾</span></button>
+      ${open?`<div class="qd-b"><div class="qd-nome"><label class="f"><span>Nome do quadro</span><input type="text" data-qdnome="${q.id}" value="${esc(q.nome||"")}" placeholder="Ex.: QGBT, QD-01 Bloco A, QD Cozinha" autocomplete="off" enterkeyhint="done"></label>
+        ${qs.length>1?`<button class="btn sm ghost danger" type="button" data-act="delQd" data-qd="${q.id}">Excluir quadro</button>`:""}</div>
+        ${its.map(y=>itemHTML(y.id,y.m,y.t)).join("")}${rCorQd(q)}</div>`:""}</div>`; }).join("")
+   + `<div class="qd-add"><button class="btn" type="button" data-act="addQd">+ Adicionar quadro</button></div>`; }
+
 /* ============================== Fotos: referências ============================== */
 function rotulo(tgt){ const v=S.v; const [k,a,b]=String(tgt).split(":");
-  if(k==="c"){ for(const e of ETAPAS) for(const [id,m,t] of e.itens) if(id===a) return "Item "+id.toUpperCase()+" – "+t; }
+  if(k==="c"){ const x=infoItem(a); if(x) return "Item "+codItem(a)+" – "+x.t; }
   if(k==="t"){ const r=v.termo[+a]||{}; return (b==="ir"?"Termograma":"Foto visual")+" – "+(r.local||"ponto "+(+a+1))+(r.componente?" / "+r.componente:""); }
   if(k==="n"){ const i=(v.notas||[]).findIndex(x=>x.id===a); const nt=v.notas[i]; return "Registro de campo "+(i+1)+(nt&&nt.txt?" – "+nt.txt.slice(0,60):""); }
   return "Vista geral"; }
 function listaFotos(v){
   const out=[];
   (v.fotosGerais||[]).forEach((f,i)=>out.push({f, cap:f.leg||"Vista geral", ref:"geral", pref:"g:"+i}));
-  itensAtivos(v).forEach(x=>{ (x.st.fotos||[]).forEach((f,i)=>out.push({f, cap:"Item "+x.id.toUpperCase()+" – "+x.t+(f.leg?" ("+f.leg+")":""), ref:"chk:"+x.id, pref:"c:"+x.id+":"+i})); });
+  itensAtivos(v).forEach(x=>{ (x.st.fotos||[]).forEach((f,i)=>out.push({f, cap:"Item "+codItem(x.id,v)+" – "+x.t+(f.leg?" ("+f.leg+")":""), ref:"chk:"+x.id, pref:"c:"+x.id+":"+i})); });
   (v.notas||[]).slice().reverse().forEach(nt=>{ const k=v.notas.indexOf(nt); (nt.fotos||[]).forEach((f,i)=>out.push({f, cap:"Registro de campo "+(k+1)+(nt.txt?" – "+nt.txt:"")+(f.leg?" ("+f.leg+")":""), ref:"nota:"+nt.id, pref:"n:"+nt.id+":"+i})); });
   v.termo.forEach((r,i)=>{ const c=calcTermo(r);
     if(r.fotoIR) out.push({f:r.fotoIR, cap:"Termograma – "+(r.local||"ponto "+(i+1))+(r.componente?" / "+r.componente:"")+(c.dt!=null?" (Tmáx "+fmt(n(r.tmax),1)+" °C; ΔT "+fmt(c.dt,1)+" °C)":"")+(r.fotoIR.leg?" ("+r.fotoIR.leg+")":""), ref:"ter:"+r.id, pref:"t:"+i+":ir"});
@@ -831,7 +882,7 @@ function atualizarChrome(){
   document.getElementById("hdTitle").textContent=titulo(S.v);
   const r=resumo(S.v); document.getElementById("progBar").style.width=(r.total?Math.round(r.feitos/r.total*100):0)+"%";
   const np=pendencias(S.v).length;
-  const bd={visual:(r.nc+r.ter)?`<span class="bdg">${r.nc+r.ter}</span>`:"", cor:r.cor?`<span class="bdg warn">${r.cor}</span>`:"", rel:np?`<span class="bdg warn">${np}</span>`:""};
+  const bd={visual:(r.nc+r.ter+r.cor)?`<span class="bdg">${r.nc+r.ter+r.cor}</span>`:"", rel:np?`<span class="bdg warn">${np}</span>`:""};
   document.getElementById("bnav").innerHTML=TABS.map(([k,l])=>`<button type="button" data-tab="${k}" aria-current="${S.tab===k}">${ICON[k]}<span>${l}</span>${bd[k]||""}</button>`).join("");
   document.getElementById("fab").hidden = !(S.tab==="visual"||S.tab==="dados");
   atualizarChipDrive();
@@ -840,8 +891,8 @@ const M=document.getElementById("main");
 function render(keep){
   const y=window.scrollY;
   atualizarChrome();
-  if(S.tab==="termo") S.tab="visual";
-  const fn={dados:rDados,visual:rVisual,cor:rCor,rel:rRel}[S.tab];
+  if(S.tab==="termo"||S.tab==="cor") S.tab="visual";
+  const fn={dados:rDados,visual:rVisual,rel:rRel}[S.tab];
   const ban=[];
   if(S.novaVersao) ban.push(`<div class="banner info row">Nova versão do app instalada. <button class="btn sm" type="button" data-act="recarregar">Recarregar</button></div>`);
   if(S.tab==="dados" && /iP(hone|ad|od)/.test(navigator.userAgent) && !navigator.standalone && !(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)) ban.push(`<div class="banner info">No iPhone, use o app instalado: abra este endereço no Safari normal (não em aba privada), toque em Compartilhar e em <b>Adicionar à Tela de Início</b>. Em aba privada o Safari apaga tudo ao fechar.</div>`);
@@ -914,7 +965,7 @@ function rDados(){
 }
 
 /* ============================== Inspeção ============================== */
-function etapaInfo(e){ const on=!e.opc||S.v.aplica[e.id]; const its=e.itens.map(([id])=>(S.v.check[id]||{}).s||"");
+function etapaInfo(e){ const on=!e.opc||S.v.aplica[e.id]; const its=itensDaEtapa(S.v,e).map(x=>(S.v.check[x.id]||{}).s||"");
   return {on, feitos:its.filter(Boolean).length, total:its.length, nc:its.filter(s=>s==="NC").length}; }
 function etapaAberta(){ if(S.openEt!==null) return S.openEt;
   const e=ETAPAS.find(e=>{ const x=etapaInfo(e); return x.on && x.feitos<x.total; }); return e? e.id : ""; }
@@ -932,8 +983,9 @@ function rVisual(){
         <span class="cnt" id="etc_${e.id}">${x.on?(x.nc?`<span class="pill crit">${x.nc} NC</span> `:"")+x.feitos+"/"+x.total:"não se aplica"}</span><span class="chev">▾</span></button>
       <div class="et-b">
         ${e.opc?`<div class="et-off"><label class="sw"><input type="checkbox" data-aplica="${e.id}" ${x.on?"checked":""}>${esc(e.pergunta)}</label></div>`:""}
-        ${x.on? e.itens.map(([id,m,t])=>itemHTML(id,m,t)).join("") : ""}
+        ${x.on? (e.id==="3"? rQuadros(e) : e.itens.map(([id,m,t])=>itemHTML(id,m,t)).join("")) : ""}
       </div></section>`; }).join("")}
+  ${rCorOutros()}
   ${rTermoOutros()}`;
 }
 function itemHTML(id,m,t){ const st=S.v.check[id]||{}; const nf=(st.fotos||[]).length; const showObs=!!st.obs||S.obsOpen.has(id);
@@ -950,9 +1002,15 @@ function marcar(id,val){
   it.querySelectorAll(".seg4 button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===st.s)));
   if(st.s==="NC"){ const ta=it.querySelector("textarea[data-itemobs]"); ta.hidden=false; S.obsOpen.add(id); if(!ta.value) ta.focus({preventScroll:false}); }
   agendarSalvar();
-  const e=ETAPAS.find(e=>e.itens.some(x=>x[0]===id)); const x=etapaInfo(e);
+  const inf=infoItem(id); const e=inf.e; const x=etapaInfo(e);
   document.getElementById("etc_"+e.id).innerHTML=(x.nc?`<span class="pill crit">${x.nc} NC</span> `:"")+x.feitos+"/"+x.total;
   const sec=document.getElementById("et_"+e.id); sec.classList.toggle("done",x.feitos===x.total);
+  if(inf.qid){ const q=S.v.quadros.find(q=>q.id===inf.qid); const y=infoQd(q); const c=document.getElementById("qdc_"+q.id); if(c) c.innerHTML=cntQd(y);
+    const qe=document.getElementById("qd_"+q.id); if(qe) qe.classList.toggle("done",y.feitos===y.total);
+    if(y.feitos===y.total && st.s && st.s!=="NC"){ /* quadro completo: fecha e abre o próximo pendente (não pula de etapa, pode haver mais quadros) */
+      const prox=S.v.quadros.find(z=>z.id!==q.id && infoQd(z).feitos<infoQd(z).total);
+      setTimeout(()=>{ S.openQd=prox?prox.id:""; render(true); const el=document.getElementById(prox?"qd_"+prox.id:"qd_"+q.id); el && el.scrollIntoView({behavior:"smooth",block:"start"}); },380); }
+    return; }
   if(x.feitos===x.total && st.s && st.s!=="NC"){
     const prox=ETAPAS.slice(ETAPAS.indexOf(e)+1).find(z=>{ const y=etapaInfo(z); return z.opc || y.feitos<y.total; });
     setTimeout(()=>{ S.openEt=prox?prox.id:""; render(true); if(prox){ const el=document.getElementById("et_"+prox.id); el && el.scrollIntoView({behavior:"smooth",block:"start"}); } },380);
@@ -961,43 +1019,56 @@ function marcar(id,val){
 
 /* ============================== Medições de corrente ============================== */
 function sevCor(c){ return c.flags.some(f=>f.sev==="crit")?"crit": c.flags.length?"warn": c.imax!=null?"ok":""; }
-function rCor(){
-  const v=S.v; if(S.openCor===null && v.correntes.length) S.openCor=v.correntes[v.correntes.length-1].id;
-  const cards=v.correntes.map((r,i)=>{ const c=calcCorrente(r,v.cfg.deseq); const sv=sevCor(c); const open=S.openCor===r.id;
+function qdDe(r){ return r&&r.qd? (S.v.quadros||[]).find(q=>q.id===r.qd)||null : null; }
+function vincularMedicoes(v){ (v.correntes||[]).forEach(r=>{ if(r.qd && !(v.quadros||[]).some(q=>q.id===r.qd)) delete r.qd;
+  if(!r.qd && r.quadro){ const k=String(r.quadro).trim().toLowerCase(); const q=(v.quadros||[]).find(q=>String(q.nome||"").trim().toLowerCase()===k); if(q) r.qd=q.id; } }); }
+function cardCor(r,i){ const v=S.v; const c=calcCorrente(r,v.cfg.deseq); const sv=sevCor(c); const open=S.openCor===r.id; const noQd=!!qdDe(r);
     const num=(k,l)=>`<label class="f num"><span>${l}</span><input type="text" inputmode="decimal" enterkeyhint="next" data-cor="${i}" data-k="${k}" value="${esc(r[k]??"")}" autocomplete="off"></label>`;
+    const circ=`<label class="f"><span>Circuito</span><input type="text" enterkeyhint="next" data-cor="${i}" data-k="circuito" value="${esc(r.circuito??"")}" placeholder="Ex.: Alimentador, C3 – tomadas sala 2" autocomplete="off"></label>`;
     return `<div class="mc" data-sev="${sv}" data-open="${open}" id="mc_${esc(r.id)}">
-      <button class="mc-h" type="button" data-act="toggleCor" data-id="${esc(r.id)}"><span class="l1"><span id="corT_${i}">${esc(r.quadro||"Quadro")} · ${esc(r.circuito||"circuito "+(i+1))}</span><span id="corPill_${i}">${pillCor(c)}</span></span>
+      <button class="mc-h" type="button" data-act="toggleCor" data-id="${esc(r.id)}"><span class="l1"><span id="corT_${i}">${tituloCor(r,i)}</span><span id="corPill_${i}">${pillCor(c)}</span></span>
         <span class="l2" id="corL2_${i}">${resumoCor(r,c)}</span></button>
       <div class="mc-b">
-        <div class="g2">${["quadro","circuito"].map((k,j)=>`<label class="f"><span>${j?"Circuito":"Quadro"}</span><input type="text" enterkeyhint="next" data-cor="${i}" data-k="${k}" value="${esc(r[k]??"")}" placeholder="${j?"Alimentador":"QGBT"}" autocomplete="off"></label>`).join("")}</div>
+        ${noQd? circ : `<div class="g2"><label class="f"><span>Local / quadro</span><input type="text" enterkeyhint="next" data-cor="${i}" data-k="quadro" value="${esc(r.quadro??"")}" placeholder="Padrão de entrada" autocomplete="off" list="dlQd"></label>${circ}</div>`}
         <div class="g4">${num("ia","Fase A (A)")}${num("ib","Fase B (A)")}${num("ic","Fase C (A)")}${num("ineutro","Neutro (A)")}</div>
         <div class="g4">${num("disjIn","In disj. (A)")}<label class="f num"><span>Cabo (mm²)</span><input type="text" inputmode="decimal" enterkeyhint="next" data-cor="${i}" data-k="cabo" value="${esc(r.cabo??"")}" autocomplete="off"></label>${num("iz","Iz cabo (A)")}<span></span></div>
         <div class="status" id="corFl_${i}">${c.flags.map(f=>esc(f.txt)).join(" · ")}</div>
         <input type="text" data-cor="${i}" data-k="obs" value="${esc(r.obs||"")}" placeholder="Cargas ligadas no momento, observação" aria-label="Observação" enterkeyhint="done">
         ${audBox("cor:"+i,r.audio)}
         <div class="row" style="justify-content:space-between"><button type="button" class="mini ${r.audio&&r.audio.id?"has":""}" data-mic="cor:${i}">${ICON.mic}${r.audio&&r.audio.id?"Regravar áudio":"Gravar áudio"}</button><button class="btn sm ghost danger" type="button" data-act="delCor" data-i="${i}">Excluir medição</button></div>
-      </div></div>`; }).join("");
-  return `<section class="card"><div class="card-h"><h2>Medições de corrente</h2><span class="status">alicate amperímetro</span></div>
-    <p class="lead">Fases e neutro de cada circuito. O app compara com a In do disjuntor e a Iz do cabo e calcula o desequilíbrio entre fases.</p></section>
-  ${cards || `<div class="empty">Nenhuma medição ainda. Comece pelo alimentador do quadro geral.</div>`}
-  <div class="g2"><button class="btn pri" type="button" data-act="addCor" data-mesmo="1" ${v.correntes.length?"":"hidden"}>+ Mesmo quadro</button><button class="btn ${v.correntes.length?"":"pri"}" type="button" data-act="addCor">+ Novo quadro</button></div>
-  <details class="card"><summary>Critérios <small>desequilíbrio: ${v.cfg.deseq}%</small></summary>
+      </div></div>`; }
+function tituloCor(r,i){ return qdDe(r)? esc(r.circuito||"Circuito "+(i+1)) : esc(r.quadro||"Medição")+" · "+esc(r.circuito||"circuito "+(i+1)); }
+/* bloco de correntes dentro do quadro (etapa 3) */
+function rCorQd(q){ const v=S.v; const L=v.correntes.map((r,i)=>[r,i]).filter(([r])=>r.qd===q.id);
+  return `<div class="qd-med"><div class="passo"><b>A</b> Correntes deste quadro <span class="status">(alicate amperímetro)</span></div>
+    <p class="lead">Meça fases e neutro do alimentador e dos circuitos mais carregados. O app compara com a In do disjuntor e a Iz do cabo.</p>
+    ${L.map(([r,i])=>cardCor(r,i)).join("")}
+    <button class="btn" type="button" data-act="addCor" data-qd="${q.id}">+ Circuito medido</button></div>`; }
+/* medições fora dos quadros + critérios, no fim da Inspeção */
+function rCorOutros(){ const v=S.v; const L=v.correntes.map((r,i)=>[r,i]).filter(([r])=>!qdDe(r));
+  return `<datalist id="dlQd">${(v.quadros||[]).map((q,i)=>nomeQd(q,i)).map(x=>`<option value="${esc(x)}">`).join("")}</datalist>
+  <section class="card" id="secCor"><div class="card-h"><h3>Correntes – outros pontos</h3><span class="status">${v.correntes.length} medição(ões) no total</span></div>
+    <p class="lead">As correntes de cada quadro ficam no próprio quadro (etapa 3). Aqui entram as de outros pontos: padrão de entrada, transformador, equipamentos.</p>
+    ${L.map(([r,i])=>cardCor(r,i)).join("")}
+    <button class="btn" type="button" data-act="addCor">+ Outra medição</button>
+    <details class="como"><summary>Critérios <small>desequilíbrio: ${v.cfg.deseq}%</small></summary>
     ${field("cfg.deseq","Limite de atenção para desequilíbrio (%)",{mode:"decimal"})}
-    <p class="lead">O limite é critério da fiscalização, não da norma. Uma leitura pontual não representa a demanda máxima. Iz vem do projeto; deixe em branco se não souber.</p></details>`;
-}
+    <p class="lead">O limite é critério da fiscalização, não da norma. Uma leitura pontual não representa a demanda máxima. Iz vem do projeto; deixe em branco se não souber.</p></details></section>`; }
 function pillCor(c){ const s=sevCor(c); return s==="crit"?`<span class="pill crit">Alerta</span>`: s==="warn"?`<span class="pill warn">Atenção</span>`: s==="ok"?`<span class="pill ok">OK</span>`:""; }
 function resumoCor(r,c){ const p=[]; ["ia","ib","ic"].forEach((k,j)=>{ if(r[k]) p.push("ABC"[j]+" "+r[k]); }); if(r.ineutro) p.push("N "+r.ineutro);
   if(c.pctIn!=null) p.push(fmt(c.pctIn,0)+"% In"); if(c.deseq!=null) p.push("deseq. "+fmt(c.deseq,0)+"%"); if(r.audio&&r.audio.id) p.push("áudio "+fmtDur(r.audio.dur)); return esc(p.join(" · ")||"toque para preencher"); }
 function atualizarCor(i){ const r=S.v.correntes[i]; if(!r) return; const c=calcCorrente(r,S.v.cfg.deseq);
   const set=(id,h)=>{ const el=document.getElementById(id); if(el) el.innerHTML=h; };
-  set("corPill_"+i,pillCor(c)); set("corT_"+i,esc(r.quadro||"Quadro")+" · "+esc(r.circuito||"circuito "+(i+1))); set("corL2_"+i,resumoCor(r,c)); set("corFl_"+i,c.flags.map(f=>esc(f.txt)).join(" · "));
-  const card=document.getElementById("mc_"+r.id); if(card) card.dataset.sev=sevCor(c); atualizarChrome(); }
+  set("corPill_"+i,pillCor(c)); set("corT_"+i,tituloCor(r,i)); set("corL2_"+i,resumoCor(r,c)); set("corFl_"+i,c.flags.map(f=>esc(f.txt)).join(" · "));
+  const card=document.getElementById("mc_"+r.id); if(card) card.dataset.sev=sevCor(c);
+  const q=qdDe(r); if(q){ const el=document.getElementById("qdc_"+q.id); if(el) el.innerHTML=cntQd(infoQd(q)); }
+  atualizarChrome(); }
 
 /* ============================== Termografia ============================== */
 function sevTer(c){ return c.sev<0?"": c.sev===0?"ok": c.sev<=2?"warn":"crit"; }
 function pillTer(c){ return c.sev<0?"": `<span class="pill ${sevTer(c)}">${esc(c.txt)}</span>`; }
 const COMPONENTES=["Disjuntor geral","Disjuntor","Barramento","Borne / conexão","Cabo","Fusível","Contator","Transformador"];
-function quadrosConhecidos(){ const v=S.v; return [...new Set([...v.correntes.map(r=>r.quadro),...v.termo.map(r=>r.local)].filter(Boolean))].slice(0,8); }
+function quadrosConhecidos(){ const v=S.v; return [...new Set([...(v.quadros||[]).map(q=>String(q.nome||"").trim()),...v.correntes.map(r=>r.quadro),...v.termo.map(r=>r.local)].filter(Boolean))].slice(0,8); }
 function cardTer(r,i){ const v=S.v; const quadros=quadrosConhecidos(); const c=calcTermo(r); const open=S.openTer===r.id; const amb=r.refTipo==="ambiente";
     const slot=(k,lbl)=>{ const f=k==="ir"?r.fotoIR:r.fotoVis; return f? `<button type="button" class="slot has" data-ver="t:${i}:${k}"><img data-fid="${esc(f.id)}" src="${esc(fotoURL(f))}" alt=""><span class="lbl">${lbl}</span>${audBadge(f.audio)}</button>`
       : `<label class="slot">${ICON.cam}<span>${lbl}</span><input type="file" accept="image/*" capture="environment" data-addph="t:${i}:${k}"></label>`; };
@@ -1183,14 +1254,27 @@ document.addEventListener("click", async ev=>{
   if(act==="sttUm"){ transcreverUm(b.dataset.ref); return; }
   if(act==="delAud"){ if(!(await confirmar("Excluir este áudio? A transcrição também sai."))) return; const h=holderPorRef(b.dataset.ref); if(h&&h.audio){ idbDel("fotos",h.audio.id).catch(()=>{}); delete h.audio; agendarSalvar(); } if(!VW.el.hidden) mostrarFoto(); else render(true); return; }
   if(act==="toggleEt"){ const id=b.dataset.et; const cur=etapaAberta(); S.openEt = cur===id? "" : id; render(true); const el=document.getElementById("et_"+id); if(S.openEt===id && el) el.scrollIntoView({block:"start"}); return; }
+  if(act==="toggleQd"){ const id=b.dataset.qd; S.openQd = qdAberto()===id? "" : id; render(true); const el=document.getElementById("qd_"+id); if(S.openQd===id && el) el.scrollIntoView({block:"start"}); return; }
+  if(act==="addQd"){ const q={id:uid8().slice(0,5),nome:""}; S.v.quadros.push(q); S.openQd=q.id; S.openEt="3"; agendarSalvar(); render(true);
+    const el=document.getElementById("qd_"+q.id); if(el){ el.scrollIntoView({block:"start"}); const f=el.querySelector("input[data-qdnome]"); f&&f.focus(); } return; }
+  if(act==="delQd"){ const qi=S.v.quadros.findIndex(q=>q.id===b.dataset.qd); if(qi<0) return; const q=S.v.quadros[qi];
+    const e=ETAPAS.find(e=>e.id==="3"); const ids=e.itens.map(([x])=>x+"_"+q.id); let nf=0; ids.forEach(id=>nf+=((S.v.check[id]||{}).fotos||[]).length);
+    const nt=S.v.termo.filter(r=>ids.includes(r.item)).length; const nm=S.v.correntes.filter(r=>r.qd===q.id).length;
+    if(!(await confirmar("Excluir o quadro “"+nomeQd(q,qi)+"” e o que foi marcado nele"+(nf?" ("+nf+" foto(s))":"")+"?"+(nt?" Os "+nt+" ponto(s) quente(s) dele vão para “outros pontos quentes”.":"")+(nm?" As "+nm+" medição(ões) de corrente vão para “Correntes – outros pontos”.":"")))) return;
+    ids.forEach(id=>{ const st=S.v.check[id]; if(st) (st.fotos||[]).forEach(f=>{ idbDel("fotos",f.id).catch(()=>{}); if(f.audio&&f.audio.id) idbDel("fotos",f.audio.id).catch(()=>{}); }); delete S.v.check[id]; delete S.v.pend["chk:"+id]; S.obsOpen.delete(id); });
+    S.v.termo.forEach(r=>{ if(ids.includes(r.item)) delete r.item; }); S.v.correntes.forEach(r=>{ if(r.qd===q.id) delete r.qd; });
+    S.v.quadros.splice(qi,1); S.openQd=null; agendarSalvar(); render(true); return; }
   if(act==="obs"){ const id=b.dataset.id; const ta=document.querySelector(`textarea[data-itemobs="${id}"]`); ta.hidden=!ta.hidden; if(ta.hidden) S.obsOpen.delete(id); else { S.obsOpen.add(id); autoGrow(ta); ta.focus(); } return; }
   if(act==="toggleCor"){ S.openCor = S.openCor===b.dataset.id? "" : b.dataset.id; render(true); return; }
   if(act==="toggleTer"){ S.openTer = S.openTer===b.dataset.id? "" : b.dataset.id; render(true); return; }
-  if(act==="addCor"){ const ant=S.v.correntes[S.v.correntes.length-1]; const r={id:uid8()}; if(b.dataset.mesmo && ant){ r.quadro=ant.quadro; } S.v.correntes.push(r); S.openCor=r.id; agendarSalvar(); render(true);
-    const el=document.getElementById("mc_"+r.id); if(el){ el.scrollIntoView({block:"center"}); const f=el.querySelector(b.dataset.mesmo?'input[data-k="circuito"]':'input[data-k="quadro"]'); f&&f.focus(); } return; }
+  if(act==="addCor"){ const r={id:uid8()}; const q=b.dataset.qd? S.v.quadros.find(x=>x.id===b.dataset.qd) : null;
+    if(q){ r.qd=q.id; r.quadro=nomeQd(q,S.v.quadros.indexOf(q)); const ant=S.v.correntes.filter(x=>x.qd===q.id).pop(); if(!ant) r.circuito="Alimentador"; }
+    S.v.correntes.push(r); S.openCor=r.id; agendarSalvar(); render(true);
+    const el=document.getElementById("mc_"+r.id); if(el){ el.scrollIntoView({block:"center"}); const f=el.querySelector(q?'input[data-k="ia"]':'input[data-k="quadro"]'); f&&f.focus(); } return; }
   if(act==="delCor"){ if(await confirmar("Excluir esta medição?")){ S.v.correntes.splice(+b.dataset.i,1); agendarSalvar(); render(true); } return; }
   if(act==="addTer"){ const ant=S.v.termo[S.v.termo.length-1]; const r={id:uid8(),refTipo:"similar"}; if(b.dataset.ponto) r.item=b.dataset.ponto;
     const ultQ=(ant&&ant.local)||((S.v.correntes[S.v.correntes.length-1]||{}).quadro)||""; if(ultQ && (b.dataset.mesmo||r.item)) r.local=ultQ;
+    if(r.item){ const inf=infoItem(r.item); if(inf&&inf.qn) r.local=inf.qn; }
     if(r.item==="e5"||r.item==="s5") r.componente=r.item==="e5"?"Disjuntor geral":"Transformador";
     S.v.termo.push(r); S.openTer=r.id; agendarSalvar(); render(true);
     const el=document.getElementById("tc_"+r.id); el && el.scrollIntoView({block:"center"}); return; }
@@ -1215,12 +1299,12 @@ document.addEventListener("click", async ev=>{
   if(act==="dlDocx"){ baixarDocx(false); return; }
   if(act==="shDocx"){ baixarDocx(true); return; }
   if(act==="cpTxt"){ try{ await navigator.clipboard.writeText(S.v.rel.texto||rascunhoAuto(S.v)); document.getElementById("dlSt").textContent="Texto copiado."; }catch(e){ document.getElementById("dlSt").textContent="Não foi possível copiar."; } return; }
-  if(b.id==="btnNew"){ if(!(await confirmar("Começar uma nova vistoria? A atual fica salva na lista."))) return; await salvarAgora(); S.v=novaVistoria({fiscal:S.v.ident.fiscal,cargo:S.v.ident.cargo}); S.list.unshift(S.v); S.openEt=null; S.openCor=null; S.openTer=null; S.tab="dados"; agendarSalvar(); render(); return; }
+  if(b.id==="btnNew"){ if(!(await confirmar("Começar uma nova vistoria? A atual fica salva na lista."))) return; await salvarAgora(); S.v=novaVistoria({fiscal:S.v.ident.fiscal,cargo:S.v.ident.cargo}); S.list.unshift(S.v); S.openEt=null; S.openQd=null; S.openCor=null; S.openTer=null; S.tab="dados"; agendarSalvar(); render(); return; }
   if(b.id==="btnList"){ abrirLista(); return; }
   if(b.id==="drvChip"){ tocarChipDrive(); return; }
   if(b.id==="dlgClose"){ document.getElementById("dlgList").close(); return; }
   if(b.id==="bkExp"){ exportarBackup(); return; }
-  if(b.dataset.open){ await salvarAgora(); const x=S.list.find(v=>v.id===b.dataset.open); if(x){ S.v=x; normalizar(x); try{localStorage.setItem("vistoriaEletrica.cur",x.id);}catch(e){} } document.getElementById("dlgList").close(); S.openEt=null; S.openCor=null; S.openTer=null; render(); return; }
+  if(b.dataset.open){ await salvarAgora(); const x=S.list.find(v=>v.id===b.dataset.open); if(x){ S.v=x; normalizar(x); try{localStorage.setItem("vistoriaEletrica.cur",x.id);}catch(e){} } document.getElementById("dlgList").close(); S.openEt=null; S.openQd=null; S.openCor=null; S.openTer=null; render(); return; }
   if(b.dataset.dup){ const x=S.list.find(v=>v.id===b.dataset.dup); if(x){ const c=JSON.parse(JSON.stringify(x)); c.id="v-"+Date.now().toString(36)+uid8().slice(0,4); c.createdAt=Date.now(); c.ident.data=hojeISO(); c.check={}; c.correntes=[]; c.termo=[]; c.fotosGerais=[]; c.notas=[]; c.pend={}; c.drive={}; c.rel={texto:"",geradoEm:0,fonte:""}; S.v=c; S.list.unshift(c); agendarSalvar(); document.getElementById("dlgList").close(); S.tab="dados"; render(); } return; }
   if(b.dataset.delv){ if(!(await confirmar("Excluir esta vistoria e as fotos dela? Não dá para desfazer."))) return; await excluirVistoria(b.dataset.delv); abrirLista(); return; }
 });
@@ -1241,6 +1325,7 @@ document.addEventListener("input", ev=>{
     if(c){ S.v.local.lat=c.lat; S.v.local.lon=c.lon; S.v.local.fonte="informadas pelo fiscal"; st.textContent="Lidas: "+fmtCoord(c.lat,c.lon); } else { S.v.local.lat=null; S.v.local.lon=null; st.textContent=el.value?"Não reconheci duas coordenadas válidas.":"Ou cole as coordenadas do Google Maps."; }
     agendarSalvar(); return; }
   if(el.dataset.path){ let val=el.value; if(el.dataset.mask==="conv"){ val=maskConv(val); el.value=val; } if(el.dataset.path==="cfg.deseq") val=n(val)??10; setPath(S.v,el.dataset.path,val); agendarSalvar(); return; }
+  if(el.dataset.qdnome){ const q=S.v.quadros.find(q=>q.id===el.dataset.qdnome); if(!q) return; q.nome=el.value; const i=S.v.quadros.indexOf(q); const h=document.getElementById("qdn_"+q.id); if(h) h.textContent=nomeQd(q,i); S.v.correntes.forEach(r=>{ if(r.qd===q.id) r.quadro=nomeQd(q,i); }); agendarSalvar(); return; }
   if(el.dataset.itemobs){ const id=el.dataset.itemobs; const st=S.v.check[id]||(S.v.check[id]={}); st.obs=el.value; const btn=document.querySelector(`button[data-act="obs"][data-id="${id}"]`); btn&&btn.classList.toggle("has",!!el.value); agendarSalvar(); return; }
   if(el.dataset.audtxt){ const h=holderPorRef(el.dataset.audtxt); if(h&&h.audio){ h.audio.txt=el.value; h.audio.fonte=el.value?"editada":""; h.audio.st=el.value?"ok":"fila"; agendarSalvar(); } return; }
   if(el.id==="sttKey"){ try{ localStorage.setItem(LS_STT,el.value.trim()); }catch(e){} if(el.value.trim()) agendarTranscricao(1500); return; }
