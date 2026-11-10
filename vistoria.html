@@ -47,9 +47,10 @@ button,input,select,textarea{font:inherit;color:inherit}
 .mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 
 /* cabeçalho */
-.hd{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--line);padding:calc(env(safe-area-inset-top) + 8px) 12px 0;display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center}
-.drv{min-height:36px;border-radius:999px;border:1px solid var(--line);background:var(--soft);font-size:12.5px;font-weight:600;padding:4px 10px;display:inline-flex;gap:5px;align-items:center;cursor:pointer;white-space:nowrap;color:var(--ink)}
+.hd{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--line);padding:calc(env(safe-area-inset-top) + 6px) 12px 0;display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:6px;align-items:center}
+.drv{min-height:34px;border-radius:999px;border:1px solid var(--line);background:var(--soft);font-size:12.5px;font-weight:600;padding:4px 10px;display:inline-flex;gap:5px;align-items:center;cursor:pointer;white-space:nowrap;color:var(--ink)}
 .drv[hidden]{display:none}
+@media (max-width:600px){.drv .t{display:none} .drv{padding:4px 8px;min-width:34px;justify-content:center} .drv svg{width:18px;height:18px}}
 .drv svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .drv.ok{color:var(--ok);background:var(--ok-soft);border-color:transparent}
 .drv.warn{color:var(--warn);background:var(--warn-soft);border-color:transparent}
@@ -62,7 +63,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .net{display:inline-flex;align-items:center;gap:4px}
 .net::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--na)}
 .net.ok::before{background:var(--ok)} .net.warn::before{background:var(--warn)}
-.icon-btn{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--soft);font-size:24px;line-height:1;cursor:pointer;display:grid;place-items:center}
+.icon-btn{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--soft);font-size:24px;line-height:1;cursor:pointer;display:grid;place-items:center}
 .prog{grid-column:1/-1;height:4px;background:var(--soft);margin:0 -12px}
 .prog i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
 
@@ -1584,7 +1585,7 @@ function atualizarChipDrive(){
   else if(!navigator.onLine){ cls="warn"; txt=pend+" na fila"; }
   else if(!tokenOk()){ cls="crit"; txt="Autorizar ("+pend+")"; }
   else { cls="warn"; txt=pend+" na fila"; }
-  c.className="drv "+cls; c.innerHTML=cloud+esc(txt);
+  c.className="drv "+cls; c.innerHTML=cloud+`<span class="t">${esc(txt)}</span>`; c.setAttribute("aria-label",txt);
   c.title = !pend? "Todas as fotos estão no Google Drive" : !navigator.onLine? "Sem internet: as fotos estão guardadas no aparelho e sobem quando houver sinal" : !tokenOk()? "Toque para autorizar o Google Drive e enviar as fotos" : "Fotos na fila de envio";
 }
 function atualizarCardDrive(){ if(S.tab!=="rel") return; const el=document.getElementById("cardDrive"); if(el){ el.outerHTML=rDrive(); } mostrarUso(); }
@@ -1967,7 +1968,7 @@ function atualizarChipNuvem(){
   if(!nvConfigurada()||NV.estado==="off"){ c.hidden=true; return; }
   const ic='<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2c2.6-.3 4.8 1.2 5.5 4.3"/></svg>';
   const m={saiu:["","Equipe: entrar"],conectando:["warn","Conectando…"],aoVivo:["ok","Ao vivo"],offline:["warn","Offline"],semAcesso:["crit","Sem acesso"],erro:["crit","Equipe: erro"]}[NV.estado]||["",""];
-  c.hidden=false; c.className="drv "+m[0]; c.innerHTML=ic+esc(m[1]);
+  c.hidden=false; c.className="drv "+m[0]; c.innerHTML=ic+`<span class="t">${esc(m[1])}</span>`; c.setAttribute("aria-label",m[1]);
   c.title={saiu:"Entre com sua conta Google para editar com a equipe em tempo real",aoVivo:"Conectado: as edições aparecem na hora nos outros aparelhos",offline:"Sem internet: as edições ficam guardadas e sobem quando o sinal voltar",semAcesso:"Seu e-mail não está na lista da equipe",conectando:"Conectando à nuvem da equipe"}[NV.estado]||NV.erro;
 }
 function tocarChipNuvem(){ if(NV.estado==="saiu"){ nvEntrar(); return; } irPara("rel"); const el=document.getElementById("cardNuvem"); el&&el.scrollIntoView({block:"start"}); }
