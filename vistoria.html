@@ -247,7 +247,7 @@ table.crit td{padding:6px 4px;border-bottom:1px solid var(--line)}
 .tile span{font-size:12.5px;color:var(--muted)}
 .tile.crit b{color:var(--crit)} .tile.warn b{color:var(--warn)}
 .pend{border:1px solid var(--line);border-radius:10px;padding:10px;display:grid;gap:8px;border-left:5px solid var(--line)}
-.pend[data-c="Grave"]{border-left-color:var(--crit)} .pend[data-c="Moderada"]{border-left-color:var(--warn)} .pend[data-c="Documental"]{border-left-color:var(--na)}
+.pend[data-c="Urgente"]{border-left-color:var(--crit)} .pend[data-c="Alta"]{border-left-color:var(--warn)} .pend[data-c="Programada"],.pend[data-c="A verificar"]{border-left-color:var(--na)}
 .pend .src{font-size:12px;color:var(--muted)}
 .pend .gp{display:grid;grid-template-columns:150px 1fr 110px;gap:8px}
 @media (max-width:600px){.pend .gp{grid-template-columns:1fr 1fr}.pend .gp input[data-k="prov"]{grid-column:1/-1;order:3}}
@@ -362,53 +362,55 @@ dialog::backdrop{background:rgba(8,12,16,.55)}
 "use strict";
 const ETAPAS = [
   {id:"1", t:"Entrada de energia e medição", opc:false, itens:[
-    ["e1","V","Padrão de entrada conforme projeto aprovado (NDU-001 ou NDU-002 Energisa)"],
-    ["e2","V","Disjuntor geral com corrente nominal igual à do projeto (anotar a In)"],
-    ["e3","V","Caixa de medição fechada, medidor instalado e número da UC anotado"],
-    ["e4","V","Condutor de aterramento do padrão visível e conectado"],
+    ["e1","V","Padrão de entrada em bom estado e no padrão da Energisa (caixa, poste ou pontalete, lacre, sem improvisos)"],
+    ["e2","V","Disjuntor geral compatível com o cabo de entrada (anotar a In e a seção do cabo)"],
+    ["e3","V","Caixa de medição fechada e íntegra, medidor instalado e número da UC anotado"],
+    ["e4","V","Condutor de aterramento do padrão presente, visível e conectado à haste"],
     ["e5","T","Conexões do disjuntor geral sem aquecimento anormal"]]},
-  {id:"2", t:"Subestação ou transformador", opc:true, pergunta:"A obra possui subestação ou transformador?", itens:[
-    ["s1","V","Dados de placa do transformador (potência, tensões, nº de série) conforme projeto"],
+  {id:"2", t:"Subestação ou transformador", opc:true, pergunta:"A escola possui subestação ou transformador próprio?", itens:[
+    ["s1","V","Dados de placa do transformador anotados (potência, tensões, nº de série)"],
     ["s2","V","Cercamento, acesso restrito e placas de advertência de risco elétrico"],
-    ["s3","V","Para-raios, chaves fusíveis e proteção geral conforme projeto aprovado"],
+    ["s3","V","Para-raios, chaves fusíveis e proteção geral presentes e sem danos aparentes"],
     ["s4","V","Massas, neutro e estruturas metálicas com ligação visível à malha de aterramento"],
     ["s5","T","Bornes e conexões de baixa tensão sem aquecimento anormal (inspeção à distância segura)"]]},
   {id:"3", t:"Quadro geral e quadros de distribuição", opc:false, itens:[
     ["q1","V","Diagrama unifilar ou quadro de cargas afixado; circuitos identificados"],
-    ["q2","V","Disjuntores com corrente nominal do quadro de cargas; nenhum maior que o previsto"],
-    ["q3","V","DR instalado nos circuitos de áreas molhadas, cozinha e tomadas externas, e onde o projeto indicar (presença apenas)"],
-    ["q4","V","Botão de teste do DR acionado pelo eletricista da executora, com desligamento (teste funcional, sem instrumento)"],
-    ["q5","V","DPS instalado conforme projeto e ligado ao barramento de terra"],
+    ["q2","V","Disjuntores compatíveis com a seção dos cabos (In ≤ Iz), sem sinais de troca por disjuntores maiores"],
+    ["q3","V","DR instalado nos circuitos de áreas molhadas, cozinha e tomadas externas (presença apenas)"],
+    ["q4","V","Botão de teste do DR acionado por pessoa autorizada, com desligamento (teste funcional, sem instrumento)"],
+    ["q5","V","DPS instalado e ligado ao barramento de terra"],
     ["q6","V","Barramentos de neutro e de terra separados e identificados"],
     ["q7","V","Cores dos condutores: neutro azul-claro, proteção verde-amarelo ou verde"],
     ["q8","V","Conexões com terminais, sem emendas, cabos soltos ou sinais de queima"],
     ["q9","V","Contra-tampa instalada, porta com fecho e placa de advertência"],
     ["q10","V","Acesso livre ao quadro, sem uso do espaço como depósito"],
+    ["q12","V","Sem circuitos acrescentados de forma improvisada (dois cabos no mesmo borne, disjuntor solto ou fora do trilho)"],
     ["q11","T","Disjuntores, barramentos e conexões sem pontos quentes"]]},
   {id:"4", t:"Linhas elétricas", opc:false, itens:[
-    ["l1","V","Bitola impressa no cabo conforme projeto e planilha medida"],
-    ["l2","V","Cabos com marcação do fabricante e certificação"],
+    ["l1","V","Seção impressa nos cabos legível e compatível com o disjuntor e a carga do circuito"],
+    ["l2","V","Cabos com marcação do fabricante e certificação Inmetro"],
+    ["l6","V","Isolação sem ressecamento, rachaduras, derretimento ou excesso de fita isolante"],
     ["l3","V","Eletrodutos, eletrocalhas e caixas fixados e com tampas; sem cabo exposto"],
     ["l4","V","Sem emendas aparentes fora de caixas de passagem"],
     ["l5","V","Circuitos de dados e telefonia separados dos de energia"]]},
   {id:"5", t:"Pontos de utilização", opc:false, itens:[
-    ["p1","V","Tomadas no padrão NBR 14136 com pino terra; quantidade e posição conforme projeto"],
+    ["p1","V","Tomadas no padrão NBR 14136, com pino terra e sem danos; sem benjamins ou extensões de uso permanente"],
     ["p2","V","Circuitos exclusivos para ar-condicionado, chuveiros e equipamentos de cozinha"],
-    ["p3","V","Luminárias, potência e comandos conforme projeto (salas, quadra, áreas externas)"],
+    ["p3","V","Luminárias e interruptores fixados, sem partes vivas expostas; iluminação suficiente em salas, quadra e áreas externas"],
     ["p4","V","Iluminação de emergência instalada e acendendo ao desligar o circuito"],
     ["p5","T","Pontos de ligação de equipamentos de maior carga sem aquecimento anormal"]]},
   {id:"6", t:"Aterramento e equipotencialização (visual)", opc:false, itens:[
     ["a1","V","Barramento de equipotencialização principal (BEP) instalado e acessível"],
     ["a2","V","Caixa de inspeção do aterramento com haste e conexão visíveis"],
     ["a3","V","Condutor de proteção presente nos circuitos e tomadas amostrados"]]},
-  {id:"7", t:"SPDA (visual)", opc:true, pergunta:"A obra possui SPDA?", itens:[
-    ["d1","V","Captação aparente conforme projeto (método e posição)"],
-    ["d2","V","Descidas em quantidade conforme projeto (mínimo duas), com conector de ensaio"],
-    ["d3","V","Material e seção aparente dos condutores conforme projeto (cobre ≥ 35 mm² na captação e descidas)"],
+  {id:"7", t:"SPDA (visual)", opc:true, pergunta:"A escola possui SPDA (para-raios)?", itens:[
+    ["d1","V","Captação presente, íntegra e fixada"],
+    ["d2","V","Descidas em quantidade adequada (mínimo duas), com conector de ensaio"],
+    ["d3","V","Condutores aparentes de material e seção adequados (cobre ≥ 35 mm² na captação e descidas)"],
     ["d4","V","Estruturas metálicas da cobertura e da quadra interligadas à captação"],
     ["d5","V","Fixações e conexões sem corrosão, afrouxamento ou rompimento"]]},
-  {id:"8", t:"Sistema fotovoltaico", opc:true, pergunta:"A obra possui sistema fotovoltaico?", itens:[
-    ["f1","V","Módulos e inversor conforme projeto (dados de placa anotados)"],
+  {id:"8", t:"Sistema fotovoltaico", opc:true, pergunta:"A escola possui sistema fotovoltaico?", itens:[
+    ["f1","V","Módulos e inversor com dados de placa anotados e em bom estado"],
     ["f2","V","Caixas de proteção CC e CA com seccionamento e DPS"],
     ["f3","V","Estruturas metálicas aterradas e placa de geração própria no padrão de entrada"],
     ["f4","T","String box, inversor e conexões sem pontos quentes"]]}
@@ -426,9 +428,14 @@ const NAO_REALIZADOS = [
 ];
 const ESCOPO_TXT = "Vistoria in loco de caráter visual, complementada por medições pontuais de corrente elétrica com alicate amperímetro e por inspeção termográfica com câmera termovisora. Não foram realizados ensaios elétricos com instrumentos específicos, em especial: " +
   NAO_REALIZADOS.map(s=>s.charAt(0).toLowerCase()+s.slice(1)).join("; ") +
-  ". Esses ensaios integram a verificação final prevista na seção 7 da ABNT NBR 5410:2004 e na ABNT NBR 5419:2015 e permanecem sob responsabilidade do responsável técnico da executora, a serem comprovados por laudo acompanhado de ART. As medições de corrente e temperatura refletem as condições de carga no momento da vistoria e não representam a demanda máxima da instalação. Esta vistoria não substitui o laudo técnico das instalações elétricas.";
+  ". Esses ensaios integram a verificação prevista na seção 7 da ABNT NBR 5410:2004 e na ABNT NBR 5419:2015 e devem ser realizados por profissional legalmente habilitado, com laudo e ART. As medições de corrente e temperatura refletem as condições de carga no momento da vistoria e não representam a demanda máxima da instalação. Esta vistoria não substitui o laudo técnico das instalações elétricas nem o projeto elétrico (as built) da unidade.";
 const TERMO_CRIT = "Critério de severidade térmica: ANSI/NETA MTS, Tabela 100.18, por diferença de temperatura (ΔT) em relação a componente similar sob carga similar ou em relação à temperatura do ar ambiente. O critério é considerado válido com carga igual ou superior a 40% da nominal; abaixo disso a anomalia pode estar subestimada.";
-
+/* prioridades das recomendações à SEDUC (as classes antigas, de convênio, são convertidas) */
+const PRIOS = ["Urgente","Alta","Programada","A verificar"];
+const PRIO_ANT = {Grave:"Urgente", Moderada:"Alta", Documental:"A verificar"};
+function prio(c){ return PRIO_ANT[c]||(PRIOS.includes(c)?c:""); }
+const CARGO_ANT = "Engenheiro Eletricista – Fiscal de Convênio SEDUC-MT (CIPI-SNP)";
+const CARGO_PADRAO = "Engenheiro Eletricista – SEDUC-MT (CIPI-SNP)";
 
 const idbGet=(st,k)=>idbReq(st,"readonly",s=>s.get(k));
 const idbPut=(st,v)=>idbReq(st,"readwrite",s=>s.put(v));
@@ -438,20 +445,23 @@ const idbAll=st=>idbReq(st,"readonly",s=>s.getAll());
 function uid8(){ return Math.random().toString(36).slice(2,10); }
 function hojeISO(){ const d=new Date(); const z=n=>String(n).padStart(2,"0"); return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate()); }
 function novaVistoria(cfg){
+  const cargo=(cfg&&cfg.cargo&&cfg.cargo!==CARGO_ANT)? cfg.cargo : CARGO_PADRAO;
   return { id:"v-"+Date.now().toString(36)+uid8().slice(0,4), createdAt:Date.now(), updatedAt:Date.now(),
-    ident:{convenio:"",processo:"",municipio:"",escola:"",objeto:"",executora:"",rt:"",art:"",data:hojeISO(),horaIni:"",horaFim:"",
-      fiscal:(cfg&&cfg.fiscal)||"Marcelo Jose Paris",cargo:(cfg&&cfg.cargo)||"Engenheiro Eletricista – Fiscal de Convênio SEDUC-MT (CIPI-SNP)",acompanhantes:"",clima:"",tAmb:"",funcionamento:"",etapaObra:""},
+    ident:{escola:"",municipio:"",processo:"",data:hojeISO(),horaIni:"",horaFim:"",motivo:"",acompanhantes:"",anoConstrucao:"",ultimaReforma:"",projeto:"",
+      fiscal:(cfg&&cfg.fiscal)||"Marcelo Jose Paris",cargo,clima:"",tAmb:"",funcionamento:""},
     instr:{alicate:{modelo:"",serie:"",calib:""}, termo:{modelo:"",serie:"",calib:"",emiss:"0,95",faixa:""}, obsLimit:""},
     aplica:{"2":false,"7":true,"8":false}, local:{endereco:"",coords:"",lat:null,lon:null,fonte:""}, carimbo:true, check:{}, correntes:[], termo:[], fotosGerais:[], notas:[], quadros:[{id:"qg",nome:""}], pend:{},
     cfg:{deseq:10}, rel:{texto:"",geradoEm:0,fonte:""} };
 }
+
 function getPath(o,p){ return p.split(".").reduce((a,k)=>a==null?a:a[k],o); }
 function setPath(o,p,val){ const ks=p.split("."); let a=o; for(let i=0;i<ks.length-1;i++){ if(a[ks[i]]==null) a[ks[i]]={}; a=a[ks[i]]; } a[ks[ks.length-1]]=val; }
 function n(v){ if(v===""||v==null) return null; const x=parseFloat(String(v).replace(",",".")); return isFinite(x)?x:null; }
 function fmt(x,d){ if(x==null) return "–"; return x.toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d}); }
 function maskConv(s){ const d=String(s).replace(/\D/g,"").slice(0,8); return d.length>4? d.slice(0,4)+"-"+d.slice(4) : d; }
 function dataBR(iso){ if(!iso) return ""; const [y,m,d]=iso.split("-"); return d+"/"+m+"/"+y; }
-function titulo(v){ const i=v.ident; const p=[]; if(i.convenio) p.push("Conv. "+i.convenio); if(i.escola) p.push(i.escola); if(i.municipio) p.push(i.municipio); return p.join(" · ")||"Nova vistoria"; }
+function titulo(v){ const i=v.ident; const p=[]; if(i.escola) p.push(i.escola); if(i.municipio) p.push(i.municipio); return p.join(" · ")||"Nova vistoria"; }
+
 function calcCorrente(r, limDeseq){
   const fases=[n(r.ia),n(r.ib),n(r.ic)].filter(x=>x!=null);
   const imax = fases.length? Math.max(...fases) : null;
@@ -465,7 +475,10 @@ function calcCorrente(r, limDeseq){
   if(inD && iz && inD>iz) flags.push({k:"inIz",sev:IZ.est?"warn":"crit",txt:"Disjuntor de "+fmt(inD,0)+" A maior que a capacidade do cabo (Iz "+(IZ.est?"estimada":"informada")+" = "+fmt(iz,0)+" A): o cabo não fica protegido contra sobrecarga (NBR 5410: In ≤ Iz)"+(IZ.est?"; confirmar isolação, forma de instalação e agrupamento":"")});
   if(deseq!=null && deseq>limDeseq) flags.push({k:"deseq",sev:"warn",txt:"Desequilíbrio entre fases de "+fmt(deseq,1)+"% (limite de atenção adotado: "+limDeseq+"%)"});
   if(ineu!=null && imax!=null && fases.length>=2 && ineu>imax) flags.push({k:"neu",sev:"warn",txt:"Corrente no neutro maior que nas fases: investigar desequilíbrio ou harmônicos"});
-  return {imax,pctIn,deseq,flags,iz,izEst:IZ.est,izDesc:IZ.desc};
+  const izm=IZ.izMin; const faixa=izm!=null? "entre "+fmt(izm,0)+" e "+fmt(iz,0)+" A" : "";
+  if(izm!=null && imax!=null && imax>izm && !(iz && imax>iz)) flags.push({k:"izAg",sev:"doc",txt:"Corrente medida ("+fmt(imax,0)+" A) pode superar a capacidade do cabo se houver outros circuitos no mesmo eletroduto (Iz estimada "+faixa+"): confirmar em levantamento do circuito (quantidade de circuitos no eletroduto e seção)"});
+  if(izm!=null && inD && inD>izm && !(iz && inD>iz)) flags.push({k:"inIzAg",sev:"doc",txt:"Disjuntor de "+fmt(inD,0)+" A pode ficar acima da capacidade do cabo se houver outros circuitos no mesmo eletroduto (Iz estimada "+faixa+"): confirmar em levantamento do circuito (agrupamento) a coordenação In ≤ Iz"});
+  return {imax,pctIn,deseq,flags,iz,izMin:izm,izEst:IZ.est,izDesc:IZ.desc};
 }
 function calcTermo(r){
   const tm=n(r.tmax), tr=n(r.tref);
@@ -486,13 +499,15 @@ function calcTermo(r){
   return {dt,sev,txt,acao,carga,baixaCarga:(carga!=null && carga<40)};
 }
 function itensAtivos(v){ const out=[]; ETAPAS.forEach(e=>{ if(e.opc && !v.aplica[e.id]) return; itensDaEtapa(v,e).forEach(x=>out.push(Object.assign({e,st:v.check[x.id]||{}},x))); }); return out; }
+/* achados que geram recomendação à SEDUC; prioridade sugerida automaticamente, ajustável pelo vistoriador */
 function pendencias(v){
   const L=[];
-  itensAtivos(v).forEach(x=>{ if(x.st.s==="NC") L.push({key:"chk:"+x.id, origem:"Inspeção – etapa "+x.e.id+(x.qn?" – "+x.qn:""), desc:(x.qn?x.base.toUpperCase()+" ("+x.qn+"): ":"")+x.t+(x.st.obs? " — "+x.st.obs:""), sug:"Moderada"}); });
-  v.correntes.forEach(r=>{ const c=calcCorrente(r,v.cfg.deseq); c.flags.forEach(f=>L.push({key:"cor:"+r.id+":"+f.k, origem:"Correntes – "+(r.quadro||"quadro")+" / "+(r.circuito||"circuito"), desc:f.txt, sug:f.sev==="crit"?"Grave":"Moderada"})); });
-  v.termo.forEach(r=>{ const c=calcTermo(r); if(c.sev>=2) L.push({key:"ter:"+r.id, origem:"Termografia – "+(r.local||"ponto"), desc:(r.componente||"Componente")+": ΔT = "+fmt(c.dt,1)+" °C ("+(r.refTipo==="ambiente"?"vs. ambiente":"vs. similar")+") – "+c.txt, sug:c.sev>=3?"Grave":"Moderada"}); });
-  return L.map(p=>{ const s=v.pend[p.key]||{}; return Object.assign(p,{classe:s.classe||p.sug, prov:s.prov||"", prazo:s.prazo||""}); });
+  itensAtivos(v).forEach(x=>{ if(x.st.s==="NC") L.push({key:"chk:"+x.id, origem:"Inspeção – etapa "+x.e.id+(x.qn?" – "+x.qn:""), desc:(x.qn?codBase(x.base)+" ("+x.qn+"): ":"")+x.t+(x.st.obs? " — "+x.st.obs:""), sug:"Alta"}); });
+  v.correntes.forEach(r=>{ const c=calcCorrente(r,v.cfg.deseq); c.flags.forEach(f=>L.push({key:"cor:"+r.id+":"+f.k, origem:"Correntes – "+(r.quadro||"quadro")+" / "+(r.circuito||"circuito"), desc:f.txt, sug:f.sev==="crit"?"Urgente":f.sev==="doc"?"A verificar":"Alta"})); });
+  v.termo.forEach(r=>{ const c=calcTermo(r); if(c.sev>=2) L.push({key:"ter:"+r.id, origem:"Termografia – "+(r.local||"ponto"), desc:(r.componente||"Componente")+": ΔT = "+fmt(c.dt,1)+" °C ("+(r.refTipo==="ambiente"?"vs. ambiente":"vs. similar")+") – "+c.txt, sug:c.sev>=3?"Urgente":"Alta"}); });
+  return L.map(p=>{ const s=v.pend[p.key]||{}; return Object.assign(p,{classe:prio(s.classe)||p.sug, prov:s.prov||"", prazo:s.prazo||""}); });
 }
+
 function resumo(v){
   const it=itensAtivos(v); const feitos=it.filter(x=>x.st.s).length;
   const nc=it.filter(x=>x.st.s==="NC").length;
@@ -529,8 +544,8 @@ async function reduzirImagem(file, max, linhas, modo){
 async function guardarFoto(file,tgt){
   const meta = await lerMeta(file);
   if(meta.lat==null){ const g=await posicaoAtual(); if(g){ meta.lat=g.lat; meta.lon=g.lon; meta.gpsFonte="GPS do aparelho, ±"+Math.round(g.acc)+" m"; } }
-  if(meta.lat==null && S.v.local.lat!=null){ meta.lat=S.v.local.lat; meta.lon=S.v.local.lon; meta.gpsFonte="informadas pelo fiscal"; }
-  if(meta.lat!=null && meta.gpsFonte!=="informadas pelo fiscal" && S.v.local.lat==null){ S.v.local.lat=meta.lat; S.v.local.lon=meta.lon; S.v.local.coords=meta.lat.toFixed(6)+", "+meta.lon.toFixed(6); S.v.local.fonte=meta.gpsFonte+" (primeira foto)"; }
+  if(meta.lat==null && S.v.local.lat!=null){ meta.lat=S.v.local.lat; meta.lon=S.v.local.lon; meta.gpsFonte="informadas pelo vistoriador"; }
+  if(meta.lat!=null && meta.gpsFonte!=="informadas pelo vistoriador" && S.v.local.lat==null){ S.v.local.lat=meta.lat; S.v.local.lon=meta.lon; S.v.local.coords=meta.lat.toFixed(6)+", "+meta.lon.toFixed(6); S.v.local.fonte=meta.gpsFonte+" (primeira foto)"; }
   const linhas = S.v.carimbo? linhasCarimbo(meta,tgt) : null;
   const r = await reduzirImagem(file, 2000, linhas, /:ir$/.test(tgt)?"faixa":"sobre");
   const m = {dt:meta.dt.getTime(), dtFonte:meta.dtFonte, lat:meta.lat, lon:meta.lon, gpsFonte:meta.gpsFonte, carimbo:!!linhas};
@@ -571,7 +586,7 @@ async function carregar(){
   S.v = lista.find(x=>x.id===cur) || lista[0] || novaVistoria();
   normalizar(S.v);
 }
-function normalizar(v){ const semQd=!Array.isArray(v.quadros); const b=novaVistoria(); for(const k of Object.keys(b)){ if(v[k]==null) v[k]=b[k]; } ["ident","instr","cfg","rel","aplica","local"].forEach(k=>{ v[k]=Object.assign({},b[k],v[k]); }); if(semQd) migrarQuadros(v); if(!v.quadros.length) v.quadros.push({id:"qg",nome:""}); vincularMedicoes(v); }
+function normalizar(v){ const semQd=!Array.isArray(v.quadros); const b=novaVistoria(); for(const k of Object.keys(b)){ if(v[k]==null) v[k]=b[k]; } ["ident","instr","cfg","rel","aplica","local"].forEach(k=>{ v[k]=Object.assign({},b[k],v[k]); }); if(semQd) migrarQuadros(v); if(!v.quadros.length) v.quadros.push({id:"qg",nome:""}); vincularMedicoes(v); if(v.ident.cargo===CARGO_ANT) v.ident.cargo=CARGO_PADRAO; }
 async function salvar(){
   if(S.saving){ S.pendingSave=true; return; }
   S.saving=true;
@@ -623,39 +638,41 @@ function linhasCarimbo(meta,tgt){
 function dadosParaClaude(v){
   const fotos=listaFotos(v); const fotosDe=ref=>fotos.filter(f=>f.ref===ref).map(f=>"Foto "+f.num);
   return {
-    identificacao:v.ident,
+    identificacao:(i=>({unidade_escolar:i.escola, municipio:i.municipio, endereco:v.local.endereco, processo:i.processo, motivo_da_vistoria:i.motivo, ano_de_construcao:i.anoConstrucao, ultima_reforma_eletrica:i.ultimaReforma, data:dataBR(i.data), horario:[i.horaIni,i.horaFim].filter(Boolean).join(" às "), vistoriador:i.fiscal, cargo:i.cargo, acompanharam:i.acompanhantes, condicao_de_uso:i.funcionamento, tempo:i.clima, temperatura_ambiente_C:i.tAmb}))(v.ident),
+    projeto_eletrico:v.ident.projeto||"não informado",
     quadros_inspecionados:(v.quadros||[]).map((q,i)=>nomeQd(q,i)),
     instrumentos:{alicate:v.instr.alicate, camera_termografica:v.instr.termo},
     outras_limitacoes:v.instr.obsLimit,
     inspecao_visual: ETAPAS.map(e=>({etapa:e.id+" – "+e.t, aplica:(!e.opc||!!v.aplica[e.id]),
       itens:(!e.opc||v.aplica[e.id])? itensDaEtapa(v,e).map(({id,m,t,qn})=>{ const s=v.check[id]||{}; return {item:codItem(id,v), quadro:qn||undefined, metodo:METODO[m], descricao:t, situacao:s.s||"sem registro", obs:s.obs||"", fotos:fotosDe("chk:"+id)}; }):[] })),
-    medicoes_corrente: v.correntes.map(r=>{ const c=calcCorrente(r,v.cfg.deseq); return {quadro:r.quadro,circuito:r.circuito,disjuntor_In_A:r.disjIn,cabo_mm2:r.cabo,Iz_A:c.iz!=null?+c.iz.toFixed(1):null,Iz_origem:c.iz==null?"":(c.izEst?c.izDesc:"informada pelo fiscal"),fase_A:r.ia,fase_B:r.ib,fase_C:r.ic,neutro:r.ineutro,pct_In:c.pctIn!=null?+c.pctIn.toFixed(0):null,desequilibrio_pct:c.deseq!=null?+c.deseq.toFixed(1):null,alertas:c.flags.map(f=>f.txt),obs:r.obs}; }),
+    medicoes_corrente: v.correntes.map(r=>{ const c=calcCorrente(r,v.cfg.deseq); return {quadro:r.quadro,circuito:r.circuito,disjuntor_In_A:r.disjIn,cabo_mm2:r.cabo,Iz_A:c.iz!=null?+c.iz.toFixed(1):null,Iz_min_A_se_agrupado:c.izMin!=null?+c.izMin.toFixed(1):null,Iz_origem:c.iz==null?"":(c.izEst?c.izDesc:"informada pelo vistoriador"),fase_A:r.ia,fase_B:r.ib,fase_C:r.ic,neutro:r.ineutro,pct_In:c.pctIn!=null?+c.pctIn.toFixed(0):null,desequilibrio_pct:c.deseq!=null?+c.deseq.toFixed(1):null,alertas:c.flags.map(f=>f.txt),obs:r.obs}; }),
     limite_desequilibrio_adotado_pct:v.cfg.deseq,
     termografia: v.termo.map(r=>{ const c=calcTermo(r); return {local:r.local,componente:r.componente,Tmax_C:r.tmax,Tref_C:r.tref,referencia:r.refTipo==="ambiente"?"ar ambiente":"componente similar",deltaT_C:c.dt!=null?+c.dt.toFixed(1):null,classificacao_NETA:c.txt,acao:c.acao,carga_pct:c.carga!=null?+c.carga.toFixed(0):null,carga_abaixo_40:!!c.baixaCarga,obs:r.obs,fotos:fotosDe("ter:"+r.id)}; }),
-    pendencias: pendencias(v).map(p=>{ const d=v.pend[p.key]||{}; return {origem:p.origem,descricao:p.desc,classe:p.classe,classe_definida_pelo_fiscal:!!d.classe,providencia:p.prov,prazo_dias:p.prazo}; }),
+    achados_e_recomendacoes: pendencias(v).map(p=>{ const d=v.pend[p.key]||{}; return {origem:p.origem,descricao:p.desc,prioridade:p.classe,prioridade_definida_pelo_vistoriador:!!prio(d.classe),recomendacao:p.prov,prazo:p.prazo}; }),
     relatos_em_audio:todosAudios(v).map(x=>({vinculo:x.rot, duracao_s:x.a.dur, transcricao:x.a.txt||"", fonte_transcricao:x.a.txt?(x.a.fonte||""):"", situacao:x.a.txt?"transcrito":"PENDENTE: transcrever o arquivo de áudio no Drive", arquivo_audio_drive:x.a.driveId?"https://drive.google.com/file/d/"+x.a.driveId+"/view":"(ainda não enviado ao Drive)"})),
     registros_de_campo:(v.notas||[]).map((nt,k)=>({registro:k+1,data_hora:dtBR(new Date(nt.t)),texto:nt.txt||"",fotos:fotosDe("nota:"+nt.id)})),
     total_fotos:fotos.length
   };
 }
+
 function promptClaude(v){
-  return `Você é engenheiro eletricista e redige, em português formal, o RELATÓRIO DE VISTORIA TÉCNICA DAS INSTALAÇÕES ELÉTRICAS de uma obra escolar executada por Prefeitura por meio de convênio com a Secretaria de Estado de Educação de Mato Grosso (SEDUC-MT). O autor é o fiscal de convênio da SEDUC-MT.
+  return `Você é engenheiro eletricista e redige, em português formal, o RELATÓRIO DE VISTORIA DAS INSTALAÇÕES ELÉTRICAS de uma unidade escolar existente da rede estadual, para a Secretaria de Estado de Educação de Mato Grosso (SEDUC-MT). O relatório é um diagnóstico: registra as condições encontradas e recomenda à SEDUC o que fazer, por prioridade, para planejar manutenção, adequação ou reforma. O autor é engenheiro eletricista da SEDUC-MT (dados em "identificacao").
 
 Regras obrigatórias:
 1. Use somente os dados do JSON abaixo. Não invente valores, nomes, datas, normas aplicadas ou constatações. Campo vazio: omita ou escreva "não informado".
 2. Deixe claro, em seção própria, que a vistoria foi visual, com medições pontuais de corrente por alicate amperímetro e inspeção por câmera termográfica, e que NÃO foram realizados os ensaios listados no texto de escopo abaixo. Reproduza o sentido desse texto de escopo integralmente.
 3. Nunca declare a instalação "conforme à NBR 5410" como um todo. Itens com situação "NV" ou "sem registro" são "não verificados"; não os trate como conformes.
-4. Número de convênio no formato 0000-0000.
+4. A escola pode não ter projeto elétrico nem as built (campo "projeto_eletrico"). Avalie a adequação às normas (ABNT NBR 5410, NBR 5419, NBR 14136, NDU da Energisa), não a conformidade com projeto. Se não houver projeto, recomende o levantamento das instalações e a elaboração do projeto as built.
 5. Termografia: cite o critério da ANSI/NETA MTS Tabela 100.18. Quando a carga for menor que 40% ou não informada, registre que a severidade pode estar subestimada.
-6. As tabelas de medição de corrente, de termografia, de pendências e o registro fotográfico são anexados automaticamente como Anexos A, B, C e D. Não reproduza essas tabelas; resuma os resultados e remeta aos anexos e às fotos pelo número (ex.: "Foto 3").
+6. As tabelas de medição de corrente, de termografia, de recomendações e o registro fotográfico são anexados automaticamente como Anexos A, B, C e D. Não reproduza essas tabelas; resuma os resultados e remeta aos anexos e às fotos pelo número (ex.: "Foto 3").
 7. Formato de saída: texto puro. Títulos de seção em linhas iniciadas por "## " (ex.: "## 1. IDENTIFICAÇÃO"). Listas com "- ". Sem negrito, sem tabelas, sem markdown além disso. Não inclua bloco de assinatura; ele é acrescentado no documento.
-8. Seções, nesta ordem: 1. IDENTIFICAÇÃO; 2. OBJETIVO; 3. ESCOPO, EQUIPAMENTOS E LIMITAÇÕES; 4. METODOLOGIA; 5. CONSTATAÇÕES DA INSPEÇÃO VISUAL (por etapa, destacando não conformidades, e ao final os registros de campo); 6. MEDIÇÕES DE CORRENTE; 7. INSPEÇÃO TERMOGRÁFICA; 8. PENDÊNCIAS E PROVIDÊNCIAS (por classe: Grave, Moderada, Documental, com prazos quando informados); 9. CONCLUSÃO (se há impedimento ao recebimento/medição dos itens elétricos, e reiterar que os ensaios da seção 7 da NBR 5410 e o laudo com ART do RT da executora são exigíveis).
+8. Seções, nesta ordem: 1. IDENTIFICAÇÃO; 2. OBJETIVO; 3. ESCOPO, EQUIPAMENTOS E LIMITAÇÕES; 4. METODOLOGIA; 5. CONSTATAÇÕES DA INSPEÇÃO VISUAL (por etapa, destacando não conformidades, e ao final os registros de campo); 6. MEDIÇÕES DE CORRENTE; 7. INSPEÇÃO TERMOGRÁFICA; 8. RECOMENDAÇÕES À SEDUC (por prioridade: Urgente, Alta, Programada, A verificar); 9. CONCLUSÃO (condição geral da instalação; se há risco que exija ação imediata, inclusive desligamento ou isolamento de circuito; e recomendação de laudo com os ensaios da seção 7 da NBR 5410, e da NBR 5419 quando houver SPDA, por profissional habilitado com ART).
 9. Frases curtas e objetivas, tom de manifestação técnica.
-11. "relatos_em_audio" são falas do fiscal gravadas no local, vinculadas a uma foto, medição ou ponto termográfico. Use as transcrições nas constatações da respectiva seção, sem citar que vieram de áudio. Se algum relato estiver PENDENTE de transcrição, liste-o ao final, fora do relatório, para o fiscal providenciar.
-10. Na metodologia, informe que as fotos levam carimbo com data, hora, coordenadas, endereço e identificação, e que a origem de cada dado (metadados da câmera ou informado pelo fiscal) consta no próprio carimbo. Endereço da unidade: ${v.local.endereco||"não informado"}. Coordenadas: ${v.local.lat!=null?fmtCoord(v.local.lat,v.local.lon)+" ("+(v.local.fonte||"")+")":"não informadas"}.
+10. Na metodologia, informe que as fotos levam carimbo com data, hora, coordenadas e identificação da escola, e que a origem de cada dado (metadados da câmera ou informado pelo vistoriador) consta no próprio carimbo. Endereço da unidade: ${v.local.endereco||"não informado"}. Coordenadas: ${v.local.lat!=null?fmtCoord(v.local.lat,v.local.lon)+" ("+(v.local.fonte||"")+")":"não informadas"}.
+11. "relatos_em_audio" são falas do vistoriador gravadas no local, vinculadas a uma foto, medição ou ponto termográfico. Use as transcrições nas constatações da respectiva seção, sem citar que vieram de áudio. Se algum relato estiver PENDENTE de transcrição, liste-o ao final, fora do relatório, para o vistoriador providenciar.
 12. Na etapa 3 cada quadro ("quadros_inspecionados") tem seus próprios itens, identificados pelo nome do quadro entre parênteses. Na seção 5, agrupe as constatações da etapa 3 por quadro.
-13. Quando "Iz_origem" indicar estimativa, diga que a capacidade de condução do cabo foi estimada pelas Tabelas 36/37 da NBR 5410 nas condições indicadas (não verificada em projeto) e recomende a confirmação pelo RT da executora. O alerta de disjuntor maior que a Iz (In > Iz) indica cabo sem proteção contra sobrecarga.
-14. Pendências: quando "providencia" ou "prazo_dias" estiverem vazios, proponha você uma providência objetiva a exigir da executora (o que corrigir e que comprovação apresentar, com a norma aplicável: NBR 5410, NBR 5419, NDU da Energisa, projeto aprovado) e um prazo em dias coerente com a classe (Grave: corrigir antes do recebimento ou de imediato; Moderada: 15 a 30 dias; Documental: 15 dias). Quando "classe_definida_pelo_fiscal" for falso, a classe é só uma sugestão automática: mantenha-a ou ajuste com base na descrição, sem comentar o ajuste. O que o fiscal preencheu prevalece. Escreva as providências e prazos no relatório como exigências da fiscalização.
+13. Quando "Iz_origem" indicar estimativa, diga que a capacidade de condução do cabo foi estimada pelas Tabelas 36/37 da NBR 5410 nas condições indicadas, sem projeto para confirmar. Quando houver "Iz_min_A_se_agrupado", o agrupamento não foi verificado: a Iz real fica entre esse valor e "Iz_A". O alerta de disjuntor maior que a Iz (In > Iz) indica cabo sem proteção contra sobrecarga, com risco de aquecimento e incêndio.
+14. Recomendações ("achados_e_recomendacoes"): quando "recomendacao" ou "prazo" estiverem vazios, proponha você uma recomendação objetiva à SEDUC (o serviço a contratar ou executar, por exemplo substituição, adequação, instalação, levantamento ou ensaio, por profissional habilitado, com a norma aplicável) e um prazo coerente com a prioridade (Urgente: imediato, com desligamento ou isolamento do circuito se houver risco a pessoas; Alta: até 90 dias; Programada: no próximo plano de manutenção ou reforma; A verificar: levantamento ou ensaio em até 60 dias). Quando "prioridade_definida_pelo_vistoriador" for falso, a prioridade é só uma sugestão automática: mantenha-a ou ajuste com base na descrição, sem comentar o ajuste. O que o vistoriador preencheu prevalece. Quando várias constatações tiverem a mesma solução (por exemplo, substituição de um quadro), agrupe-as numa recomendação só.
 
 Texto de escopo:
 """${ESCOPO_TXT}"""
@@ -666,14 +683,15 @@ Critério termográfico:
 Dados da vistoria (JSON):
 ${JSON.stringify(dadosParaClaude(v),null,1)}`;
 }
+
 function rascunhoAuto(v){
   const i=v.ident, L=[]; const P=s=>L.push(s); const H=s=>{ L.push(""); L.push("## "+s); };
-  P("RELATÓRIO DE VISTORIA TÉCNICA – INSTALAÇÕES ELÉTRICAS");
+  P("RELATÓRIO DE VISTORIA DAS INSTALAÇÕES ELÉTRICAS – DIAGNÓSTICO");
   H("1. IDENTIFICAÇÃO");
-  [["Convênio nº",i.convenio],["Processo",i.processo],["Município",i.municipio],["Unidade escolar",i.escola],["Endereço",v.local.endereco],["Coordenadas",v.local.lat!=null?fmtCoord(v.local.lat,v.local.lon):""],["Objeto",i.objeto],["Executora",i.executora],["Responsável técnico",i.rt],["ART",i.art],["Fase da obra",i.etapaObra],["Data da vistoria",dataBR(i.data)+(i.horaIni?", das "+i.horaIni+(i.horaFim?" às "+i.horaFim:""):"")],["Fiscal",i.fiscal+(i.cargo?" – "+i.cargo:"")],["Acompanhantes",i.acompanhantes],["Condição de uso",i.funcionamento],["Tempo / temperatura ambiente",[i.clima,i.tAmb?i.tAmb+" °C":""].filter(Boolean).join(", ")]]
+  [["Unidade escolar",i.escola],["Município",i.municipio],["Endereço",v.local.endereco],["Coordenadas",v.local.lat!=null?fmtCoord(v.local.lat,v.local.lon):""],["Processo / protocolo",i.processo],["Motivo da vistoria",i.motivo],["Ano de construção",i.anoConstrucao],["Última reforma elétrica",i.ultimaReforma],["Projeto elétrico",i.projeto],["Data da vistoria",dataBR(i.data)+(i.horaIni?", das "+i.horaIni+(i.horaFim?" às "+i.horaFim:""):"")],["Vistoriador",i.fiscal+(i.cargo?" – "+i.cargo:"")],["Acompanharam",i.acompanhantes],["Condição de uso",i.funcionamento],["Tempo / temperatura ambiente",[i.clima,i.tAmb?i.tAmb+" °C":""].filter(Boolean).join(", ")]]
     .forEach(([k,x])=>{ if(x) P("- "+k+": "+x); });
   H("2. OBJETIVO");
-  P("Verificar in loco, de forma básica, as instalações elétricas executadas"+(i.escola?" na "+i.escola:"")+(i.convenio?", objeto do Convênio nº "+i.convenio:"")+", confrontando-as com o projeto e registrando não conformidades visíveis, correntes de carga e anomalias térmicas.");
+  P("Diagnosticar, de forma básica e in loco, as condições das instalações elétricas"+(i.escola?" da "+i.escola:" da unidade escolar")+", verificando sua adequação às normas técnicas e registrando não conformidades visíveis, correntes de carga e anomalias térmicas, para subsidiar a SEDUC-MT no planejamento de manutenção, adequação ou reforma.");
   H("3. ESCOPO, EQUIPAMENTOS E LIMITAÇÕES");
   P(ESCOPO_TXT);
   const a=v.instr.alicate, t=v.instr.termo;
@@ -681,7 +699,7 @@ function rascunhoAuto(v){
   P("- Câmera termográfica: "+([t.modelo,t.serie?"nº de série "+t.serie:"",t.calib?"calibração "+t.calib:"",t.emiss?"emissividade "+t.emiss:"",t.faixa?"faixa "+t.faixa+" °C":""].filter(Boolean).join(", ")||"não informado"));
   if(v.instr.obsLimit) P("- Outras limitações: "+v.instr.obsLimit);
   H("4. METODOLOGIA");
-  P("Inspeção visual por etapas (entrada de energia, quadros, linhas, pontos de utilização, aterramento"+(v.aplica["7"]?", SPDA":"")+(v.aplica["2"]?", subestação":"")+(v.aplica["8"]?", sistema fotovoltaico":"")+"), com registro fotográfico. Medição pontual de corrente nas fases e no neutro dos circuitos amostrados. "+TERMO_CRIT+(v.carimbo?" As fotos receberam carimbo com data e hora, coordenadas, endereço e identificação; o carimbo indica a origem de cada dado (metadados da câmera ou informação do fiscal).":""));
+  P("Inspeção visual por etapas (entrada de energia, quadros, linhas, pontos de utilização, aterramento"+(v.aplica["7"]?", SPDA":"")+(v.aplica["2"]?", subestação":"")+(v.aplica["8"]?", sistema fotovoltaico":"")+"), com registro fotográfico. Medição pontual de corrente nas fases e no neutro dos circuitos amostrados. "+TERMO_CRIT+(v.carimbo?" As fotos receberam carimbo com data e hora, coordenadas e identificação da escola.":""));
   H("5. CONSTATAÇÕES DA INSPEÇÃO VISUAL");
   const fotos=listaFotos(v); const fr=ref=>{ const x=fotos.filter(f=>f.ref===ref).map(f=>"Foto "+f.num); return x.length?" ("+x.join(", ")+")":""; };
   ETAPAS.forEach(e=>{ if(e.opc && !v.aplica[e.id]) return;
@@ -699,17 +717,18 @@ function rascunhoAuto(v){
   H("7. INSPEÇÃO TERMOGRÁFICA");
   if(!v.termo.length) P("Não foram registrados pontos termográficos.");
   else { P(v.termo.length+" ponto(s) inspecionado(s); valores no Anexo B."); v.termo.forEach(r=>{ const c=calcTermo(r); if(c.sev>=1) P("- "+(r.local||"")+" / "+(r.componente||"")+": ΔT "+fmt(c.dt,1)+" °C ("+(r.refTipo==="ambiente"?"vs. ambiente":"vs. similar")+"), "+c.txt.toLowerCase()+"; "+c.acao.toLowerCase()+"."+(c.baixaCarga||c.carga==null?" Carga abaixo de 40% ou não informada: severidade pode estar subestimada.":"")+fr("ter:"+r.id)); }); }
-  H("8. PENDÊNCIAS E PROVIDÊNCIAS");
+  H("8. RECOMENDAÇÕES À SEDUC");
   const pend=pendencias(v);
-  if(!pend.length) P("Não foram identificadas pendências no escopo desta vistoria.");
-  ["Grave","Moderada","Documental"].forEach(cl=>{ const x=pend.filter(p=>p.classe===cl); if(!x.length) return; P(cl+":"); x.forEach(p=>P("- "+p.desc+(p.prov?". Providência: "+p.prov:"")+(p.prazo?". Prazo: "+p.prazo+" dias":"")+".")); });
+  if(!pend.length) P("Não foram identificados problemas no escopo desta vistoria.");
+  PRIOS.forEach(cl=>{ const x=pend.filter(p=>p.classe===cl); if(!x.length) return; P(cl+":"); x.forEach(p=>P("- "+p.desc+(p.prov?". Recomendação: "+p.prov:"")+(p.prazo?". Prazo: "+p.prazo:"")+".")); });
   H("9. CONCLUSÃO");
-  const g=pend.filter(p=>p.classe==="Grave").length;
-  P(g? "Foram constatadas "+g+" pendência(s) grave(s), que impedem o recebimento dos serviços elétricos até sua correção e nova verificação."
-     : "Não foram constatadas pendências graves no escopo desta vistoria.");
-  P("Os ensaios da seção 7 da ABNT NBR 5410:2004 e, quando houver SPDA, os da ABNT NBR 5419:2015 devem ser comprovados por laudo do responsável técnico da executora, com ART.");
+  const g=pend.filter(p=>p.classe==="Urgente").length;
+  P(g? "Foram constatados "+g+" problema(s) de prioridade urgente, com risco a pessoas ou de incêndio, que exigem correção imediata ou o desligamento do circuito afetado até a correção."
+     : "Não foram constatados problemas de prioridade urgente no escopo desta vistoria.");
+  P("Recomenda-se a contratação de laudo das instalações elétricas, com os ensaios da seção 7 da ABNT NBR 5410:2004 e, quando houver SPDA, os da ABNT NBR 5419:2015, por profissional habilitado, com ART"+(i.projeto==="Existe e foi consultado"?".":", e o levantamento das instalações com elaboração do projeto elétrico as built."));
   return L.join("\n").trim();
 }
+
 async function gerarDocx(v){
   const D=window.docx; if(!D) throw new Error("biblioteca de Word não carregou; verifique a conexão");
   const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,WidthType,AlignmentType,ImageRun,BorderStyle,PageBreak}=D;
@@ -733,18 +752,18 @@ async function gerarDocx(v){
   const anexo=t=>{ kids.push(new Paragraph({children:[new PageBreak()]})); kids.push(new Paragraph({text:t,heading:HeadingLevel.HEADING_2,spacing:{after:160}})); };
   anexo("ANEXO A – MEDIÇÕES DE CORRENTE (alicate amperímetro)");
   if(v.correntes.length) kids.push(tabela(["Quadro","Circuito","In disj. (A)","Cabo","Iz (A)","A (A)","B (A)","C (A)","N (A)","% In","Deseq. (%)","Alertas"],
-    v.correntes.map(r=>{ const c=calcCorrente(r,v.cfg.deseq); return [r.quadro,r.circuito,r.disjIn,r.cabo,c.iz!=null?fmt(c.iz,0)+(c.izEst?"*":""):"–",r.ia,r.ib,r.ic,r.ineutro,c.pctIn!=null?fmt(c.pctIn,0):"–",c.deseq!=null?fmt(c.deseq,1):"–",c.flags.map(f=>f.txt).join("; ")||"–"]; })));
+    v.correntes.map(r=>{ const c=calcCorrente(r,v.cfg.deseq); return [r.quadro,r.circuito,r.disjIn,r.cabo,c.iz!=null?(c.izMin!=null?fmt(c.izMin,0)+"–":"")+fmt(c.iz,0)+(c.izEst?"*":""):"–",r.ia,r.ib,r.ic,r.ineutro,c.pctIn!=null?fmt(c.pctIn,0):"–",c.deseq!=null?fmt(c.deseq,1):"–",c.flags.map(f=>f.txt).join("; ")||"–"]; })));
   else kids.push(p("Sem medições registradas."));
-  kids.push(p("Leituras pontuais, nas condições de carga do momento da vistoria. Limite de atenção para desequilíbrio adotado pela fiscalização: "+v.cfg.deseq+"%."+(v.correntes.some(r=>calcCorrente(r,v.cfg.deseq).izEst)?" (*) Iz estimada pelas Tabelas 36/37 da NBR 5410 a partir da seção do cabo, isolação, método de instalação, temperatura ambiente e agrupamento adotados; a confirmar com o projeto.":""),{it:true,size:18}));
+  kids.push(p("Leituras pontuais, nas condições de carga do momento da vistoria. Limite de atenção para desequilíbrio adotado na vistoria: "+v.cfg.deseq+"%."+(v.correntes.some(r=>calcCorrente(r,v.cfg.deseq).izEst)?" (*) Iz estimada pelas Tabelas 36/37 da NBR 5410 a partir da seção do cabo, isolação, método de instalação, temperatura ambiente e agrupamento adotados; a confirmar em levantamento do circuito.":""),{it:true,size:18}));
   anexo("ANEXO B – INSPEÇÃO TERMOGRÁFICA");
   if(v.termo.length) kids.push(tabela(["Local","Componente","T máx. (°C)","T ref. (°C)","Referência","ΔT (°C)","Carga (%)","Classificação (NETA 100.18)","Ação"],
     v.termo.map(r=>{ const c=calcTermo(r); return [r.local,r.componente,r.tmax,r.tref,r.refTipo==="ambiente"?"Ambiente":"Similar",c.dt!=null?fmt(c.dt,1):"–",c.carga!=null?fmt(c.carga,0):"n.i.",c.txt,c.acao]; })));
   else kids.push(p("Sem pontos registrados."));
   kids.push(p(TERMO_CRIT,{it:true,size:18}));
-  anexo("ANEXO C – PENDÊNCIAS");
+  anexo("ANEXO C – ACHADOS E RECOMENDAÇÕES À SEDUC");
   const pend=pendencias(v);
-  if(pend.length) kids.push(tabela(["Nº","Origem","Descrição","Classe","Providência","Prazo (dias)"],pend.map((x,k)=>[k+1,x.origem,x.desc,x.classe,x.prov,x.prazo])));
-  else kids.push(p("Sem pendências."));
+  if(pend.length) kids.push(tabela(["Nº","Origem","Achado","Prioridade","Recomendação","Prazo"],pend.map((x,k)=>[k+1,x.origem,x.desc,x.classe,x.prov,x.prazo])));
+  else kids.push(p("Sem achados que exijam recomendação."));
   anexo("ANEXO D – REGISTRO FOTOGRÁFICO");
   const fotos=listaFotos(v); let falhas=0;
   if(!fotos.length) kids.push(p("Sem fotos registradas."));
@@ -755,7 +774,7 @@ async function gerarDocx(v){
     kids.push(new Paragraph({children:[new TextRun({text:"Foto "+fo.num+" – "+fo.cap,size:18,italics:true})],alignment:AlignmentType.CENTER,spacing:{after:fo.f.audio&&fo.f.audio.txt?60:200}}));
     if(fo.f.audio&&fo.f.audio.txt) kids.push(new Paragraph({children:[new TextRun({text:"Relato: "+fo.f.audio.txt,size:18})],alignment:AlignmentType.CENTER,spacing:{after:200}}));
   }
-  const doc=new Document({creator:v.ident.fiscal||"Fiscal",title:"Relatório de vistoria elétrica"+(v.ident.convenio?" – Convênio "+v.ident.convenio:""),
+  const doc=new Document({creator:v.ident.fiscal||"SEDUC-MT",title:"Relatório de vistoria elétrica"+(v.ident.escola?" – "+v.ident.escola:""),
     styles:{default:{document:{run:{font:"Arial",size:22}}}},
     sections:[{properties:{page:{margin:{top:1134,bottom:1134,left:1418,right:1134}}},children:kids}]});
   return {blob:await Packer.toBlob(doc), falhas};
@@ -770,7 +789,7 @@ async function excluirVistoria(id){
   try{ await idbDel("vistorias",id); const fs=await idbAll("fotos"); for(const f of fs) if(f.vid===id) await idbDel("fotos",f.id); }catch(e){ toastSave("Erro ao excluir: "+(e&&e.message||e),true); }
   if(S.v.id===id){ S.v=S.list[0]||novaVistoria(); normalizar(S.v); render(); }
 }
-function nomeDocx(){ return "Relatorio_vistoria_eletrica"+(S.v.ident.convenio?"_conv_"+S.v.ident.convenio:"")+"_"+(S.v.ident.data||hojeISO())+".docx"; }
+function nomeDocx(){ return "Relatorio_vistoria_eletrica"+(S.v.ident.escola?"_"+nomeArq(S.v.ident.escola).replace(/\s+/g,"_"):"")+"_"+(S.v.ident.data||hojeISO())+".docx"; }
 async function baixarDocx(share){
   const st=document.getElementById("dlSt"); st.textContent="Montando o documento…";
   try{ const {blob,falhas}=await gerarDocx(S.v); const nome=nomeDocx();
@@ -821,6 +840,7 @@ const TABS = [["dados","Dados"],["visual","Inspeção"],["rel","Relatório"]];
 function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function vib(){ try{ navigator.vibrate && navigator.vibrate(8); }catch(e){} }
 
+const PRIO_TOM={"Urgente":"crit","Alta":"warn","Programada":"na","A verificar":"na"};
 /* ============================== Quadros (etapa 3) ============================== */
 /* A etapa 3 se repete por quadro: o item q1 do quadro "k3f9a" vira "q1_k3f9a". As demais etapas mantêm os ids simples. */
 function nomeQd(q,i){ return String((q&&q.nome)||"").trim() || "Quadro "+(i+1); }
@@ -829,7 +849,9 @@ function itensDaEtapa(v,e){ if(e.id!=="3") return e.itens.map(([id,m,t])=>({id,b
 function infoItem(id,v){ v=v||S.v; const [b,qid]=String(id).split("_"); const e=ETAPAS.find(e=>e.itens.some(x=>x[0]===b)); if(!e) return null;
   const it=e.itens.find(x=>x[0]===b); const qi=qid?(v.quadros||[]).findIndex(q=>q.id===qid):-1;
   return {e,id,base:b,m:it[1],t:it[2],qid:qid||"",qn:qi>=0?nomeQd(v.quadros[qi],qi):(qid?"quadro excluído":"")}; }
-function codItem(id,v){ const x=infoItem(id,v); if(!x) return String(id).toUpperCase(); return x.base.toUpperCase()+(x.qn?" ("+x.qn+")":""); }
+/* código exibido pela posição do item na etapa (ex.: L3 = 3º item de linhas), independente do id interno */
+function codBase(b){ const e=ETAPAS.find(e=>e.itens.some(x=>x[0]===b)); if(!e) return String(b).toUpperCase(); return b.replace(/\d+$/,"").toUpperCase()+(e.itens.findIndex(x=>x[0]===b)+1); }
+function codItem(id,v){ const x=infoItem(id,v); if(!x) return String(id).toUpperCase(); return codBase(x.base)+(x.qn?" ("+x.qn+")":""); }
 function migrarQuadros(v){ const e=ETAPAS.find(e=>e.id==="3"); let tem=false; v.quadros=[{id:"qg",nome:""}];
   e.itens.forEach(([b])=>{ const nv=b+"_qg";
     if(v.check&&v.check[b]){ v.check[nv]=v.check[b]; delete v.check[b]; tem=true; }
@@ -934,11 +956,14 @@ function field(path,label,o={}){
 /* ============================== Dados ============================== */
 function rDados(){
   const L=S.v.local, ok=L.lat!=null&&L.lon!=null, i=S.v.instr;
-  return `<section class="card"><div class="card-h"><h2>Convênio e escola</h2></div>
-    <div class="g2 st">${field("ident.convenio","Convênio nº",{ph:"0000-0000",mask:"conv",mode:"numeric"})}${field("ident.municipio","Município",{ph:"Sinop"})}</div>
+  return `<section class="card"><div class="card-h"><h2>Escola</h2></div>
     ${field("ident.escola","Unidade escolar",{ph:"E. E. …"})}
+    <div class="g2 st">${field("ident.municipio","Município",{ph:"Sinop"})}${field("ident.data","Data",{type:"date"})}</div>
     ${field("local.endereco","Endereço da unidade",{ph:"Rua…, nº…, bairro, Sinop-MT"})}
-    <div class="g2 st">${field("ident.data","Data",{type:"date"})}${field("ident.funcionamento","Condição de uso",{sel:["","Escola em funcionamento (aulas)","Escola sem aulas, com cargas ligadas","Obra sem ocupação","Instalação desenergizada"]})}</div>
+    <div class="g2 st">${field("ident.motivo","Motivo da vistoria",{sel:["","Diagnóstico de rotina","Pedido da escola","Ocorrência (queda de energia, choque, cheiro de queimado, princípio de incêndio)","Reforma ou ampliação prevista","Instalação de equipamentos (ar-condicionado, cozinha…)","Outro"]})}${field("ident.funcionamento","Condição de uso",{sel:["","Escola em funcionamento (aulas)","Escola sem aulas, com cargas ligadas","Escola sem ocupação (férias ou recesso)","Instalação desenergizada"]})}</div>
+    ${field("ident.acompanhantes","Quem acompanhou",{ph:"Nome – função (ex.: diretora, coordenador, zelador)"})}
+    <div class="g2 st">${field("ident.anoConstrucao","Ano de construção",{mode:"numeric",ph:"1998"})}${field("ident.ultimaReforma","Última reforma elétrica",{ph:"2015, ou não sabem"})}</div>
+    ${field("ident.projeto","Projeto elétrico / as built",{sel:["","Não existe","Existe, mas não foi apresentado","Existe e foi consultado","Não informado"]})}
   </section>
   <section class="card"><div class="card-h"><h3>Localização e carimbo</h3><label class="sw"><input type="checkbox" id="carimbo" ${S.v.carimbo?"checked":""}>Carimbar fotos</label></div>
     <div class="row"><button class="btn pri" type="button" data-act="usarGPS">Usar minha posição</button><button class="btn" type="button" data-act="buscarEnd">Buscar endereço</button></div>
@@ -947,15 +972,11 @@ function rDados(){
     <span class="status" id="endSt"></span>
     <p class="lead">Carimbo no padrão do fiscaliza-coipt, no canto inferior direito da foto: data e hora, coordenadas e nome da escola. No termograma vai numa faixa abaixo da imagem, para não cobrir a escala. GPS usado: o da foto, o do aparelho no momento, ou as coordenadas acima.</p>
   </section>
-  <details class="card"><summary>Visita e executora <small>${esc([S.v.ident.executora,S.v.ident.etapaObra].filter(Boolean).join(" · "))}</small></summary>
-    ${field("ident.processo","Processo SEDUC",{ph:"SEDUC-PRO-2026/00000"})}
-    ${field("ident.objeto","Objeto do convênio",{area:true,ph:"Construção, reforma ou ampliação de …"})}
-    <div class="g2 st">${field("ident.executora","Empresa executora")}${field("ident.etapaObra","Fase da obra",{sel:["","Em execução","Medição","Recebimento provisório","Recebimento definitivo","Prestação de contas final"]})}</div>
-    <div class="g2 st">${field("ident.rt","Responsável técnico")}${field("ident.art","ART nº")}</div>
+  <details class="card"><summary>Visita e vistoriador <small>${esc([S.v.ident.horaIni,S.v.ident.clima,S.v.ident.tAmb?S.v.ident.tAmb+" °C":""].filter(Boolean).join(" · "))}</small></summary>
     <div class="g2">${field("ident.horaIni","Início",{type:"time"})}${field("ident.horaFim","Término",{type:"time"})}</div>
-    ${field("ident.acompanhantes","Acompanharam a vistoria",{ph:"Nome – função – entidade"})}
     <div class="g2 st">${field("ident.clima","Tempo",{ph:"Ensolarado, nublado…"})}${field("ident.tAmb","Temperatura ambiente (°C)",{mode:"decimal",ph:"32"})}</div>
-    <div class="g2 st">${field("ident.fiscal","Fiscal")}${field("ident.cargo","Cargo / função")}</div>
+    ${field("ident.processo","Processo ou protocolo (opcional)",{ph:"SEDUC-PRO-2026/00000"})}
+    <div class="g2 st">${field("ident.fiscal","Vistoriador")}${field("ident.cargo","Cargo / função")}</div>
   </details>
   <details class="card"><summary>Equipamentos <small>${esc([i.alicate.modelo,i.termo.modelo].filter(Boolean).join(" · ")||"alicate e câmera")}</small></summary>
     <h3>Alicate amperímetro</h3>
@@ -967,15 +988,15 @@ function rDados(){
     <div class="g2">${field("instr.termo.emiss","Emissividade")}${field("instr.termo.faixa","Faixa (°C)")}</div>
   </details>
   <details class="card"><summary>Escopo e limitações <small>entra no relatório</small></summary>
-    <p class="lead">Ensaios não realizados nesta vistoria (cabem ao RT da executora, com laudo e ART):</p>
+    <p class="lead">Ensaios não realizados nesta vistoria (devem ser feitos por profissional habilitado, com laudo e ART):</p>
     <ul class="notdone">${NAO_REALIZADOS.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
     <p class="scope">${esc(ESCOPO_TXT)}</p>
     ${field("instr.obsLimit","Outras limitações desta visita",{area:true,ph:"Cobertura sem acesso seguro, quadro trancado…"})}
-    <p class="lead">Segurança: quadros abertos e manobrados só pelo eletricista ou RT da executora; alicate só em condutor isolado; termografia a distância segura.</p>
+    <p class="lead">Segurança: quadros abertos e manobrados só por eletricista autorizado (NR-10); alicate só em condutor isolado; termografia a distância segura.</p>
   </details>
   ${rTranscricao()}
   <section class="card"><div class="card-h"><h3>Fotos gerais</h3>${camBtn("g","Adicionar",0)}</div>
-    ${(S.v.fotosGerais||[]).length? strip(S.v.fotosGerais,"g") : `<p class="lead">Fachada, placa da obra, padrão de entrada visto de fora.</p>`}
+    ${(S.v.fotosGerais||[]).length? strip(S.v.fotosGerais,"g") : `<p class="lead">Fachada, placa de identificação da escola, padrão de entrada visto de fora.</p>`}
   </section>`;
 }
 
@@ -1048,19 +1069,22 @@ const IZ_FT={PVC:{10:1.22,15:1.17,20:1.12,25:1.06,30:1,35:0.94,40:0.87,45:0.79,5
 const IZ_FA={1:1,2:0.8,3:0.7,4:0.65,5:0.6,6:0.57};
 const IZ_MET={B1:"Condutores em eletroduto embutido (B1)",B2:"Cabo multipolar em eletroduto (B2)",C:"Fixado na parede ou bandeja (C)",D:"Enterrado em eletroduto (D)"};
 const IZ_ISOL={PVC:"PVC 70 °C",EPR:"HEPR/EPR/XLPE 90 °C"};
-function izCond(r){ return {isol:IZ_ISOL[r.isol]?r.isol:"PVC", met:IZ_MET[r.metodo]?r.metodo:"B1", ag:Math.min(6,Math.max(1,parseInt(r.agrup)||1))}; }
+/* agrupamento: 0 = não verificado (padrão); 1 a 6 = circuitos no mesmo eletroduto */
+const IZ_AG_TIPICO=3;
+function izCond(r){ const a=parseInt(r.agrup); return {isol:IZ_ISOL[r.isol]?r.isol:"PVC", met:IZ_MET[r.metodo]?r.metodo:"B1", ag:a>=1?Math.min(6,a):0}; }
 function izCabo(r){
   if(n(r.iz)!=null) return {iz:n(r.iz),est:false,desc:"Iz informada"};
   const k=IZ_SEC.indexOf(n(r.cabo)); if(k<0) return {iz:null,est:false,desc:""};
   const c=izCond(r); const nf=[r.ia,r.ib,r.ic].filter(x=>n(x)!=null).length; const cc=nf===1?2:3;
   const t=n(S&&S.v&&S.v.ident?S.v.ident.tAmb:null); const tk=Math.min(60,Math.max(10,Math.ceil((t==null?30:t)/5)*5));
-  const ft=c.met==="D"?1:IZ_FT[c.isol][tk]; const fa=IZ_FA[c.ag];
+  const ft=c.met==="D"?1:IZ_FT[c.isol][tk]; const fa=c.ag?IZ_FA[c.ag]:1;
   const base=IZ_TAB[c.isol][c.met][cc-2][k]; const iz=Math.round(base*ft*fa*10)/10;
-  return {iz,est:true,base,cc,ft,fa,tk,
-    desc:"Iz estimada pela NBR 5410 (Tab. "+(c.isol==="EPR"?"37":"36")+"): cobre "+IZ_ISOL[c.isol]+", "+(IZ_MET[c.met].charAt(0).toLowerCase()+IZ_MET[c.met].slice(1))+", "+cc+" condutores carregados, "+(c.met==="D"?"solo 20 °C":"ar "+tk+" °C"+(ft!==1?" (fator "+String(ft).replace(".",",")+")":""))+", "+(c.ag===1?"sem agrupamento":c.ag+(c.ag>=6?" ou mais":"")+" circuitos no mesmo eletroduto (fator "+String(fa).replace(".",",")+")")}; }
+  const izMin=c.ag? null : Math.round(base*ft*IZ_FA[IZ_AG_TIPICO]*10)/10;
+  return {iz,izMin,est:true,base,cc,ft,fa,tk,
+    desc:"Iz estimada pela NBR 5410 (Tab. "+(c.isol==="EPR"?"37":"36")+"): cobre "+IZ_ISOL[c.isol]+", "+(IZ_MET[c.met].charAt(0).toLowerCase()+IZ_MET[c.met].slice(1))+", "+cc+" condutores carregados, "+(c.met==="D"?"solo 20 °C":"ar "+tk+" °C"+(ft!==1?" (fator "+String(ft).replace(".",",")+")":""))+", "+(c.ag===0?"agrupamento não verificado (Iz entre "+fmt(izMin,0)+" A, com "+IZ_AG_TIPICO+" circuitos no eletroduto, fator 0,7, e "+fmt(iz,0)+" A, sem agrupamento)":c.ag===1?"sem agrupamento":c.ag+(c.ag>=6?" ou mais":"")+" circuitos no mesmo eletroduto (fator "+String(fa).replace(".",",")+")")}; }
 function izLinha(r,c){ if(n(r.iz)!=null) return "Iz informada: "+esc(r.iz)+" A";
   if(c.iz==null) return n(r.cabo)!=null? "Seção não padronizada: informe a Iz ou use 1,5 / 2,5 / 4 / 6 / 10 / 16 / 25 mm²…" : "Informe a seção do cabo para o app estimar a Iz.";
-  return "<b>Iz ≈ "+fmt(c.iz,0)+" A</b> (estimada) – "+esc(c.izDesc.replace(/^Iz estimada pela /,"")); }
+  return "<b>Iz ≈ "+(c.izMin!=null?fmt(c.izMin,0)+" a ":"")+fmt(c.iz,0)+" A</b> (estimada) – "+esc(c.izDesc.replace(/^Iz estimada pela /,"")); }
 function sevCor(c){ return c.flags.some(f=>f.sev==="crit")?"crit": c.flags.length?"warn": c.imax!=null?"ok":""; }
 /* etapas (fora dos quadros) que também têm bloco de correntes */
 const COR_ET={"1":{local:"Padrão de entrada", circ:"Disjuntor geral", titulo:"Correntes na entrada", lead:"Meça fases e neutro na saída do disjuntor geral. O app compara com a In do disjuntor e a Iz do cabo e calcula o desequilíbrio."}};
@@ -1077,7 +1101,7 @@ function cardCor(r,i){ const v=S.v; const c=calcCorrente(r,v.cfg.deseq); const s
       <div class="mc-b">
         ${noQd? circ : `<div class="g2"><label class="f"><span>Local / quadro</span><input type="text" enterkeyhint="next" data-cor="${i}" data-k="quadro" value="${esc(r.quadro??"")}" placeholder="Padrão de entrada" autocomplete="off" list="dlQd"></label>${circ}</div>`}
         <div class="g4">${num("ia","Fase A (A)")}${num("ib","Fase B (A)")}${num("ic","Fase C (A)")}${num("ineutro","Neutro (A)")}</div>
-        <div class="g4">${num("disjIn","In disj. (A)")}<label class="f num"><span>Cabo (mm²)</span><input type="text" inputmode="decimal" enterkeyhint="next" data-cor="${i}" data-k="cabo" value="${esc(r.cabo??"")}" autocomplete="off"></label><label class="f num"><span>Iz cabo (A)</span><input type="text" inputmode="decimal" enterkeyhint="next" data-cor="${i}" data-k="iz" value="${esc(r.iz??"")}" placeholder="${c.izEst?"≈"+fmt(c.iz,0):"auto"}" autocomplete="off"></label><span></span></div>
+        <div class="g4">${num("disjIn","In disj. (A)")}<label class="f num"><span>Cabo (mm²)</span><input type="text" inputmode="decimal" enterkeyhint="next" data-cor="${i}" data-k="cabo" value="${esc(r.cabo??"")}" autocomplete="off"></label><label class="f num"><span>Iz cabo (A)</span><input type="text" inputmode="decimal" enterkeyhint="next" data-cor="${i}" data-k="iz" value="${esc(r.iz??"")}" placeholder="${c.izEst?"≈"+(c.izMin!=null?fmt(c.izMin,0)+"–":"")+fmt(c.iz,0):"auto"}" autocomplete="off"></label><span></span></div>
         <div class="izl status" id="corIz_${i}">${izLinha(r,c)}</div>
         ${condCabo(r,i)}
         <div class="status" id="corFl_${i}">${c.flags.map(f=>esc(f.txt)).join(" · ")}</div>
@@ -1086,11 +1110,12 @@ function cardCor(r,i){ const v=S.v; const c=calcCorrente(r,v.cfg.deseq); const s
         <div class="row" style="justify-content:space-between"><button type="button" class="mini ${r.audio&&r.audio.id?"has":""}" data-mic="cor:${i}">${ICON.mic}${r.audio&&r.audio.id?"Regravar áudio":"Gravar áudio"}</button><button class="btn sm ghost danger" type="button" data-act="delCor" data-i="${i}">Excluir medição</button></div>
       </div></div>`; }
 function condCabo(r,i){ const c=izCond(r); const ch=(k,lista,cur)=>`<div class="chips">${lista.map(([v,l])=>`<button type="button" class="chip-s ${String(cur)===String(v)?"on":""}" data-act="corOpt" data-i="${i}" data-k="${k}" data-v="${v}">${l}</button>`).join("")}</div>`;
-  return `<details class="como izc"><summary>Condições do cabo <small>${c.isol==="EPR"?"HEPR/EPR/XLPE":"PVC"} · ${c.met} · ${c.ag}${c.ag>=6?"+":""} circ.</small></summary>
+  return `<details class="como izc"><summary>Condições do cabo <small>${c.isol==="EPR"?"HEPR/EPR/XLPE":"PVC"} · ${c.met} · ${c.ag?c.ag+(c.ag>=6?"+":"")+" circ.":"agrupamento não verificado"}</small></summary>
     <div class="lead">Isolação impressa no cabo (a tensão 0,6/1 kV sozinha não define: há cabo 0,6/1 kV de PVC)</div>${ch("isol",[["PVC","PVC 70 °C"],["EPR","HEPR / EPR / XLPE 90 °C"]],c.isol)}
     <div class="lead">Como o cabo está instalado</div>${ch("metodo",Object.entries(IZ_MET),c.met)}
-    <div class="lead">Circuitos passando no mesmo eletroduto</div>${ch("agrup",[[1,"1"],[2,"2"],[3,"3"],[4,"4"],[5,"5"],[6,"6+"]],c.ag)}
-    <p class="lead">Se houver Iz no projeto, digite no campo acima: ela substitui a estimativa.</p></details>`; }
+    <div class="lead">Circuitos passando no mesmo eletroduto</div>${ch("agrup",[[0,"Não verificado"],[1,"1"],[2,"2"],[3,"3"],[4,"4"],[5,"5"],[6,"6+"]],c.ag)}
+    <p class="lead">Sem verificar, o app usa uma faixa: só dá alerta certo quando o cabo não atende nem sem agrupamento; se atender só sem agrupamento, gera um achado "A verificar" para confirmar em levantamento do circuito.</p>
+    <p class="lead">Se a Iz for conhecida (projeto ou memorial de cálculo), digite no campo acima: ela substitui a estimativa.</p></details>`; }
 function tituloCor(r,i){ return (qdDe(r)||etDe(r))? esc(r.circuito||"Circuito "+(i+1)) : esc(r.quadro||"Medição")+" · "+esc(r.circuito||"circuito "+(i+1)); }
 /* bloco de correntes dentro do quadro (etapa 3) */
 function rCorQd(q){ const v=S.v; const L=v.correntes.map((r,i)=>[r,i]).filter(([r])=>r.qd===q.id);
@@ -1112,7 +1137,7 @@ function rCorOutros(){ const v=S.v; const L=v.correntes.map((r,i)=>[r,i]).filter
     <button class="btn" type="button" data-act="addCor">+ Outra medição</button>
     <details class="como"><summary>Critérios <small>desequilíbrio: ${v.cfg.deseq}%</small></summary>
     ${field("cfg.deseq","Limite de atenção para desequilíbrio (%)",{mode:"decimal"})}
-    <p class="lead">O limite é critério da fiscalização, não da norma. Uma leitura pontual não representa a demanda máxima. Sem Iz digitada, o app estima pela NBR 5410 (Tabelas 36/37) a partir da seção do cabo e das condições de instalação; o disjuntor maior que a Iz (In > Iz) gera alerta mesmo com pouca carga.</p></details></section>`; }
+    <p class="lead">O limite é critério adotado na vistoria, não da norma. Uma leitura pontual não representa a demanda máxima. Sem Iz digitada, o app estima pela NBR 5410 (Tabelas 36/37) a partir da seção do cabo e das condições de instalação; o disjuntor maior que a Iz (In > Iz) gera alerta mesmo com pouca carga.</p></details></section>`; }
 function pillCor(c){ const s=sevCor(c); return s==="crit"?`<span class="pill crit">Alerta</span>`: s==="warn"?`<span class="pill warn">Atenção</span>`: s==="ok"?`<span class="pill ok">OK</span>`:""; }
 function resumoCor(r,c){ const p=[]; ["ia","ib","ic"].forEach((k,j)=>{ if(r[k]) p.push("ABC"[j]+" "+r[k]); }); if(r.ineutro) p.push("N "+r.ineutro);
   if(c.pctIn!=null) p.push(fmt(c.pctIn,0)+"% In"); if(c.deseq!=null) p.push("deseq. "+fmt(c.deseq,0)+"%"); if(r.audio&&r.audio.id) p.push("áudio "+fmtDur(r.audio.dur)); return esc(p.join(" · ")||"toque para preencher"); }
@@ -1120,7 +1145,7 @@ function atualizarCor(i){ const r=S.v.correntes[i]; if(!r) return; const c=calcC
   const set=(id,h)=>{ const el=document.getElementById(id); if(el) el.innerHTML=h; };
   set("corPill_"+i,pillCor(c)); set("corT_"+i,tituloCor(r,i)); set("corL2_"+i,resumoCor(r,c)); set("corFl_"+i,c.flags.map(f=>esc(f.txt)).join(" · "));
   const card=document.getElementById("mc_"+r.id); if(card) card.dataset.sev=sevCor(c);
-  const zl=document.getElementById("corIz_"+i); if(zl) zl.innerHTML=izLinha(r,c); const zi=document.querySelector(`input[data-cor="${i}"][data-k="iz"]`); if(zi) zi.placeholder=c.izEst?"≈"+fmt(c.iz,0):"auto";
+  const zl=document.getElementById("corIz_"+i); if(zl) zl.innerHTML=izLinha(r,c); const zi=document.querySelector(`input[data-cor="${i}"][data-k="iz"]`); if(zi) zi.placeholder=c.izEst?"≈"+(c.izMin!=null?fmt(c.izMin,0)+"–":"")+fmt(c.iz,0):"auto";
   const q=qdDe(r); if(q){ const el=document.getElementById("qdc_"+q.id); if(el) el.innerHTML=cntQd(infoQd(q)); }
   atualizarChrome(); }
 
@@ -1201,16 +1226,16 @@ function atualizarTer(i){ const r=S.v.termo[i]; if(!r) return; const c=calcTermo
 function rRel(){
   const r=S.v.rel, R=resumo(S.v), L=pendencias(S.v); const share=!!(navigator.canShare && window.File);
   return `<div class="tiles"><div class="tile"><b>${R.feitos}/${R.total}</b><span>itens avaliados</span></div><div class="tile ${R.nc?"crit":""}"><b>${R.nc}</b><span>não conformes</span></div><div class="tile ${R.cor?"warn":""}"><b>${R.cor}</b><span>alertas de corrente</span></div><div class="tile ${R.ter?"crit":""}"><b>${R.ter}</b><span>anomalias térmicas</span></div></div>
-  <section class="card"><div class="card-h"><h2>Pendências</h2><span class="status">${L.length} item(ns)</span></div>
-    <p class="lead">Registro automático de itens NC, alertas de corrente e pontos quentes. <b>Classe, providência e prazo são opcionais</b>: o Claude propõe ao redigir o relatório. Preencha só o que quiser definir você mesmo.</p>
-    ${L.length? L.map(p=>{ const def=S.v.pend[p.key]||{}; const meu=!!(def.classe||def.prov||def.prazo);
+  <section class="card"><div class="card-h"><h2>Achados e recomendações</h2><span class="status">${L.length} item(ns)</span></div>
+    <p class="lead">Registro automático de itens NC, alertas de corrente e pontos quentes. <b>Prioridade, recomendação e prazo são opcionais</b>: o Claude propõe ao redigir o relatório para a SEDUC. Preencha só o que quiser definir você mesmo.</p>
+    ${L.length? L.map(p=>{ const def=S.v.pend[p.key]||{}; const meu=!!(prio(def.classe)||def.prov||def.prazo);
       return `<div class="pend" data-c="${esc(p.classe)}"><div class="src">${esc(p.origem)}</div><div>${esc(p.desc)}</div>
-      <details class="como pd" ${meu?"open":""}><summary><span class="pill ${p.classe==="Grave"?"crit":p.classe==="Moderada"?"warn":"na"}">${esc(p.classe)}${def.classe?"":" (sugerida)"}</span> <small>${meu?"definido por você":"providência e prazo: o Claude propõe"}</small></summary>
-      <div class="gp"><select data-pend="${esc(p.key)}" data-k="classe" aria-label="Classe">${["Grave","Moderada","Documental"].map(c=>`<option ${c===p.classe?"selected":""}>${c}</option>`).join("")}</select>
-      <input type="text" data-pend="${esc(p.key)}" data-k="prov" value="${esc(p.prov)}" placeholder="Providência a exigir (opcional)" aria-label="Providência">
-      <input type="text" data-pend="${esc(p.key)}" data-k="prazo" value="${esc(p.prazo)}" placeholder="Prazo (dias)" inputmode="numeric" aria-label="Prazo"></div></details></div>`; }).join("")
-    : `<div class="empty">Sem pendências. Itens NC, alertas de corrente e anomalias térmicas aparecem aqui sozinhos.</div>`}
-    <p class="lead"><b>Grave</b>: risco imediato, impede o recebimento · <b>Moderada</b>: diferente do projeto, corrigir com prazo · <b>Documental</b>: falta de comprovação.</p>
+      <details class="como pd" ${meu?"open":""}><summary><span class="pill ${PRIO_TOM[p.classe]||""}">${esc(p.classe)}${prio(def.classe)?"":" (sugerida)"}</span> <small>${meu?"definido por você":"recomendação e prazo: o Claude propõe"}</small></summary>
+      <div class="gp"><select data-pend="${esc(p.key)}" data-k="classe" aria-label="Prioridade">${PRIOS.map(c=>`<option ${c===p.classe?"selected":""}>${c}</option>`).join("")}</select>
+      <input type="text" data-pend="${esc(p.key)}" data-k="prov" value="${esc(p.prov)}" placeholder="Recomendação à SEDUC (opcional)" aria-label="Recomendação">
+      <input type="text" data-pend="${esc(p.key)}" data-k="prazo" value="${esc(p.prazo)}" placeholder="Prazo" aria-label="Prazo"></div></details></div>`; }).join("")
+    : `<div class="empty">Nenhum achado ainda. Itens NC, alertas de corrente e anomalias térmicas aparecem aqui sozinhos.</div>`}
+    <p class="lead"><b>Urgente</b>: risco a pessoas ou de incêndio, corrigir já ou desligar o circuito · <b>Alta</b>: em desacordo com a norma, corrigir em curto prazo · <b>Programada</b>: incluir no plano de manutenção ou reforma · <b>A verificar</b>: depende de levantamento, ensaio ou documento.</p>
   </section>
   <section class="card"><div class="card-h"><h2>Relatório</h2></div>
     <p class="lead">O rascunho automático funciona sem internet. Para o Claude redigir, copie o pedido, cole numa conversa com o Claude e traga a resposta para o campo abaixo. Tabelas e fotos entram como anexos no .docx.</p>
@@ -1288,7 +1313,7 @@ document.getElementById("vwDel").onclick=async()=>{ const o=VW.list[VW.i]; if(!o
   if(!(await confirmar("Excluir a foto "+o.num+" do app e do relatório?"+(((S.v.drive&&S.v.drive.fotos)||{})[o.f.id]?" A cópia que já está no Google Drive continua lá.":"")))) return;
   removerFoto(o.pref); agendarSalvar(); VW.list=listaFotos(S.v); if(!VW.list.length){ fecharVisualizador(); return; } VW.i=Math.min(VW.i,VW.list.length-1); mostrarFoto(); };
 document.getElementById("vwShare").onclick=async()=>{ const o=VW.list[VW.i]; if(!o) return;
-  try{ const b=(await fotoAlta(o.f).catch(()=>null))||await fotoBlob(o.f); const nome="foto_"+o.num+"_"+(S.v.ident.convenio||"vistoria")+".jpg"; const f=new File([b],nome,{type:"image/jpeg"});
+  try{ const b=(await fotoAlta(o.f).catch(()=>null))||await fotoBlob(o.f); const nome="foto_"+o.num+"_"+(nomeArq(S.v.ident.escola||"vistoria").replace(/\s+/g,"_"))+".jpg"; const f=new File([b],nome,{type:"image/jpeg"});
     if(navigator.canShare && navigator.canShare({files:[f]})) await navigator.share({files:[f],title:nome});
     else { const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download=nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),30000); } }catch(e){} };
 window.addEventListener("popstate",()=>{ if(!VW.el.hidden) fecharVisualizador(true); });
@@ -1391,7 +1416,7 @@ document.addEventListener("input", ev=>{
   const el=ev.target;
   if(el.tagName==="TEXTAREA") autoGrow(el);
   if(el.dataset.path==="local.coords"){ S.v.local.coords=el.value; const c=parseCoords(el.value); const st=document.getElementById("coordSt");
-    if(c){ S.v.local.lat=c.lat; S.v.local.lon=c.lon; S.v.local.fonte="informadas pelo fiscal"; st.textContent="Lidas: "+fmtCoord(c.lat,c.lon); } else { S.v.local.lat=null; S.v.local.lon=null; st.textContent=el.value?"Não reconheci duas coordenadas válidas.":"Ou cole as coordenadas do Google Maps."; }
+    if(c){ S.v.local.lat=c.lat; S.v.local.lon=c.lon; S.v.local.fonte="informadas pelo vistoriador"; st.textContent="Lidas: "+fmtCoord(c.lat,c.lon); } else { S.v.local.lat=null; S.v.local.lon=null; st.textContent=el.value?"Não reconheci duas coordenadas válidas.":"Ou cole as coordenadas do Google Maps."; }
     agendarSalvar(); return; }
   if(el.dataset.path){ let val=el.value; if(el.dataset.mask==="conv"){ val=maskConv(val); el.value=val; } if(el.dataset.path==="cfg.deseq") val=n(val)??10; setPath(S.v,el.dataset.path,val); agendarSalvar(); return; }
   if(el.dataset.qdnome){ const q=S.v.quadros.find(q=>q.id===el.dataset.qdnome); if(!q) return; q.nome=el.value; const i=S.v.quadros.indexOf(q); const h=document.getElementById("qdn_"+q.id); if(h) h.textContent=nomeQd(q,i); S.v.correntes.forEach(r=>{ if(r.qd===q.id) r.quadro=nomeQd(q,i); }); agendarSalvar(); return; }
@@ -1483,7 +1508,7 @@ async function enviarArquivo(meta,blob,idExistente){
   return await driveFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,size",{method:"POST",headers:{"Content-Type":"multipart/related; boundary="+bd},body:corpo});
 }
 const nomeArq=s=>String(s).replace(/[\\/:*?"<>|\n\r]+/g," ").replace(/\s+/g," ").trim().slice(0,110);
-function nomePastaVistoria(v){ const i=v.ident; return nomeArq([i.convenio?"Conv "+i.convenio:"", i.escola, i.municipio, i.data].filter(Boolean).join(" - ")||("Vistoria "+v.id)); }
+function nomePastaVistoria(v){ const i=v.ident; return nomeArq([i.escola, i.municipio, i.data].filter(Boolean).join(" - ")||("Vistoria "+v.id)); }
 /* cada um envia ao seu Drive só as fotos que tirou neste aparelho (as dos colegas chegam pela nuvem da equipe) */
 function pendentesDe(v){ const env=(v.drive&&v.drive.fotos)||{}; return listaFotos(v).filter(o=>!env[o.f.id] && (!o.f.dev||o.f.dev===DEV)); }
 function totalPendentes(){ const vs=S.list.includes(S.v)? S.list : [S.v,...S.list]; return vs.reduce((a,v)=>a+pendentesDe(v).length+audiosPendentesDrive(v).length,0); }
@@ -1530,12 +1555,12 @@ async function fotoAlta(f){
 }
 /* Arquivo de dados para o Claude: o mesmo conteúdo do "Copiar pedido para o Claude", salvo na pasta da vistoria no Drive
    (dados_vistoria_<convênio>.json). Atualizado sempre que a vistoria mudou desde o último envio. */
-function nomeJSON(v){ return "dados_vistoria"+(v.ident.convenio?"_conv_"+v.ident.convenio:"")+"_"+(v.ident.data||"")+".json"; }
+function nomeJSON(v){ return "dados_vistoria"+(v.ident.escola?"_"+nomeArq(v.ident.escola).replace(/\s+/g,"_"):"")+"_"+(v.ident.data||"")+".json"; }
 async function enviarDadosJSON(forcar){
   const vs=(S.list.includes(S.v)? S.list : [S.v,...S.list]).filter(v=>v.drive&&v.drive.pasta);
   for(const v of vs){
     if(!forcar && v.drive.jsonEm && (v.updatedAt||0)<=v.drive.jsonEm) continue;
-    const corpo={app:"vistoria-eletrica", gerado_em:new Date().toISOString(), convenio:v.ident.convenio, escola:v.ident.escola,
+    const corpo={app:"vistoria-eletrica", gerado_em:new Date().toISOString(), escola:v.ident.escola, municipio:v.ident.municipio,
       pasta_drive:"https://drive.google.com/drive/folders/"+v.drive.pasta, pedido_para_o_claude:promptClaude(v), dados:dadosParaClaude(v)};
     const j=await enviarArquivo({name:nomeJSON(v), parents:[v.drive.pasta], description:"Dados da vistoria para o Claude redigir o relatório"}, new Blob([JSON.stringify(corpo,null,1)],{type:"application/json"}), v.drive.json);
     v.drive.json=j.id; v.drive.jsonEm=Date.now(); await gravarVistoria(v);
@@ -2002,7 +2027,7 @@ window.addEventListener("offline",()=>{ if(NV.pronta){ NV.estado="offline"; atua
   S.v=novaVistoria(); render();
   await initCaps();
   await carregar();
-  if(!S.v.ident.convenio && !S.v.ident.escola) S.tab="dados";
+  if(!S.v.ident.escola) S.tab="dados";
   render(); atualizarRede();
   toastSave(S.store==="idb"?"Salvo no aparelho":"Sem armazenamento");
   try{ if(navigator.permissions){ const p=await navigator.permissions.query({name:"geolocation"}); if(p.state==="granted") iniciarGPS(); } }catch(e){}

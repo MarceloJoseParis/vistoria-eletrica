@@ -1,6 +1,6 @@
 # Vistoria Elétrica Básica
 
-App de campo para a vistoria elétrica básica de obras escolares de convênio (SEDUC-MT, CIPI-SNP), com inspeção visual, alicate amperímetro e câmera termográfica. Gera o relatório em .docx.
+App de campo para a vistoria elétrica básica (diagnóstico) de escolas estaduais existentes (SEDUC-MT, CIPI-SNP), com inspeção visual, alicate amperímetro e câmera termográfica. Gera o relatório em .docx com recomendações à SEDUC por prioridade.
 
 Endereço: https://marcelojoseparis.github.io/vistoria-eletrica/vistoria.html
 
