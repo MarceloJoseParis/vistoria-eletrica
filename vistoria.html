@@ -985,7 +985,8 @@ function rRel(){
     <div class="g2"><button class="btn pri" type="button" id="dlDocx" data-act="dlDocx">Baixar .docx</button>${share?`<button class="btn" type="button" data-act="shDocx">Compartilhar .docx</button>`:`<button class="btn" type="button" data-act="cpTxt">Copiar texto</button>`}</div>
     ${share?`<button class="btn ghost" type="button" data-act="cpTxt">Copiar texto</button>`:""}
     <span class="status" id="dlSt"></span>
-  </section>`;
+  </section>
+  ${rDrive()}`;
 }
 
 /* ============================== Visualizador de fotos ============================== */
@@ -1083,6 +1084,7 @@ document.addEventListener("click", async ev=>{
   if(act==="recarregar"){ location.reload(); return; }
   if(act==="genDraft"){ if(S.v.rel.texto && !(await confirmar("Substituir o texto atual pelo rascunho automático?"))) return; S.v.rel.texto=rascunhoAuto(S.v); S.v.rel.geradoEm=Date.now(); S.v.rel.fonte="rascunho automático"; agendarSalvar(); render(true); return; }
   if(act==="cpPrompt"){ const st=document.getElementById("genSt"); try{ await navigator.clipboard.writeText(promptClaude(S.v)); st.textContent="Pedido copiado. Cole numa conversa com o Claude e traga a resposta para o campo abaixo."; }catch(e){ st.textContent="Não foi possível copiar automaticamente."; } return; }
+  if(act==="enviarDrive"){ enviarDrive(); return; }
   if(act==="dlDocx"){ baixarDocx(false); return; }
   if(act==="shDocx"){ baixarDocx(true); return; }
   if(act==="cpTxt"){ try{ await navigator.clipboard.writeText(S.v.rel.texto||rascunhoAuto(S.v)); document.getElementById("dlSt").textContent="Texto copiado."; }catch(e){ document.getElementById("dlSt").textContent="Não foi possível copiar."; } return; }
@@ -1091,7 +1093,7 @@ document.addEventListener("click", async ev=>{
   if(b.id==="dlgClose"){ document.getElementById("dlgList").close(); return; }
   if(b.id==="bkExp"){ exportarBackup(); return; }
   if(b.dataset.open){ await salvarAgora(); const x=S.list.find(v=>v.id===b.dataset.open); if(x){ S.v=x; normalizar(x); try{localStorage.setItem("vistoriaEletrica.cur",x.id);}catch(e){} } document.getElementById("dlgList").close(); S.openEt=null; S.openCor=null; S.openTer=null; render(); return; }
-  if(b.dataset.dup){ const x=S.list.find(v=>v.id===b.dataset.dup); if(x){ const c=JSON.parse(JSON.stringify(x)); c.id="v-"+Date.now().toString(36)+uid8().slice(0,4); c.createdAt=Date.now(); c.ident.data=hojeISO(); c.check={}; c.correntes=[]; c.termo=[]; c.fotosGerais=[]; c.notas=[]; c.pend={}; c.rel={texto:"",geradoEm:0,fonte:""}; S.v=c; S.list.unshift(c); agendarSalvar(); document.getElementById("dlgList").close(); S.tab="dados"; render(); } return; }
+  if(b.dataset.dup){ const x=S.list.find(v=>v.id===b.dataset.dup); if(x){ const c=JSON.parse(JSON.stringify(x)); c.id="v-"+Date.now().toString(36)+uid8().slice(0,4); c.createdAt=Date.now(); c.ident.data=hojeISO(); c.check={}; c.correntes=[]; c.termo=[]; c.fotosGerais=[]; c.notas=[]; c.pend={}; c.drive={}; c.rel={texto:"",geradoEm:0,fonte:""}; S.v=c; S.list.unshift(c); agendarSalvar(); document.getElementById("dlgList").close(); S.tab="dados"; render(); } return; }
   if(b.dataset.delv){ if(!(await confirmar("Excluir esta vistoria e as fotos dela? Não dá para desfazer."))) return; await excluirVistoria(b.dataset.delv); abrirLista(); return; }
 });
 document.getElementById("sheet").addEventListener("click",e=>{ if(e.target.id==="sheet") fecharSheet(); });
@@ -1134,6 +1136,102 @@ document.addEventListener("keydown", ev=>{
   const i=ins.indexOf(el); if(i>=0 && i<ins.length-1){ ev.preventDefault(); ins[i+1].focus(); } else { ev.preventDefault(); el.blur(); }
 });
 
+/* ============================== Google Drive ============================== */
+/* Envio direto do aparelho para o Drive do próprio usuário (escopo drive.file: o app só enxerga o que ele mesmo criou).
+   Usa o mesmo cadastro OAuth do fiscaliza-coipt (mesmo endereço marcelojoseparis.github.io), sem passar pelo servidor dele. */
+const DRIVE={clientId:"419096828771-os28t8sam1uak8b1oknur322ojq5b19p.apps.googleusercontent.com", scope:"https://www.googleapis.com/auth/drive.file", token:null, exp:0, tc:null, gis:null, enviando:false};
+function carregarGIS(){
+  if(DRIVE.gis) return DRIVE.gis;
+  DRIVE.gis=new Promise((res,rej)=>{ if(window.google&&google.accounts&&google.accounts.oauth2) return res();
+    const s=document.createElement("script"); s.src="https://accounts.google.com/gsi/client"; s.async=true; s.onload=()=>res(); s.onerror=()=>{ DRIVE.gis=null; rej(new Error("não foi possível carregar o login do Google (sem internet?)")); }; document.head.appendChild(s); });
+  return DRIVE.gis;
+}
+function drvSt(t,err){ const el=document.getElementById("drvSt"); if(el){ el.innerHTML=t; el.style.color=err?"var(--crit)":""; } }
+function pedirToken(){
+  return new Promise((res,rej)=>{
+    if(DRIVE.token && Date.now()<DRIVE.exp) return res(DRIVE.token);
+    if(!(window.google&&google.accounts&&google.accounts.oauth2)) return rej(new Error("login do Google ainda carregando; toque de novo em alguns segundos"));
+    const tc=google.accounts.oauth2.initTokenClient({client_id:DRIVE.clientId, scope:DRIVE.scope,
+      callback:r=>{ if(r&&r.access_token){ DRIVE.token=r.access_token; DRIVE.exp=Date.now()+((+r.expires_in||3600)-120)*1000; res(DRIVE.token); } else rej(new Error((r&&(r.error_description||r.error))||"autorização não concedida")); },
+      error_callback:e=>rej(new Error(e&&e.type==="popup_closed"?"janela do Google fechada antes de autorizar":(e&&(e.message||e.type))||"falha no login do Google"))});
+    tc.requestAccessToken({prompt:DRIVE.token?"":"consent"});
+  });
+}
+async function driveFetch(url,opts={}){
+  opts.headers=Object.assign({},opts.headers,{Authorization:"Bearer "+DRIVE.token});
+  const r=await fetch(url,opts);
+  if(r.ok) return r.status===204? null : r.json();
+  let j=null; try{ j=await r.json(); }catch(e){}
+  const err=(j&&j.error)||{}; const motivo=(err.errors&&err.errors[0]&&err.errors[0].reason)||err.status||"";
+  if(r.status===401){ DRIVE.token=null; throw new Error("a autorização do Google expirou; toque em Enviar de novo"); }
+  if(/accessNotConfigured|SERVICE_DISABLED/i.test(motivo)||/has not been used|is disabled/i.test(err.message||"")){
+    const e=new Error("a API do Google Drive não está ativada no projeto do Google Cloud"); e.ativar=true; throw e; }
+  if(r.status===404){ const e=new Error("item não encontrado no Drive"); e.nf=true; throw e; }
+  if(/storageQuotaExceeded/i.test(motivo)) throw new Error("o Google Drive está cheio");
+  throw new Error((err.message||("erro "+r.status))+" (Drive)");
+}
+const qEsc=s=>String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+async function pastaDrive(nome,pai){
+  const q="name='"+qEsc(nome)+"' and mimeType='application/vnd.google-apps.folder' and trashed=false"+(pai?" and '"+pai+"' in parents":"");
+  const j=await driveFetch("https://www.googleapis.com/drive/v3/files?fields=files(id)&q="+encodeURIComponent(q));
+  if(j.files&&j.files.length) return j.files[0].id;
+  const c=await driveFetch("https://www.googleapis.com/drive/v3/files?fields=id",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:nome,mimeType:"application/vnd.google-apps.folder",parents:pai?[pai]:undefined})});
+  return c.id;
+}
+async function enviarArquivo(meta,blob,idExistente){
+  if(idExistente){ try{ return (await driveFetch("https://www.googleapis.com/upload/drive/v3/files/"+idExistente+"?uploadType=media&fields=id",{method:"PATCH",headers:{"Content-Type":blob.type||"application/octet-stream"},body:blob})).id; }catch(e){ if(!e.nf) throw e; } }
+  const bd="vistoria"+uid8()+uid8();
+  const corpo=new Blob(["--"+bd+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n",JSON.stringify(meta),"\r\n--"+bd+"\r\nContent-Type: "+(blob.type||"application/octet-stream")+"\r\n\r\n",blob,"\r\n--"+bd+"--"]);
+  return (await driveFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id",{method:"POST",headers:{"Content-Type":"multipart/related; boundary="+bd},body:corpo})).id;
+}
+const nomeArq=s=>String(s).replace(/[\\/:*?"<>|\n\r]+/g," ").replace(/\s+/g," ").trim().slice(0,110);
+function nomePastaVistoria(v){ const i=v.ident; return nomeArq([i.convenio?"Conv "+i.convenio:"", i.escola, i.municipio, i.data].filter(Boolean).join(" - ")||("Vistoria "+v.id)); }
+function pendentesDrive(v){ const d=v.drive||{}; const env=d.fotos||{}; return listaFotos(v).filter(o=>!env[o.f.id]).length; }
+async function enviarDrive(){
+  if(DRIVE.enviando) return;
+  if(!navigator.onLine){ drvSt("Sem internet agora. As fotos continuam no aparelho; envie quando houver sinal.",true); return; }
+  let tokenP;
+  try{ tokenP=pedirToken(); }catch(e){ drvSt(esc(msgErro(e)),true); return; }
+  DRIVE.enviando=true; const btn=document.getElementById("btnDrive"); if(btn) btn.disabled=true;
+  const v=S.v; v.drive=v.drive||{}; v.drive.fotos=v.drive.fotos||{};
+  try{
+    drvSt("Aguardando autorização do Google…"); await tokenP;
+    drvSt("Preparando a pasta no Drive…");
+    let raiz=null; try{ raiz=localStorage.getItem("vistoriaEletrica.driveRaiz"); }catch(e){}
+    if(raiz){ try{ await driveFetch("https://www.googleapis.com/drive/v3/files/"+raiz+"?fields=id,trashed").then(j=>{ if(j.trashed) raiz=null; }); }catch(e){ if(e.nf) raiz=null; else throw e; } }
+    if(!raiz){ raiz=await pastaDrive("Vistorias Elétricas",null); try{ localStorage.setItem("vistoriaEletrica.driveRaiz",raiz); }catch(e){} }
+    if(v.drive.pasta){ try{ const j=await driveFetch("https://www.googleapis.com/drive/v3/files/"+v.drive.pasta+"?fields=id,trashed"); if(j.trashed){ v.drive.pasta=null; v.drive.fotos={}; v.drive.docx=null; } }catch(e){ if(e.nf){ v.drive.pasta=null; v.drive.fotos={}; v.drive.docx=null; } else throw e; } }
+    if(!v.drive.pasta){ v.drive.pasta=await pastaDrive(nomePastaVistoria(v),raiz); agendarSalvar(); }
+    const lista=listaFotos(v).filter(o=>!v.drive.fotos[o.f.id]); let k=0, falhas=0;
+    for(const o of lista){
+      k++; drvSt("Enviando foto "+k+" de "+lista.length+"…");
+      try{ const b=await fotoBlob(o.f);
+        const id=await enviarArquivo({name:nomeArq(String(o.num).padStart(2,"0")+" - "+o.cap)+".jpg", parents:[v.drive.pasta], description:o.cap}, b.type?b:new Blob([b],{type:"image/jpeg"}));
+        v.drive.fotos[o.f.id]=id; agendarSalvar();
+      }catch(e){ if(e.ativar||/expirou|cheio/.test(e.message)) throw e; falhas++; }
+    }
+    drvSt("Gerando e enviando o relatório .docx…");
+    const {blob}=await gerarDocx(v);
+    const docBlob=new Blob([blob],{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"});
+    v.drive.docx=await enviarArquivo({name:nomeDocx(), parents:[v.drive.pasta]}, docBlob, v.drive.docx);
+    v.drive.enviadoEm=Date.now(); agendarSalvar(); await salvarAgora();
+    const link="https://drive.google.com/drive/folders/"+v.drive.pasta;
+    drvSt("Enviado: "+(lista.length-falhas)+" foto(s) novas e o relatório"+(falhas?". "+falhas+" foto(s) falharam; toque em Enviar de novo":"")+`. <a href="${link}" target="_blank" rel="noopener">Abrir pasta no Drive</a>`, !!falhas);
+  }catch(e){
+    if(e.ativar) drvSt(`A API do Google Drive não está ativada no projeto do Google Cloud. <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com?project=419096828771" target="_blank" rel="noopener">Ativar a API do Drive</a> (uma vez só) e tente de novo.`,true);
+    else drvSt("Não foi possível enviar: "+esc(msgErro(e))+". As fotos continuam no aparelho.",true);
+  }finally{ DRIVE.enviando=false; const b2=document.getElementById("btnDrive"); if(b2) b2.disabled=false; }
+}
+function rDrive(){
+  const d=S.v.drive||{}; const pend=pendentesDrive(S.v); const tot=listaFotos(S.v).length;
+  if(navigator.onLine) carregarGIS().catch(()=>{});
+  return `<section class="card"><div class="card-h"><h2>Google Drive</h2><span class="status">${d.enviadoEm?"último envio "+new Date(d.enviadoEm).toLocaleString("pt-BR"):"nada enviado ainda"}</span></div>
+    <p class="lead">Envia as fotos carimbadas e o relatório .docx para a pasta <b>Vistorias Elétricas › ${esc(nomePastaVistoria(S.v))}</b> no seu Google Drive. Precisa de internet. Só vão as fotos que ainda não foram; o .docx é atualizado a cada envio.</p>
+    <div class="row"><span class="pill ${pend?"warn":"ok"}">${pend? pend+" de "+tot+" foto(s) a enviar" : (tot? "todas as "+tot+" fotos no Drive" : "sem fotos")}</span></div>
+    <div class="g2"><button class="btn pri" type="button" id="btnDrive" data-act="enviarDrive">Enviar para o Drive</button>${d.pasta?`<a class="btn" href="https://drive.google.com/drive/folders/${esc(d.pasta)}" target="_blank" rel="noopener">Abrir pasta no Drive</a>`:`<span></span>`}</div>
+    <span class="status" id="drvSt"></span></section>`;
+}
+
 /* ============================== Início ============================== */
 (async function(){
   S.v=novaVistoria(); render();
@@ -1144,6 +1242,7 @@ document.addEventListener("keydown", ev=>{
   toastSave(S.store==="idb"?"Salvo no aparelho":"Sem armazenamento");
   try{ if(navigator.permissions){ const p=await navigator.permissions.query({name:"geolocation"}); if(p.state==="granted") iniciarGPS(); } }catch(e){}
 })();
+
 
 </script>
 </body>
