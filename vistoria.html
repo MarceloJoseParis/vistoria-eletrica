@@ -69,7 +69,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 main{max-width:760px;margin:0 auto;padding:14px 12px;display:grid;gap:14px}
 
 /* navegação */
-.bn{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--panel);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom)}
+.bn{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--panel);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding-bottom:env(safe-area-inset-bottom)}
 .bn button{border:0;background:none;height:var(--nav-h);display:grid;place-items:center;align-content:center;gap:2px;font-size:11.5px;color:var(--muted);cursor:pointer;position:relative}
 .bn button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .bn button[aria-current="true"]{color:var(--ink);font-weight:600}
@@ -150,6 +150,8 @@ details.card > summary small{font-family:var(--f-body);font-weight:400;font-size
 .it:last-child{border-bottom:0}
 .it[data-s="C"]{border-left-color:var(--ok)} .it[data-s="NC"]{border-left-color:var(--crit);background:linear-gradient(90deg,var(--crit-soft),transparent 40%)} .it[data-s="NA"],.it[data-s="NV"]{border-left-color:var(--na)}
 .it-t{font-size:15px}
+.it .mc{border-radius:10px}
+#secTermo .mc{margin-bottom:2px}
 .tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px;margin-right:6px;vertical-align:1px;background:var(--na-soft);color:var(--muted)}
 .tag.T{background:var(--accent-soft);color:var(--accent-ink)}
 .seg4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
@@ -194,6 +196,23 @@ details.card > summary small{font-family:var(--f-body);font-weight:400;font-size
 .seg2{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .seg2 button{min-height:46px;border:0;background:var(--soft);cursor:pointer;font-weight:600;color:var(--muted)}
 .seg2 button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+.passo{display:flex;gap:8px;align-items:center;font-weight:600;font-size:14.5px;margin-top:6px}
+.passo b{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#1A1200;display:grid;place-items:center;font-size:13px;flex-shrink:0}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip-s{min-height:36px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 12px;font-size:13.5px;cursor:pointer;color:var(--ink)}
+.chip-s.on{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.resultado{display:grid;gap:6px}
+.res-box{display:flex;gap:14px;align-items:center;border-radius:12px;padding:12px 14px;background:var(--na-soft)}
+.res-box.ok{background:var(--ok-soft)} .res-box.warn{background:var(--warn-soft)} .res-box.crit{background:var(--crit-soft)}
+.res-box .res-dt{font-size:26px;font-weight:700;white-space:nowrap}
+.res-box.ok .res-dt,.res-box.ok b{color:var(--ok)} .res-box.warn .res-dt,.res-box.warn b{color:var(--warn)} .res-box.crit .res-dt,.res-box.crit b{color:var(--crit)}
+.res-box span{font-size:13.5px;color:var(--ink)}
+.res-vazio{border:1px dashed var(--line);border-radius:12px;padding:12px;font-size:14px;color:var(--muted)}
+details.como summary{cursor:pointer;font-weight:600;color:var(--accent-ink)}
+details.como ol{padding-left:20px;margin:8px 0;display:grid;gap:4px}
+table.crit{width:100%;border-collapse:collapse;font-size:13px}
+table.crit th{text-align:left;font-weight:600;color:var(--muted);padding:6px 4px;border-bottom:1px solid var(--line)}
+table.crit td{padding:6px 4px;border-bottom:1px solid var(--line)}
 .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 @media (max-width:520px){.tiles{grid-template-columns:1fr 1fr}}
 .tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px}
@@ -762,7 +781,7 @@ const ICON = {
   obs:'<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
   mic:'<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>'
 };
-const TABS = [["dados","Dados"],["visual","Inspeção"],["cor","Medições"],["termo","Termo"],["rel","Relatório"]];
+const TABS = [["dados","Dados"],["visual","Inspeção"],["cor","Medições"],["rel","Relatório"]];
 
 function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function vib(){ try{ navigator.vibrate && navigator.vibrate(8); }catch(e){} }
@@ -812,7 +831,7 @@ function atualizarChrome(){
   document.getElementById("hdTitle").textContent=titulo(S.v);
   const r=resumo(S.v); document.getElementById("progBar").style.width=(r.total?Math.round(r.feitos/r.total*100):0)+"%";
   const np=pendencias(S.v).length;
-  const bd={visual:r.nc?`<span class="bdg">${r.nc}</span>`:"", cor:r.cor?`<span class="bdg warn">${r.cor}</span>`:"", termo:r.ter?`<span class="bdg">${r.ter}</span>`:"", rel:np?`<span class="bdg warn">${np}</span>`:""};
+  const bd={visual:(r.nc+r.ter)?`<span class="bdg">${r.nc+r.ter}</span>`:"", cor:r.cor?`<span class="bdg warn">${r.cor}</span>`:"", rel:np?`<span class="bdg warn">${np}</span>`:""};
   document.getElementById("bnav").innerHTML=TABS.map(([k,l])=>`<button type="button" data-tab="${k}" aria-current="${S.tab===k}">${ICON[k]}<span>${l}</span>${bd[k]||""}</button>`).join("");
   document.getElementById("fab").hidden = !(S.tab==="visual"||S.tab==="dados");
   atualizarChipDrive();
@@ -821,13 +840,14 @@ const M=document.getElementById("main");
 function render(keep){
   const y=window.scrollY;
   atualizarChrome();
-  const fn={dados:rDados,visual:rVisual,cor:rCor,termo:rTermo,rel:rRel}[S.tab];
+  if(S.tab==="termo") S.tab="visual";
+  const fn={dados:rDados,visual:rVisual,cor:rCor,rel:rRel}[S.tab];
   const ban=[];
   if(S.novaVersao) ban.push(`<div class="banner info row">Nova versão do app instalada. <button class="btn sm" type="button" data-act="recarregar">Recarregar</button></div>`);
   if(S.tab==="dados" && /iP(hone|ad|od)/.test(navigator.userAgent) && !navigator.standalone && !(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)) ban.push(`<div class="banner info">No iPhone, use o app instalado: abra este endereço no Safari normal (não em aba privada), toque em Compartilhar e em <b>Adicionar à Tela de Início</b>. Em aba privada o Safari apaga tudo ao fechar.</div>`);
   if(S.fotoSoSessao) ban.push(`<div class="banner">O navegador não está deixando gravar fotos no aparelho (aba privada?). As fotos desta sessão somem ao fechar: gere o .docx antes, ou abra o app instalado.</div>`);
   if(S.store==="none") ban.push(`<div class="banner">O armazenamento do aparelho não está disponível neste navegador. Nada será guardado.</div>`);
-  if(S.v.carimbo && (S.tab==="visual"||S.tab==="termo") && !S.v.ident.escola) ban.push(`<div class="banner info">Preencha o nome da escola em <b>Dados</b> antes das fotos: o carimbo é gravado na hora da foto.</div>`);
+  if(S.v.carimbo && S.tab==="visual" && !S.v.ident.escola) ban.push(`<div class="banner info">Preencha o nome da escola em <b>Dados</b> antes das fotos: o carimbo é gravado na hora da foto.</div>`);
   M.innerHTML=ban.join("")+fn();
   M.querySelectorAll("textarea").forEach(autoGrow);
   if(S.tab==="dados") atualizarGPSst();
@@ -913,7 +933,8 @@ function rVisual(){
       <div class="et-b">
         ${e.opc?`<div class="et-off"><label class="sw"><input type="checkbox" data-aplica="${e.id}" ${x.on?"checked":""}>${esc(e.pergunta)}</label></div>`:""}
         ${x.on? e.itens.map(([id,m,t])=>itemHTML(id,m,t)).join("") : ""}
-      </div></section>`; }).join("")}`;
+      </div></section>`; }).join("")}
+  ${rTermoOutros()}`;
 }
 function itemHTML(id,m,t){ const st=S.v.check[id]||{}; const nf=(st.fotos||[]).length; const showObs=!!st.obs||S.obsOpen.has(id);
   return `<div class="it" id="it_${id}" data-s="${st.s||""}">
@@ -921,7 +942,8 @@ function itemHTML(id,m,t){ const st=S.v.check[id]||{}; const nf=(st.fotos||[]).l
     <div class="seg4" role="group" aria-label="Situação">${["C","NC","NA","NV"].map(s=>`<button type="button" data-item="${id}" data-v="${s}" aria-pressed="${st.s===s}">${s}</button>`).join("")}</div>
     <div class="it-x"><button type="button" class="mini ${st.obs?"has":""}" data-act="obs" data-id="${id}">${ICON.obs}Obs</button>${camBtn("c:"+id,"Foto",nf)}<button type="button" class="mini ${(st.fotos||[]).some(f=>f.audio&&f.audio.id)?"has":""}" data-mic="c:${id}">${ICON.mic}Áudio</button></div>
     <textarea data-itemobs="${id}" placeholder="Observação: local, o que foi visto, valor de placa…" rows="2" ${showObs?"":"hidden"}>${esc(st.obs||"")}</textarea>
-    ${strip(st.fotos,"c:"+id)}</div>`; }
+    ${strip(st.fotos,"c:"+id)}
+    ${m==="T"? S.v.termo.map((r,i)=>r.item===id?cardTer(r,i):"").join("")+`<button type="button" class="mini" data-act="addTer" data-ponto="${id}">${ICON.termo}+ Ponto quente</button>` : ""}</div>`; }
 function marcar(id,val){
   const st=S.v.check[id]||(S.v.check[id]={}); st.s = st.s===val? "" : val; vib();
   const it=document.getElementById("it_"+id); it.dataset.s=st.s;
@@ -974,42 +996,75 @@ function atualizarCor(i){ const r=S.v.correntes[i]; if(!r) return; const c=calcC
 /* ============================== Termografia ============================== */
 function sevTer(c){ return c.sev<0?"": c.sev===0?"ok": c.sev<=2?"warn":"crit"; }
 function pillTer(c){ return c.sev<0?"": `<span class="pill ${sevTer(c)}">${esc(c.txt)}</span>`; }
-function rTermo(){
-  const v=S.v; if(S.openTer===null && v.termo.length) S.openTer=v.termo[v.termo.length-1].id;
-  const cards=v.termo.map((r,i)=>{ const c=calcTermo(r); const open=S.openTer===r.id;
-    const slot=(k,lbl)=>{ const f=k==="ir"?r.fotoIR:r.fotoVis; return f? `<button type="button" class="slot has" data-ver="t:${i}:${k}"><img data-fid="${esc(f.id)}" src="${esc(fotoURL(f))}" alt=""><span class="lbl">${lbl}</span></button>`
+const COMPONENTES=["Disjuntor geral","Disjuntor","Barramento","Borne / conexão","Cabo","Fusível","Contator","Transformador"];
+function quadrosConhecidos(){ const v=S.v; return [...new Set([...v.correntes.map(r=>r.quadro),...v.termo.map(r=>r.local)].filter(Boolean))].slice(0,8); }
+function cardTer(r,i){ const v=S.v; const quadros=quadrosConhecidos(); const c=calcTermo(r); const open=S.openTer===r.id; const amb=r.refTipo==="ambiente";
+    const slot=(k,lbl)=>{ const f=k==="ir"?r.fotoIR:r.fotoVis; return f? `<button type="button" class="slot has" data-ver="t:${i}:${k}"><img data-fid="${esc(f.id)}" src="${esc(fotoURL(f))}" alt=""><span class="lbl">${lbl}</span>${audBadge(f.audio)}</button>`
       : `<label class="slot">${ICON.cam}<span>${lbl}</span><input type="file" accept="image/*" capture="environment" data-addph="t:${i}:${k}"></label>`; };
-    const inp=(k,l,ph,num)=>`<label class="f ${num?"num":""}"><span>${l}</span><input type="text" ${num?'inputmode="decimal"':""} enterkeyhint="next" data-ter="${i}" data-k="${k}" value="${esc(r[k]??"")}" placeholder="${ph||""}" autocomplete="off"></label>`;
+    const inp=(k,l,ph,num,extra)=>`<label class="f ${num?"num":""}"><span>${l}</span><input type="text" ${num?'inputmode="decimal"':""} enterkeyhint="next" data-ter="${i}" data-k="${k}" value="${esc(r[k]??"")}" placeholder="${ph||""}" autocomplete="off" ${extra||""}></label>`;
+    const chips=(lista,k)=>lista.length?`<div class="chips">${lista.map(x=>`<button type="button" class="chip-s ${r[k]===x?"on":""}" data-act="terChip" data-i="${i}" data-k="${k}" data-v="${esc(x)}">${esc(x)}</button>`).join("")}</div>`:"";
+    const med=v.correntes.find(m=>m.quadro && r.local && m.quadro.trim().toLowerCase()===r.local.trim().toLowerCase() && (m.ia||m.ib||m.ic));
     return `<div class="mc" data-sev="${sevTer(c)}" data-open="${open}" id="tc_${esc(r.id)}">
       <button class="mc-h" type="button" data-act="toggleTer" data-id="${esc(r.id)}"><span class="l1"><span id="terT_${i}">${esc(r.local||"Ponto "+(i+1))}${r.componente?" · "+esc(r.componente):""}</span><span id="terPill_${i}">${pillTer(c)}</span></span>
         <span class="l2" id="terL2_${i}">${resumoTer(r,c)}</span></button>
       <div class="mc-b">
-        <div class="slots">${slot("ir","Termograma")}${slot("vis","Foto visual")}</div>
-        <div class="g2">${inp("local","Local","QGBT – bloco adm.")}${inp("componente","Componente","Borne fase C")}</div>
-        <div class="g2">${inp("tmax","T máx. (°C)","",1)}${inp("tref","T referência (°C)","",1)}</div>
-        <div class="seg2" role="group" aria-label="Referência de temperatura"><button type="button" data-act="refTipo" data-i="${i}" data-v="similar" aria-pressed="${r.refTipo!=="ambiente"}">vs. fase similar</button><button type="button" data-act="refTipo" data-i="${i}" data-v="ambiente" aria-pressed="${r.refTipo==="ambiente"}">vs. ambiente</button></div>
-        <div class="g2">${inp("iMed","Corrente agora (A)","",1)}${inp("iNom","Corrente nominal (A)","",1)}</div>
-        <div class="res" id="terRes_${i}">${resTer(c)}</div>
-        <input type="text" data-ter="${i}" data-k="obs" value="${esc(r.obs||"")}" placeholder="Causa provável, condição da conexão" aria-label="Observação" enterkeyhint="done">
+        <div class="passo"><b>1</b> Fotografe a tela da câmera térmica e o mesmo ponto em foto comum</div>
+        <div class="slots">${slot("ir","Termograma")}${slot("vis","Foto comum")}</div>
+        <div class="passo"><b>2</b> Onde está o ponto quente?</div>
+        ${inp("local","Quadro ou local","QGBT – bloco administrativo")}
+        ${chips(quadros,"local")}
+        ${inp("componente","Componente","Borne do disjuntor geral, fase C")}
+        ${chips(COMPONENTES,"componente")}
+        <div class="passo"><b>3</b> Temperaturas lidas na câmera</div>
+        ${inp("tmax","Ponto mais quente (°C)","58",1)}
+        <div class="lead" style="margin-top:-2px">Comparar com:</div>
+        <div class="seg2" role="group" aria-label="Referência de comparação"><button type="button" data-act="refTipo" data-i="${i}" data-v="similar" aria-pressed="${!amb}">A mesma peça em outra fase</button><button type="button" data-act="refTipo" data-i="${i}" data-v="ambiente" aria-pressed="${amb}">A temperatura do ar</button></div>
+        ${inp("tref",amb?"Temperatura do ar no local (°C)":"Temperatura da mesma peça em outra fase (°C)",amb?(v.ident.tAmb||"32"):"36",1)}
+        <p class="lead">${amb?"Use quando não há peça igual para comparar (ex.: cabo único, transformador). Leia a temperatura do ar perto do quadro.":"Preferível: compare com a peça igual que está fria. Ex.: borne da fase C a 58 °C e borne da fase A a 36 °C."}</p>
+        <div class="resultado" id="terRes_${i}">${resTer(c,r)}</div>
+        <div class="passo"><b>4</b> Carga no momento <span class="status">(confirma se a leitura vale)</span></div>
+        <div class="g2">${inp("iMed","Corrente medida agora (A)","",1)}${inp("iNom","Corrente nominal do disjuntor (A)","",1)}</div>
+        ${med?`<button type="button" class="btn sm" data-act="terMed" data-i="${i}">Usar a medição do ${esc(med.quadro)}${med.circuito?" – "+esc(med.circuito):""}</button>`:""}
+        <p class="lead">Com o circuito pouco carregado (abaixo de 40% da nominal) o aquecimento aparece menor do que é: registre assim mesmo, o relatório avisa.</p>
+        <input type="text" data-ter="${i}" data-k="obs" value="${esc(r.obs||"")}" placeholder="Observação: causa provável, aperto, oxidação, cabo subdimensionado…" aria-label="Observação" enterkeyhint="done">
         ${audBox("ter:"+i,r.audio)}
         <div class="row" style="justify-content:space-between"><button type="button" class="mini ${r.audio&&r.audio.id?"has":""}" data-mic="ter:${i}">${ICON.mic}${r.audio&&r.audio.id?"Regravar áudio":"Gravar áudio"}</button><button class="btn sm ghost danger" type="button" data-act="delTer" data-i="${i}">Excluir ponto</button></div>
-      </div></div>`; }).join("");
-  return `<section class="card"><div class="card-h"><h2>Termografia</h2><span class="status">câmera termográfica</span></div>
-    <p class="lead">Temperatura máxima e uma referência: a mesma peça em outra fase (preferível) ou o ar ambiente. Classificação pela ANSI/NETA MTS, Tabela 100.18.</p></section>
-  ${cards || `<div class="empty">Nenhum ponto. Comece pelo quadro geral sob carga.</div>`}
-  <div class="g2"><button class="btn pri" type="button" data-act="addTer" data-mesmo="1" ${v.termo.length?"":"hidden"}>+ Mesmo local</button><button class="btn ${v.termo.length?"":"pri"}" type="button" data-act="addTer">+ Novo ponto</button></div>
-  <details class="card"><summary>Critérios <small>NETA 100.18</small></summary>
-    <p class="lead"><b>vs. fase similar:</b> ΔT 1–3 °C possível deficiência (investigar) · 4–15 °C provável (reparar quando possível) · acima de 15 °C grave (reparar imediatamente).</p>
-    <p class="lead"><b>vs. ambiente:</b> 1–10 °C possível · 11–20 °C provável · 21–40 °C deficiência (monitorar) · acima de 40 °C grave.</p>
-    <p class="lead">Válido com carga a partir de 40% da nominal; meça a corrente com o alicate no mesmo ponto.</p></details>`;
+      </div></div>`; }
+function itemAtivo(id){ return itensAtivos(S.v).some(x=>x.id===id); }
+function rTermoOutros(){
+  const v=S.v; const soltos=v.termo.map((r,i)=>[r,i]).filter(([r])=>!r.item||!itemAtivo(r.item));
+  return `<section class="card" id="secTermo"><div class="card-h"><h3>Termografia – outros pontos quentes</h3><span class="status">${v.termo.length} ponto(s) no total</span></div>
+    <p class="lead">Pontos quentes dos itens marcados <span class="tag T">Câmera</span> ficam no próprio item (botão <b>+ Ponto quente</b>). Aqui entram os que não se encaixam em nenhum item.</p>
+    <details class="como"><summary>Como funciona a termografia</summary>
+      <ol class="lead">
+        <li>Com o quadro aberto e ligado, passe a câmera térmica por disjuntores, bornes e barramentos.</li>
+        <li>Achou um ponto mais quente que os vizinhos? Toque em <b>+ Ponto quente</b> no item e fotografe.</li>
+        <li>Anote a temperatura do ponto quente e a da mesma peça em outra fase (ou a do ar).</li>
+        <li>A diferença entre as duas (ΔT) define a gravidade, pela norma americana ANSI/NETA MTS (Tabela 100.18). Se nada estiver anormal, marque o item como C.</li>
+      </ol>
+      <table class="crit"><thead><tr><th>Diferença (ΔT)</th><th>vs. outra fase</th><th>vs. ar</th></tr></thead><tbody>
+        <tr><td><span class="pill warn">Investigar</span></td><td>1 a 3 °C</td><td>1 a 10 °C</td></tr>
+        <tr><td><span class="pill warn">Reparar quando possível</span></td><td>4 a 15 °C</td><td>11 a 20 °C</td></tr>
+        <tr><td><span class="pill crit">Monitorar até corrigir</span></td><td>–</td><td>21 a 40 °C</td></tr>
+        <tr><td><span class="pill crit">Reparar imediatamente</span></td><td>acima de 15 °C</td><td>acima de 40 °C</td></tr></tbody></table>
+    </details>
+    ${soltos.map(([r,i])=>cardTer(r,i)).join("")}
+    <button class="btn" type="button" data-act="addTer">+ Outro ponto quente</button></section>`;
 }
 function resumoTer(r,c){ const p=[]; if(r.tmax) p.push("Tmáx "+r.tmax+" °C"); if(c.dt!=null) p.push("ΔT "+fmt(c.dt,1)+" °C "+(r.refTipo==="ambiente"?"(amb.)":"(sim.)")); if(c.carga!=null) p.push("carga "+fmt(c.carga,0)+"%");
   const nf=(r.fotoIR?1:0)+(r.fotoVis?1:0); if(nf) p.push(nf+" foto"+(nf>1?"s":"")); if(r.audio&&r.audio.id) p.push("áudio "+fmtDur(r.audio.dur)); return esc(p.join(" · ")||"toque para preencher"); }
-function resTer(c){ return (c.sev<0?`<span class="status">Informe T máx. e referência</span>`:pillTer(c)+(c.dt!=null?`<span class="mono">ΔT ${fmt(c.dt,1)} °C</span><span>${esc(c.acao)}</span>`:""))+(c.carga!=null?`<span class="mono">carga ${fmt(c.carga,0)}%</span>`:"")+(c.baixaCarga?`<span class="pill warn">carga &lt; 40%</span>`:""); }
+function resTer(c,r){
+  if(c.sev<0) return `<div class="res-vazio">Preencha as duas temperaturas para ver a gravidade.</div>`;
+  const tom=sevTer(c)||"na"; const ref=r&&r.refTipo==="ambiente"?"o ar":"a outra fase";
+  return `<div class="res-box ${tom}"><div class="res-dt mono">ΔT ${fmt(c.dt,1)} °C</div><div><b>${esc(c.sev===0?"Normal":c.txt)}</b><br><span>${esc(c.sev===0?"Diferença menor que 1 °C em relação a "+ref+".":c.acao+". Ponto "+fmt(c.dt,1)+" °C mais quente que "+ref+".")}</span></div></div>`
+   + (c.carga!=null? `<div class="status">Carga no momento: ${fmt(c.carga,0)}% da nominal${c.baixaCarga?" – abaixo de 40%: a gravidade real pode ser maior.":"."}</div>` : `<div class="status">Sem a carga informada (passo 4), o relatório indica que a gravidade pode estar subestimada.</div>`);
+}
 function atualizarTer(i){ const r=S.v.termo[i]; if(!r) return; const c=calcTermo(r);
   const set=(id,h)=>{ const el=document.getElementById(id); if(el) el.innerHTML=h; };
-  set("terPill_"+i,pillTer(c)); set("terT_"+i,esc(r.local||"Ponto "+(i+1))+(r.componente?" · "+esc(r.componente):"")); set("terL2_"+i,resumoTer(r,c)); set("terRes_"+i,resTer(c));
-  const card=document.getElementById("tc_"+r.id); if(card) card.dataset.sev=sevTer(c); atualizarChrome(); }
+  set("terPill_"+i,pillTer(c)); set("terT_"+i,esc(r.local||"Ponto "+(i+1))+(r.componente?" · "+esc(r.componente):"")); set("terL2_"+i,resumoTer(r,c)); set("terRes_"+i,resTer(c,r));
+  const card=document.getElementById("tc_"+r.id); if(card) card.dataset.sev=sevTer(c);
+  if(r.item && c.sev>=2){ const st=S.v.check[r.item]||(S.v.check[r.item]={}); if(!st.s){ st.s="NC"; const it=document.getElementById("it_"+r.item); if(it){ it.dataset.s="NC"; it.querySelectorAll(".seg4 button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v==="NC"))); } } }
+  atualizarChrome(); }
 
 /* ============================== Relatório ============================== */
 function rRel(){
@@ -1134,10 +1189,16 @@ document.addEventListener("click", async ev=>{
   if(act==="addCor"){ const ant=S.v.correntes[S.v.correntes.length-1]; const r={id:uid8()}; if(b.dataset.mesmo && ant){ r.quadro=ant.quadro; } S.v.correntes.push(r); S.openCor=r.id; agendarSalvar(); render(true);
     const el=document.getElementById("mc_"+r.id); if(el){ el.scrollIntoView({block:"center"}); const f=el.querySelector(b.dataset.mesmo?'input[data-k="circuito"]':'input[data-k="quadro"]'); f&&f.focus(); } return; }
   if(act==="delCor"){ if(await confirmar("Excluir esta medição?")){ S.v.correntes.splice(+b.dataset.i,1); agendarSalvar(); render(true); } return; }
-  if(act==="addTer"){ const ant=S.v.termo[S.v.termo.length-1]; const r={id:uid8(),refTipo:"similar"}; if(b.dataset.mesmo && ant){ r.local=ant.local; } S.v.termo.push(r); S.openTer=r.id; agendarSalvar(); render(true);
+  if(act==="addTer"){ const ant=S.v.termo[S.v.termo.length-1]; const r={id:uid8(),refTipo:"similar"}; if(b.dataset.ponto) r.item=b.dataset.ponto;
+    const ultQ=(ant&&ant.local)||((S.v.correntes[S.v.correntes.length-1]||{}).quadro)||""; if(ultQ && (b.dataset.mesmo||r.item)) r.local=ultQ;
+    if(r.item==="e5"||r.item==="s5") r.componente=r.item==="e5"?"Disjuntor geral":"Transformador";
+    S.v.termo.push(r); S.openTer=r.id; agendarSalvar(); render(true);
     const el=document.getElementById("tc_"+r.id); el && el.scrollIntoView({block:"center"}); return; }
   if(act==="delTer"){ if(await confirmar("Excluir este ponto e suas fotos?")){ const r=S.v.termo[+b.dataset.i]; [r.fotoIR,r.fotoVis].forEach(f=>{ if(f&&f.id) idbDel("fotos",f.id).catch(()=>{}); }); S.v.termo.splice(+b.dataset.i,1); agendarSalvar(); render(true); } return; }
-  if(act==="refTipo"){ const i=+b.dataset.i; S.v.termo[i].refTipo=b.dataset.v; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); agendarSalvar(); atualizarTer(i); return; }
+  if(act==="refTipo"){ const i=+b.dataset.i, r=S.v.termo[i]; if(r.refTipo!==b.dataset.v){ r.refTipo=b.dataset.v; if(b.dataset.v==="ambiente" && S.v.ident.tAmb && !r.tref) r.tref=S.v.ident.tAmb; } agendarSalvar(); render(true); return; }
+  if(act==="terChip"){ const i=+b.dataset.i, r=S.v.termo[i]; r[b.dataset.k]=b.dataset.v; agendarSalvar(); render(true); return; }
+  if(act==="terMed"){ const i=+b.dataset.i, r=S.v.termo[i]; const m=S.v.correntes.find(x=>x.quadro && r.local && x.quadro.trim().toLowerCase()===r.local.trim().toLowerCase() && (x.ia||x.ib||x.ic));
+    if(m){ const f=[m.ia,m.ib,m.ic].map(n).filter(x=>x!=null); r.iMed=String(Math.max(...f)).replace(".",","); if(m.disjIn) r.iNom=m.disjIn; agendarSalvar(); render(true); } return; }
   if(act==="novaNota"||act==="fabNotaTxt"){ fecharSheet(); const nt=novaNota(); if(S.tab!=="visual") S.tab="visual"; render(); focarNota(nt.id); return; }
   if(act==="delNota"){ if(!(await confirmar("Excluir este registro de campo e suas fotos?"))) return; const i=S.v.notas.findIndex(x=>x.id===b.dataset.id); if(i>=0){ (S.v.notas[i].fotos||[]).forEach(f=>idbDel("fotos",f.id).catch(()=>{})); S.v.notas.splice(i,1); } agendarSalvar(); render(true); return; }
   if(b.id==="fab"){ document.getElementById("sheet").hidden=false; return; }
