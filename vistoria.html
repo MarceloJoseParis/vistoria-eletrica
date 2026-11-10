@@ -47,7 +47,13 @@ button,input,select,textarea{font:inherit;color:inherit}
 .mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 
 /* cabeçalho */
-.hd{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--line);padding:calc(env(safe-area-inset-top) + 8px) 12px 0;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.hd{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--line);padding:calc(env(safe-area-inset-top) + 8px) 12px 0;display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center}
+.drv{min-height:36px;border-radius:999px;border:1px solid var(--line);background:var(--soft);font-size:12.5px;font-weight:600;padding:4px 10px;display:inline-flex;gap:5px;align-items:center;cursor:pointer;white-space:nowrap;color:var(--ink)}
+.drv[hidden]{display:none}
+.drv svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.drv.ok{color:var(--ok);background:var(--ok-soft);border-color:transparent}
+.drv.warn{color:var(--warn);background:var(--warn-soft);border-color:transparent}
+.drv.crit{color:var(--crit);background:var(--crit-soft);border-color:transparent}
 .hd-t{display:grid;text-align:left;border:0;background:none;padding:2px 0 6px;min-width:0;cursor:pointer}
 .hd-title{font-family:var(--f-display);font-weight:600;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hd-title::after{content:" ▾";color:var(--muted);font-size:13px}
@@ -213,6 +219,7 @@ details.card > summary small{font-family:var(--f-body);font-weight:400;font-size
 .vw-bot input{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff}
 .vw-acts{display:grid;grid-template-columns:auto 1fr 1fr auto;gap:8px}
 .vw-acts .del{color:#FF9A8F}
+.vw-link{color:#F6C27A;font-weight:600}
 .vw-hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:12px;color:#aab}
 
 dialog{border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--ink);padding:0;max-width:560px;width:calc(100% - 24px)}
@@ -231,6 +238,7 @@ dialog::backdrop{background:rgba(8,12,16,.55)}
     <span class="hd-title" id="hdTitle">Nova vistoria</span>
     <span class="hd-sub"><span id="saveState">Carregando…</span><span class="net" id="netSt">…</span></span>
   </button>
+  <button class="drv" id="drvChip" type="button" hidden></button>
   <button class="icon-btn" id="btnNew" type="button" aria-label="Nova vistoria" title="Nova vistoria">+</button>
   <div class="prog" aria-hidden="true"><i id="progBar"></i></div>
 </header>
@@ -260,6 +268,7 @@ dialog::backdrop{background:rgba(8,12,16,.55)}
   <div class="vw-bot">
     <div class="vw-cap" id="vwCap"></div>
     <div class="vw-meta" id="vwMeta"></div>
+    <div class="vw-meta"><span id="vwQual"></span> <a id="vwDrive" class="vw-link" target="_blank" rel="noopener" hidden>Abrir original no Drive</a></div>
     <input type="text" id="vwLeg" placeholder="Legenda (opcional, entra no relatório)" aria-label="Legenda da foto">
     <div class="vw-acts"><button type="button" id="vwPrev" aria-label="Foto anterior">‹</button><button type="button" id="vwShare">Compartilhar</button><button type="button" id="vwDel" class="del">Excluir</button><button type="button" id="vwNext" aria-label="Próxima foto">›</button></div>
   </div>
@@ -462,7 +471,7 @@ async function guardarBlob(r){
   catch(e){ S.fotoSoSessao=true; toastSave("Foto mantida só enquanto o app estiver aberto: o navegador não deixou gravar no aparelho",true); }
   return {id,w:r.w,h:r.h,leg:""};
 }
-function blobDe(r){ if(!r) return null; if(r.blob instanceof Blob) return r.blob; if(r.buf) return new Blob([r.buf],{type:r.type||"image/jpeg"}); return null; }
+function blobDe(r){ if(!r) return null; if(r.blob instanceof Blob) return r.blob; if(r.buf) return new Blob([r.buf],{type:r.type||"image/jpeg"}); if(r.prev) return new Blob([r.prev],{type:"image/jpeg"}); return null; }
 function msgErro(e){ return (e&&e.message)||(e&&e.name)||(e?String(e):"erro desconhecido"); }
 async function abrirImagem(file){
   if(window.createImageBitmap){ try{ return await createImageBitmap(file,{imageOrientation:"from-image"}); }catch(e){ try{ return await createImageBitmap(file); }catch(e2){} } }
@@ -775,6 +784,7 @@ function atualizarChrome(){
   const bd={visual:r.nc?`<span class="bdg">${r.nc}</span>`:"", cor:r.cor?`<span class="bdg warn">${r.cor}</span>`:"", termo:r.ter?`<span class="bdg">${r.ter}</span>`:"", rel:np?`<span class="bdg warn">${np}</span>`:""};
   document.getElementById("bnav").innerHTML=TABS.map(([k,l])=>`<button type="button" data-tab="${k}" aria-current="${S.tab===k}">${ICON[k]}<span>${l}</span>${bd[k]||""}</button>`).join("");
   document.getElementById("fab").hidden = !(S.tab==="visual"||S.tab==="dados");
+  atualizarChipDrive();
 }
 const M=document.getElementById("main");
 function render(keep){
@@ -790,6 +800,7 @@ function render(keep){
   M.innerHTML=ban.join("")+fn();
   M.querySelectorAll("textarea").forEach(autoGrow);
   if(S.tab==="dados") atualizarGPSst();
+  if(S.tab==="rel") mostrarUso();
   if(keep) window.scrollTo(0,y);
 }
 function autoGrow(t){ t.style.height="auto"; t.style.height=Math.min(t.scrollHeight+2,420)+"px"; }
@@ -990,7 +1001,7 @@ function rRel(){
 }
 
 /* ============================== Visualizador de fotos ============================== */
-const VW={el:document.getElementById("vw"), img:document.getElementById("vwImg"), stage:document.getElementById("vwStage"), list:[], i:0, s:1, x:0, y:0, ptr:new Map(), start:null, lastTap:0, swipeX:0};
+const VW={tok:0, el:document.getElementById("vw"), img:document.getElementById("vwImg"), stage:document.getElementById("vwStage"), list:[], i:0, s:1, x:0, y:0, ptr:new Map(), start:null, lastTap:0, swipeX:0};
 function abrirVisualizador(pref){
   VW.list=listaFotos(S.v); VW.i=Math.max(0,VW.list.findIndex(o=>o.pref===pref)); if(!VW.list.length) return;
   VW.el.hidden=false; document.body.style.overflow="hidden"; try{ history.pushState({vw:1},""); }catch(e){}
@@ -1005,7 +1016,21 @@ function mostrarFoto(){
   document.getElementById("vwCap").textContent=o.cap.split(" – ").slice(0,2).join(" – ");
   const m=o.f.meta; document.getElementById("vwMeta").textContent=m? [m.dt?dtBR(new Date(m.dt)):"", m.lat!=null?fmtCoord(m.lat,m.lon)+" ("+m.gpsFonte+")":"sem coordenadas"].filter(Boolean).join(" · ") : "";
   document.getElementById("vwLeg").value=o.f.leg||"";
+  carregarAlta(o,++VW.tok);
   document.getElementById("vwPrev").disabled=VW.i===0; document.getElementById("vwNext").disabled=VW.i===VW.list.length-1;
+}
+async function carregarAlta(o,tk){
+  const st=document.getElementById("vwQual"), link=document.getElementById("vwDrive"); st.textContent=""; link.hidden=true;
+  let r=null; try{ r=await idbGet("fotos",o.f.id); }catch(e){}
+  if(VW.tok!==tk) return;
+  const did=(r&&r.driveId)||((S.v.drive&&S.v.drive.fotos)||{})[o.f.id];
+  if(did){ link.href="https://drive.google.com/file/d/"+did+"/view"; link.hidden=false; }
+  if(!r || r.buf || r.blob || !r.prev) return;
+  if(!navigator.onLine){ st.textContent="Prévia reduzida (sem internet). Original no Drive."; return; }
+  if(!tokenOk()){ st.textContent="Prévia reduzida. Original no Drive."; return; }
+  st.textContent="Carregando o original do Drive…";
+  try{ const b=await fotoAlta(o.f); if(VW.tok!==tk) return; if(b){ VW.img.src=URL.createObjectURL(b); st.textContent="Original do Drive"; } else st.textContent="Prévia reduzida. Original no Drive."; }
+  catch(e){ if(VW.tok===tk) st.textContent="Não foi possível baixar o original; mostrando a prévia."; }
 }
 function aplicarZoom(){ VW.img.style.transform=`translate(${VW.x}px,${VW.y}px) scale(${VW.s})`; }
 function limitarPan(){ const r=VW.img.getBoundingClientRect(), st=VW.stage.getBoundingClientRect(); const w=r.width/VW.s, h=r.height/VW.s;
@@ -1034,10 +1059,10 @@ document.getElementById("vwPrev").onclick=()=>{ if(VW.i>0){ VW.i--; mostrarFoto(
 document.getElementById("vwNext").onclick=()=>{ if(VW.i<VW.list.length-1){ VW.i++; mostrarFoto(); } };
 document.getElementById("vwLeg").addEventListener("input",e=>{ const o=VW.list[VW.i]; if(!o) return; o.f.leg=e.target.value; agendarSalvar(); });
 document.getElementById("vwDel").onclick=async()=>{ const o=VW.list[VW.i]; if(!o) return;
-  if(!(await confirmar("Excluir a foto "+o.num+"? Ela sai do relatório e do aparelho."))) return;
+  if(!(await confirmar("Excluir a foto "+o.num+" do app e do relatório?"+(((S.v.drive&&S.v.drive.fotos)||{})[o.f.id]?" A cópia que já está no Google Drive continua lá.":"")))) return;
   removerFoto(o.pref); agendarSalvar(); VW.list=listaFotos(S.v); if(!VW.list.length){ fecharVisualizador(); return; } VW.i=Math.min(VW.i,VW.list.length-1); mostrarFoto(); };
 document.getElementById("vwShare").onclick=async()=>{ const o=VW.list[VW.i]; if(!o) return;
-  try{ const b=await fotoBlob(o.f); const nome="foto_"+o.num+"_"+(S.v.ident.convenio||"vistoria")+".jpg"; const f=new File([b],nome,{type:"image/jpeg"});
+  try{ const b=(await fotoAlta(o.f).catch(()=>null))||await fotoBlob(o.f); const nome="foto_"+o.num+"_"+(S.v.ident.convenio||"vistoria")+".jpg"; const f=new File([b],nome,{type:"image/jpeg"});
     if(navigator.canShare && navigator.canShare({files:[f]})) await navigator.share({files:[f],title:nome});
     else { const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download=nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),30000); } }catch(e){} };
 window.addEventListener("popstate",()=>{ if(!VW.el.hidden) fecharVisualizador(true); });
@@ -1090,6 +1115,7 @@ document.addEventListener("click", async ev=>{
   if(act==="cpTxt"){ try{ await navigator.clipboard.writeText(S.v.rel.texto||rascunhoAuto(S.v)); document.getElementById("dlSt").textContent="Texto copiado."; }catch(e){ document.getElementById("dlSt").textContent="Não foi possível copiar."; } return; }
   if(b.id==="btnNew"){ if(!(await confirmar("Começar uma nova vistoria? A atual fica salva na lista."))) return; await salvarAgora(); S.v=novaVistoria({fiscal:S.v.ident.fiscal,cargo:S.v.ident.cargo}); S.list.unshift(S.v); S.openEt=null; S.openCor=null; S.openTer=null; S.tab="dados"; agendarSalvar(); render(); return; }
   if(b.id==="btnList"){ abrirLista(); return; }
+  if(b.id==="drvChip"){ tocarChipDrive(); return; }
   if(b.id==="dlgClose"){ document.getElementById("dlgList").close(); return; }
   if(b.id==="bkExp"){ exportarBackup(); return; }
   if(b.dataset.open){ await salvarAgora(); const x=S.list.find(v=>v.id===b.dataset.open); if(x){ S.v=x; normalizar(x); try{localStorage.setItem("vistoriaEletrica.cur",x.id);}catch(e){} } document.getElementById("dlgList").close(); S.openEt=null; S.openCor=null; S.openTer=null; render(); return; }
@@ -1103,7 +1129,7 @@ function focarNota(id){ const ta=document.querySelector(`textarea[data-notatxt="
 document.getElementById("fabFile").addEventListener("change",async e=>{ const file=e.target.files&&e.target.files[0]; e.target.value=""; if(!file) return;
   let tgt="g", nid=null; if(S.fabMode==="fabNota"){ const nt=novaNota(); nid=nt.id; tgt="n:"+nt.id; }
   toastSave("Processando foto…");
-  try{ const f=await guardarFoto(file,tgt); colocarFoto(tgt,f); agendarSalvar(); }catch(er){ toastSave("Não foi possível ler a imagem: "+msgErro(er),true); }
+  try{ const f=await guardarFoto(file,tgt); colocarFoto(tgt,f); agendarSalvar(); agendarSync(2500); }catch(er){ toastSave("Não foi possível ler a imagem: "+msgErro(er),true); }
   if(nid){ S.tab="visual"; render(); focarNota(nid); } else render(true);
 });
 document.addEventListener("input", ev=>{
@@ -1122,11 +1148,13 @@ document.addEventListener("input", ev=>{
 document.addEventListener("change", async ev=>{
   const el=ev.target;
   if(el.id==="bkImp" && el.files && el.files[0]){ importarBackup(el.files[0]); return; }
+  if(el.id==="liberar"){ try{ localStorage.setItem(LS_LIB,el.checked?"1":"0"); }catch(e){} if(el.checked && tokenOk() && navigator.onLine) sincronizarDrive(true); return; }
+  if(el.id==="autoDrive"){ setAuto(el.checked); if(el.checked){ if(tokenOk()) sincronizarDrive(); else { try{ await pedirToken(); sincronizarDrive(); }catch(e){ drvSt(esc(msgErro(e))+". Toque em Enviar agora para autorizar.",true); } } } atualizarCardDrive(); return; }
   if(el.id==="carimbo"){ S.v.carimbo=el.checked; agendarSalvar(); return; }
   if(el.dataset.aplica){ S.v.aplica[el.dataset.aplica]=el.checked; S.openEt=el.dataset.aplica; agendarSalvar(); render(true); return; }
   if(el.dataset.addph && el.files && el.files[0]){
     const tgt=el.dataset.addph, file=el.files[0]; const lab=el.closest("label"); if(lab) lab.style.opacity=".5"; toastSave("Processando foto…");
-    try{ const f=await guardarFoto(file,tgt); colocarFoto(tgt,f); agendarSalvar(); }catch(e){ toastSave("Não foi possível ler a imagem: "+msgErro(e), true); }
+    try{ const f=await guardarFoto(file,tgt); colocarFoto(tgt,f); agendarSalvar(); agendarSync(2500); }catch(e){ toastSave("Não foi possível ler a imagem: "+msgErro(e), true); }
     render(true); return; }
 });
 document.addEventListener("keydown", ev=>{
@@ -1138,8 +1166,15 @@ document.addEventListener("keydown", ev=>{
 
 /* ============================== Google Drive ============================== */
 /* Envio direto do aparelho para o Drive do próprio usuário (escopo drive.file: o app só enxerga o que ele mesmo criou).
-   Usa o mesmo cadastro OAuth do fiscaliza-coipt (mesmo endereço marcelojoseparis.github.io), sem passar pelo servidor dele. */
-const DRIVE={clientId:"419096828771-os28t8sam1uak8b1oknur322ojq5b19p.apps.googleusercontent.com", scope:"https://www.googleapis.com/auth/drive.file", token:null, exp:0, tc:null, gis:null, enviando:false};
+   Usa o mesmo cadastro OAuth do fiscaliza-coipt (mesmo endereço marcelojoseparis.github.io), sem passar pelo servidor dele.
+   Fotos ficam SEMPRE no aparelho; a fila sobe sozinha quando há internet e autorização válida (cerca de 1 hora por autorização). */
+const DRIVE={clientId:"419096828771-os28t8sam1uak8b1oknur322ojq5b19p.apps.googleusercontent.com", scope:"https://www.googleapis.com/auth/drive.file",
+  token:null, exp:0, gis:null, rodando:false, denovo:false, precisaAuth:false, erro:"", ultimo:0};
+const LS_TOK="vistoriaEletrica.driveToken", LS_AUTO="vistoriaEletrica.autoDrive", LS_RAIZ="vistoriaEletrica.driveRaiz";
+try{ const t=JSON.parse(localStorage.getItem(LS_TOK)||"null"); if(t&&t.exp>Date.now()){ DRIVE.token=t.token; DRIVE.exp=t.exp; } }catch(e){}
+function autoLigado(){ try{ return localStorage.getItem(LS_AUTO)==="1"; }catch(e){ return false; } }
+function setAuto(on){ try{ localStorage.setItem(LS_AUTO,on?"1":"0"); }catch(e){} atualizarChipDrive(); }
+function tokenOk(){ return !!DRIVE.token && Date.now()<DRIVE.exp; }
 function carregarGIS(){
   if(DRIVE.gis) return DRIVE.gis;
   DRIVE.gis=new Promise((res,rej)=>{ if(window.google&&google.accounts&&google.accounts.oauth2) return res();
@@ -1147,27 +1182,31 @@ function carregarGIS(){
   return DRIVE.gis;
 }
 function drvSt(t,err){ const el=document.getElementById("drvSt"); if(el){ el.innerHTML=t; el.style.color=err?"var(--crit)":""; } }
+/* chamar SÓ a partir de um toque: o navegador bloqueia a janela do Google sem gesto */
 function pedirToken(){
   return new Promise((res,rej)=>{
-    if(DRIVE.token && Date.now()<DRIVE.exp) return res(DRIVE.token);
-    if(!(window.google&&google.accounts&&google.accounts.oauth2)) return rej(new Error("login do Google ainda carregando; toque de novo em alguns segundos"));
+    if(tokenOk()) return res(DRIVE.token);
+    if(!(window.google&&google.accounts&&google.accounts.oauth2)){ carregarGIS().catch(()=>{}); return rej(new Error("login do Google carregando; toque de novo em alguns segundos")); }
     const tc=google.accounts.oauth2.initTokenClient({client_id:DRIVE.clientId, scope:DRIVE.scope,
-      callback:r=>{ if(r&&r.access_token){ DRIVE.token=r.access_token; DRIVE.exp=Date.now()+((+r.expires_in||3600)-120)*1000; res(DRIVE.token); } else rej(new Error((r&&(r.error_description||r.error))||"autorização não concedida")); },
+      callback:r=>{ if(r&&r.access_token){ DRIVE.token=r.access_token; DRIVE.exp=Date.now()+((+r.expires_in||3600)-120)*1000; DRIVE.precisaAuth=false;
+          try{ localStorage.setItem(LS_TOK,JSON.stringify({token:DRIVE.token,exp:DRIVE.exp})); }catch(e){} res(DRIVE.token); }
+        else rej(new Error((r&&(r.error_description||r.error))||"autorização não concedida")); },
       error_callback:e=>rej(new Error(e&&e.type==="popup_closed"?"janela do Google fechada antes de autorizar":(e&&(e.message||e.type))||"falha no login do Google"))});
-    tc.requestAccessToken({prompt:DRIVE.token?"":"consent"});
+    tc.requestAccessToken();
   });
 }
 async function driveFetch(url,opts={}){
+  if(!tokenOk()){ DRIVE.precisaAuth=true; const e=new Error("autorização do Google expirada"); e.auth=true; throw e; }
   opts.headers=Object.assign({},opts.headers,{Authorization:"Bearer "+DRIVE.token});
-  const r=await fetch(url,opts);
+  let r; try{ r=await fetch(url,opts); }catch(e){ const x=new Error("sem conexão com o Google"); x.rede=true; throw x; }
   if(r.ok) return r.status===204? null : r.json();
   let j=null; try{ j=await r.json(); }catch(e){}
   const err=(j&&j.error)||{}; const motivo=(err.errors&&err.errors[0]&&err.errors[0].reason)||err.status||"";
-  if(r.status===401){ DRIVE.token=null; throw new Error("a autorização do Google expirou; toque em Enviar de novo"); }
-  if(/accessNotConfigured|SERVICE_DISABLED/i.test(motivo)||/has not been used|is disabled/i.test(err.message||"")){
-    const e=new Error("a API do Google Drive não está ativada no projeto do Google Cloud"); e.ativar=true; throw e; }
+  if(r.status===401){ DRIVE.token=null; DRIVE.precisaAuth=true; try{ localStorage.removeItem(LS_TOK); }catch(e){} const e=new Error("autorização do Google expirada"); e.auth=true; throw e; }
+  if(/accessNotConfigured|SERVICE_DISABLED/i.test(motivo)||/has not been used|is disabled/i.test(err.message||"")){ const e=new Error("a API do Google Drive não está ativada no projeto do Google Cloud"); e.ativar=true; throw e; }
   if(r.status===404){ const e=new Error("item não encontrado no Drive"); e.nf=true; throw e; }
-  if(/storageQuotaExceeded/i.test(motivo)) throw new Error("o Google Drive está cheio");
+  if(/storageQuotaExceeded/i.test(motivo)){ const e=new Error("o Google Drive está cheio"); e.grave=true; throw e; }
+  if(r.status>=500||r.status===429){ const e=new Error("Google ocupado, nova tentativa em seguida"); e.rede=true; throw e; }
   throw new Error((err.message||("erro "+r.status))+" (Drive)");
 }
 const qEsc=s=>String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
@@ -1178,59 +1217,166 @@ async function pastaDrive(nome,pai){
   const c=await driveFetch("https://www.googleapis.com/drive/v3/files?fields=id",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:nome,mimeType:"application/vnd.google-apps.folder",parents:pai?[pai]:undefined})});
   return c.id;
 }
+async function existeDrive(id){ try{ const j=await driveFetch("https://www.googleapis.com/drive/v3/files/"+id+"?fields=id,trashed"); return !j.trashed; }catch(e){ if(e.nf) return false; throw e; } }
 async function enviarArquivo(meta,blob,idExistente){
-  if(idExistente){ try{ return (await driveFetch("https://www.googleapis.com/upload/drive/v3/files/"+idExistente+"?uploadType=media&fields=id",{method:"PATCH",headers:{"Content-Type":blob.type||"application/octet-stream"},body:blob})).id; }catch(e){ if(!e.nf) throw e; } }
+  if(idExistente){ try{ return await driveFetch("https://www.googleapis.com/upload/drive/v3/files/"+idExistente+"?uploadType=media&fields=id,size",{method:"PATCH",headers:{"Content-Type":blob.type||"application/octet-stream"},body:blob}); }catch(e){ if(!e.nf) throw e; } }
   const bd="vistoria"+uid8()+uid8();
   const corpo=new Blob(["--"+bd+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n",JSON.stringify(meta),"\r\n--"+bd+"\r\nContent-Type: "+(blob.type||"application/octet-stream")+"\r\n\r\n",blob,"\r\n--"+bd+"--"]);
-  return (await driveFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id",{method:"POST",headers:{"Content-Type":"multipart/related; boundary="+bd},body:corpo})).id;
+  return await driveFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,size",{method:"POST",headers:{"Content-Type":"multipart/related; boundary="+bd},body:corpo});
 }
 const nomeArq=s=>String(s).replace(/[\\/:*?"<>|\n\r]+/g," ").replace(/\s+/g," ").trim().slice(0,110);
 function nomePastaVistoria(v){ const i=v.ident; return nomeArq([i.convenio?"Conv "+i.convenio:"", i.escola, i.municipio, i.data].filter(Boolean).join(" - ")||("Vistoria "+v.id)); }
-function pendentesDrive(v){ const d=v.drive||{}; const env=d.fotos||{}; return listaFotos(v).filter(o=>!env[o.f.id]).length; }
-async function enviarDrive(){
-  if(DRIVE.enviando) return;
-  if(!navigator.onLine){ drvSt("Sem internet agora. As fotos continuam no aparelho; envie quando houver sinal.",true); return; }
-  let tokenP;
-  try{ tokenP=pedirToken(); }catch(e){ drvSt(esc(msgErro(e)),true); return; }
-  DRIVE.enviando=true; const btn=document.getElementById("btnDrive"); if(btn) btn.disabled=true;
-  const v=S.v; v.drive=v.drive||{}; v.drive.fotos=v.drive.fotos||{};
+function pendentesDe(v){ const env=(v.drive&&v.drive.fotos)||{}; return listaFotos(v).filter(o=>!env[o.f.id]); }
+function totalPendentes(){ const vs=S.list.includes(S.v)? S.list : [S.v,...S.list]; return vs.reduce((a,v)=>a+pendentesDe(v).length,0); }
+let raizCache=null;
+async function garantirPastas(v){
+  v.drive=v.drive||{}; v.drive.fotos=v.drive.fotos||{};
+  if(!raizCache){ let r=null; try{ r=localStorage.getItem(LS_RAIZ); }catch(e){} if(r && !(await existeDrive(r))) r=null;
+    if(!r){ r=await pastaDrive("Vistorias Elétricas",null); try{ localStorage.setItem(LS_RAIZ,r); }catch(e){} } raizCache=r; }
+  if(v.drive.pasta && !v.drive.pastaOk){ if(!(await existeDrive(v.drive.pasta))){ v.drive.pasta=null; v.drive.fotos={}; v.drive.docx=null; } else v.drive.pastaOk=true; }
+  if(!v.drive.pasta){ v.drive.pasta=await pastaDrive(nomePastaVistoria(v),raizCache); v.drive.pastaOk=true; }
+}
+async function gravarVistoria(v){ if(v===S.v){ agendarSalvar(); } else { try{ await idbPut("vistorias",JSON.parse(JSON.stringify(v))); }catch(e){} } }
+/* Espaço no aparelho: depois que o Drive confirma o arquivo (mesmo tamanho), a foto grande sai do aparelho e fica só
+   uma prévia de 1024 px (miniatura, visualização offline e .docx). O original continua no Drive. */
+const LS_LIB="vistoriaEletrica.liberarEspaco";
+function liberarLigado(){ try{ return localStorage.getItem(LS_LIB)!=="0"; }catch(e){ return true; } }
+async function previa(blob){ const im=await abrirImagem(blob); const bw=im.width||im.naturalWidth, bh=im.height||im.naturalHeight; const sc=Math.min(1,1024/Math.max(bw,bh));
+  const cv=document.createElement("canvas"); cv.width=Math.round(bw*sc); cv.height=Math.round(bh*sc); const g=cv.getContext("2d"); try{ g.imageSmoothingQuality="high"; }catch(e){} g.drawImage(im,0,0,cv.width,cv.height); if(im.close) try{ im.close(); }catch(e){}
+  return await new Promise((res,rej)=>cv.toBlob(b=>b&&b.size?res(b):rej(new Error("falha ao gerar a prévia")),"image/jpeg",0.8)); }
+async function liberarFoto(id,driveId,blob){
+  try{ const r=await idbGet("fotos",id); if(!r||!(r.buf||r.blob)) return;
+    const pv=await previa(blob);
+    await idbPut("fotos",{id,prev:await pv.arrayBuffer(),type:"image/jpeg",vid:r.vid,criado:r.criado,driveId,liberadaEm:Date.now(),tamOriginal:blob.size});
+    if(S.memFotos) delete S.memFotos[id];
+    if(S.urls[id]) try{ URL.revokeObjectURL(S.urls[id]); }catch(e){}
+    S.urls[id]=URL.createObjectURL(pv); document.querySelectorAll(`img[data-fid="${id}"]`).forEach(im=>im.src=S.urls[id]);
+  }catch(e){ /* mantém a foto inteira se algo falhar */ }
+}
+async function liberarJaEnviadas(){
+  const vs=S.list.includes(S.v)? S.list : [S.v,...S.list];
+  for(const v of vs){ const env=(v.drive&&v.drive.fotos)||{};
+    for(const o of listaFotos(v)){ const did=env[o.f.id]; if(!did) continue;
+      let r=null; try{ r=await idbGet("fotos",o.f.id); }catch(e){} if(!r||!(r.buf||r.blob)) continue;
+      const b=blobDe(r); try{ const j=await driveFetch("https://www.googleapis.com/drive/v3/files/"+did+"?fields=size,trashed"); if(!j.trashed && +j.size===b.size) await liberarFoto(o.f.id,did,b); }catch(e){ if(e.auth||e.rede) throw e; } } }
+}
+async function fotoAlta(f){
+  let r=null; try{ r=await idbGet("fotos",f.id); }catch(e){}
+  if(r&&(r.buf||r.blob)) return blobDe(r);
+  if(S.memFotos&&S.memFotos[f.id]) return S.memFotos[f.id];
+  const did=r&&r.driveId; if(!did||!navigator.onLine||!tokenOk()) return null;
+  S.altaCache=S.altaCache||{}; if(S.altaCache[f.id]) return S.altaCache[f.id];
+  const resp=await fetch("https://www.googleapis.com/drive/v3/files/"+did+"?alt=media",{headers:{Authorization:"Bearer "+DRIVE.token}});
+  if(!resp.ok) return null; const b=await resp.blob(); const ks=Object.keys(S.altaCache); if(ks.length>8) delete S.altaCache[ks[0]]; S.altaCache[f.id]=b; return b;
+}
+/* Arquivo de dados para o Claude: o mesmo conteúdo do "Copiar pedido para o Claude", salvo na pasta da vistoria no Drive
+   (dados_vistoria_<convênio>.json). Atualizado sempre que a vistoria mudou desde o último envio. */
+function nomeJSON(v){ return "dados_vistoria"+(v.ident.convenio?"_conv_"+v.ident.convenio:"")+"_"+(v.ident.data||"")+".json"; }
+async function enviarDadosJSON(forcar){
+  const vs=(S.list.includes(S.v)? S.list : [S.v,...S.list]).filter(v=>v.drive&&v.drive.pasta);
+  for(const v of vs){
+    if(!forcar && v.drive.jsonEm && (v.updatedAt||0)<=v.drive.jsonEm) continue;
+    const corpo={app:"vistoria-eletrica", gerado_em:new Date().toISOString(), convenio:v.ident.convenio, escola:v.ident.escola,
+      pasta_drive:"https://drive.google.com/drive/folders/"+v.drive.pasta, pedido_para_o_claude:promptClaude(v), dados:dadosParaClaude(v)};
+    const j=await enviarArquivo({name:nomeJSON(v), parents:[v.drive.pasta], description:"Dados da vistoria para o Claude redigir o relatório"}, new Blob([JSON.stringify(corpo,null,1)],{type:"application/json"}), v.drive.json);
+    v.drive.json=j.id; v.drive.jsonEm=Date.now(); await gravarVistoria(v);
+  }
+}
+async function usoAparelho(){ try{ const e=await navigator.storage.estimate(); return e.usage||0; }catch(e){ return null; } }
+/* Envia a fila de fotos de todas as vistorias. */
+async function sincronizarDrive(manual){
+  if(DRIVE.rodando){ DRIVE.denovo=true; return; }
+  if(!manual && !autoLigado()) return;
+  if(!navigator.onLine){ DRIVE.erro=""; atualizarChipDrive(); return; }
+  if(!tokenOk()){ DRIVE.precisaAuth = totalPendentes()>0 || manual; atualizarChipDrive(); return; }
+  DRIVE.rodando=true; DRIVE.erro=""; atualizarChipDrive();
+  let enviadas=0, falhas=0;
   try{
-    drvSt("Aguardando autorização do Google…"); await tokenP;
-    drvSt("Preparando a pasta no Drive…");
-    let raiz=null; try{ raiz=localStorage.getItem("vistoriaEletrica.driveRaiz"); }catch(e){}
-    if(raiz){ try{ await driveFetch("https://www.googleapis.com/drive/v3/files/"+raiz+"?fields=id,trashed").then(j=>{ if(j.trashed) raiz=null; }); }catch(e){ if(e.nf) raiz=null; else throw e; } }
-    if(!raiz){ raiz=await pastaDrive("Vistorias Elétricas",null); try{ localStorage.setItem("vistoriaEletrica.driveRaiz",raiz); }catch(e){} }
-    if(v.drive.pasta){ try{ const j=await driveFetch("https://www.googleapis.com/drive/v3/files/"+v.drive.pasta+"?fields=id,trashed"); if(j.trashed){ v.drive.pasta=null; v.drive.fotos={}; v.drive.docx=null; } }catch(e){ if(e.nf){ v.drive.pasta=null; v.drive.fotos={}; v.drive.docx=null; } else throw e; } }
-    if(!v.drive.pasta){ v.drive.pasta=await pastaDrive(nomePastaVistoria(v),raiz); agendarSalvar(); }
-    const lista=listaFotos(v).filter(o=>!v.drive.fotos[o.f.id]); let k=0, falhas=0;
-    for(const o of lista){
-      k++; drvSt("Enviando foto "+k+" de "+lista.length+"…");
-      try{ const b=await fotoBlob(o.f);
-        const id=await enviarArquivo({name:nomeArq(String(o.num).padStart(2,"0")+" - "+o.cap)+".jpg", parents:[v.drive.pasta], description:o.cap}, b.type?b:new Blob([b],{type:"image/jpeg"}));
-        v.drive.fotos[o.f.id]=id; agendarSalvar();
-      }catch(e){ if(e.ativar||/expirou|cheio/.test(e.message)) throw e; falhas++; }
+    const vs=(S.list.includes(S.v)? S.list : [S.v,...S.list]).filter(v=>pendentesDe(v).length);
+    for(const v of vs){
+      await garantirPastas(v); await gravarVistoria(v);
+      for(const o of pendentesDe(v)){
+        try{ const b=await fotoBlob(o.f);
+          const bb=b.type?b:new Blob([b],{type:"image/jpeg"});
+          const j=await enviarArquivo({name:nomeArq(String(o.num).padStart(2,"0")+" - "+o.cap)+".jpg", parents:[v.drive.pasta], description:o.cap}, bb);
+          v.drive.fotos[o.f.id]=j.id; v.drive.enviadoEm=Date.now(); enviadas++; await gravarVistoria(v);
+          if(liberarLigado() && +j.size===bb.size) await liberarFoto(o.f.id,j.id,bb);
+          atualizarChipDrive();
+        }catch(e){ if(e.auth||e.rede||e.ativar||e.grave) throw e; falhas++; }
+      }
     }
+    if(liberarLigado()) await liberarJaEnviadas();
+    await enviarDadosJSON();
+    DRIVE.ultimo=Date.now();
+  }catch(e){ DRIVE.erro = e.auth? "" : msgErro(e); if(e.ativar) DRIVE.ativar=true; }
+  finally{ DRIVE.rodando=false; atualizarChipDrive(); atualizarCardDrive(); }
+  if(DRIVE.denovo){ DRIVE.denovo=false; setTimeout(()=>sincronizarDrive(),1500); }
+  return {enviadas,falhas};
+}
+let syncTimer=null;
+function agendarSync(ms){ clearTimeout(syncTimer); syncTimer=setTimeout(()=>sincronizarDrive(),ms==null?1500:ms); }
+function atualizarChipDrive(){
+  const c=document.getElementById("drvChip"); if(!c) return;
+  const cloud='<svg viewBox="0 0 24 24"><path d="M7 18a4 4 0 010-8 5 5 0 019.6-1.5A3.5 3.5 0 1117.5 18z"/></svg>';
+  if(!autoLigado() && !DRIVE.rodando){ c.hidden=true; return; }
+  c.hidden=false; let cls="", txt=""; const pend=totalPendentes();
+  if(DRIVE.rodando){ cls="warn"; txt="Enviando… "+pend; }
+  else if(DRIVE.ativar||DRIVE.erro){ cls="crit"; txt="Drive: erro"; }
+  else if(!pend){ cls="ok"; txt="Drive ✓"; }
+  else if(!navigator.onLine){ cls="warn"; txt=pend+" na fila"; }
+  else if(!tokenOk()){ cls="crit"; txt="Autorizar ("+pend+")"; }
+  else { cls="warn"; txt=pend+" na fila"; }
+  c.className="drv "+cls; c.innerHTML=cloud+esc(txt);
+  c.title = !pend? "Todas as fotos estão no Google Drive" : !navigator.onLine? "Sem internet: as fotos estão guardadas no aparelho e sobem quando houver sinal" : !tokenOk()? "Toque para autorizar o Google Drive e enviar as fotos" : "Fotos na fila de envio";
+}
+function atualizarCardDrive(){ if(S.tab!=="rel") return; const el=document.getElementById("cardDrive"); if(el){ el.outerHTML=rDrive(); } mostrarUso(); }
+async function mostrarUso(){ const u=await usoAparelho(); const el=document.getElementById("usoSt"); if(el&&u!=null) el.textContent="Espaço usado pelo app neste aparelho: "+fmt(u/1048576,1)+" MB"; }
+async function tocarChipDrive(){
+  if(DRIVE.erro||DRIVE.ativar||!navigator.onLine||tokenOk()){ irPara("rel"); const el=document.getElementById("cardDrive"); el&&el.scrollIntoView({block:"start"}); if(tokenOk()&&navigator.onLine) sincronizarDrive(); return; }
+  try{ await pedirToken(); setAuto(true); sincronizarDrive(); }catch(e){ irPara("rel"); drvSt(esc(msgErro(e)),true); }
+}
+/* botão do cartão: autoriza (toque), envia a fila de todas as vistorias e atualiza o .docx desta */
+async function enviarDrive(){
+  if(DRIVE.rodando){ drvSt("Envio em andamento…"); return; }
+  if(!navigator.onLine){ drvSt("Sem internet agora. As fotos estão guardadas no aparelho e sobem sozinhas quando houver sinal.",true); return; }
+  let tokenP; try{ tokenP=pedirToken(); }catch(e){ drvSt(esc(msgErro(e)),true); return; }
+  const btn=document.getElementById("btnDrive"); if(btn) btn.disabled=true;
+  try{
+    drvSt("Aguardando autorização do Google…"); await tokenP; setAuto(true); DRIVE.ativar=false;
+    drvSt("Enviando as fotos…");
+    const r=await sincronizarDrive(true)||{enviadas:0,falhas:0};
+    if(DRIVE.erro) throw new Error(DRIVE.erro);
+    const v=S.v; await garantirPastas(v);
     drvSt("Gerando e enviando o relatório .docx…");
     const {blob}=await gerarDocx(v);
-    const docBlob=new Blob([blob],{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"});
-    v.drive.docx=await enviarArquivo({name:nomeDocx(), parents:[v.drive.pasta]}, docBlob, v.drive.docx);
+    v.drive.docx=(await enviarArquivo({name:nomeDocx(), parents:[v.drive.pasta]}, new Blob([blob],{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"}), v.drive.docx)).id;
     v.drive.enviadoEm=Date.now(); agendarSalvar(); await salvarAgora();
-    const link="https://drive.google.com/drive/folders/"+v.drive.pasta;
-    drvSt("Enviado: "+(lista.length-falhas)+" foto(s) novas e o relatório"+(falhas?". "+falhas+" foto(s) falharam; toque em Enviar de novo":"")+`. <a href="${link}" target="_blank" rel="noopener">Abrir pasta no Drive</a>`, !!falhas);
+    await enviarDadosJSON(true);
+    atualizarCardDrive();
+    drvSt("Enviado: "+r.enviadas+" foto(s) novas e o relatório"+(r.falhas?". "+r.falhas+" foto(s) falharam e ficam na fila":"")+`. <a href="https://drive.google.com/drive/folders/${v.drive.pasta}" target="_blank" rel="noopener">Abrir pasta no Drive</a>`, !!r.falhas);
   }catch(e){
-    if(e.ativar) drvSt(`A API do Google Drive não está ativada no projeto do Google Cloud. <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com?project=419096828771" target="_blank" rel="noopener">Ativar a API do Drive</a> (uma vez só) e tente de novo.`,true);
-    else drvSt("Não foi possível enviar: "+esc(msgErro(e))+". As fotos continuam no aparelho.",true);
-  }finally{ DRIVE.enviando=false; const b2=document.getElementById("btnDrive"); if(b2) b2.disabled=false; }
+    if(e.ativar||DRIVE.ativar) drvSt(`A API do Google Drive não está ativada no projeto do Google Cloud. <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com?project=419096828771" target="_blank" rel="noopener">Ativar a API do Drive</a> (uma vez só) e tente de novo.`,true);
+    else drvSt("Não foi possível enviar: "+esc(msgErro(e))+". As fotos continuam no aparelho e na fila.",true);
+  }finally{ const b2=document.getElementById("btnDrive"); if(b2) b2.disabled=false; }
 }
 function rDrive(){
-  const d=S.v.drive||{}; const pend=pendentesDrive(S.v); const tot=listaFotos(S.v).length;
+  const d=S.v.drive||{}; const pend=pendentesDe(S.v).length; const tot=listaFotos(S.v).length; const fila=totalPendentes();
   if(navigator.onLine) carregarGIS().catch(()=>{});
-  return `<section class="card"><div class="card-h"><h2>Google Drive</h2><span class="status">${d.enviadoEm?"último envio "+new Date(d.enviadoEm).toLocaleString("pt-BR"):"nada enviado ainda"}</span></div>
-    <p class="lead">Envia as fotos carimbadas e o relatório .docx para a pasta <b>Vistorias Elétricas › ${esc(nomePastaVistoria(S.v))}</b> no seu Google Drive. Precisa de internet. Só vão as fotos que ainda não foram; o .docx é atualizado a cada envio.</p>
-    <div class="row"><span class="pill ${pend?"warn":"ok"}">${pend? pend+" de "+tot+" foto(s) a enviar" : (tot? "todas as "+tot+" fotos no Drive" : "sem fotos")}</span></div>
-    <div class="g2"><button class="btn pri" type="button" id="btnDrive" data-act="enviarDrive">Enviar para o Drive</button>${d.pasta?`<a class="btn" href="https://drive.google.com/drive/folders/${esc(d.pasta)}" target="_blank" rel="noopener">Abrir pasta no Drive</a>`:`<span></span>`}</div>
-    <span class="status" id="drvSt"></span></section>`;
+  const auto=autoLigado();
+  return `<section class="card" id="cardDrive"><div class="card-h"><h2>Google Drive</h2><span class="status">${d.enviadoEm?"último envio "+new Date(d.enviadoEm).toLocaleString("pt-BR"):"nada enviado ainda"}</span></div>
+    <p class="lead">Pasta <b>Vistorias Elétricas › ${esc(nomePastaVistoria(S.v))}</b> no seu Drive: fotos, relatório .docx e o arquivo <b>${esc(nomeJSON(S.v))}</b>, com os dados para o Claude redigir o relatório.</p>
+    <div class="row"><span class="pill ${pend?"warn":"ok"}">${pend? pend+" de "+tot+" foto(s) desta vistoria na fila" : (tot? "todas as "+tot+" fotos desta vistoria no Drive" : "sem fotos nesta vistoria")}</span>${fila>pend?`<span class="pill warn">${fila-pend} de outras vistorias</span>`:""}</div>
+    <label class="sw"><input type="checkbox" id="autoDrive" ${auto?"checked":""}>Enviar fotos automaticamente quando houver internet</label>
+    <label class="sw"><input type="checkbox" id="liberar" ${liberarLigado()?"checked":""}>Liberar espaço: depois de confirmar no Drive, manter no celular só uma prévia</label>
+    <span class="status" id="usoSt"></span>
+    <p class="lead">${auto? (tokenOk()? "Autorização válida até "+new Date(DRIVE.exp).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})+". Cada foto nova sobe sozinha; sem sinal, fica na fila e sobe quando a internet voltar, com o app aberto." : "A autorização do Google dura cerca de 1 hora. Quando vencer, o botão no topo mostra <b>Autorizar</b>: um toque e a fila volta a subir.") : "Desligado: as fotos só vão quando você tocar em Enviar."}</p>
+    <div class="g2"><button class="btn pri" type="button" id="btnDrive" data-act="enviarDrive">Enviar agora (fotos e .docx)</button>${d.pasta?`<a class="btn" href="https://drive.google.com/drive/folders/${esc(d.pasta)}" target="_blank" rel="noopener">Abrir pasta no Drive</a>`:`<span></span>`}</div>
+    <span class="status" id="drvSt">${DRIVE.ativar?`A API do Google Drive não está ativada no projeto. <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com?project=419096828771" target="_blank" rel="noopener">Ativar</a>`:(DRIVE.erro? "Último erro: "+esc(DRIVE.erro) : "")}</span></section>`;
 }
+window.addEventListener("online",()=>{ atualizarChipDrive(); agendarSync(500); });
+window.addEventListener("offline",atualizarChipDrive);
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") agendarSync(800); });
+setInterval(()=>{ if(totalPendentes()) sincronizarDrive(); else atualizarChipDrive(); },90000);
 
 /* ============================== Início ============================== */
 (async function(){
@@ -1241,6 +1387,7 @@ function rDrive(){
   render(); atualizarRede();
   toastSave(S.store==="idb"?"Salvo no aparelho":"Sem armazenamento");
   try{ if(navigator.permissions){ const p=await navigator.permissions.query({name:"geolocation"}); if(p.state==="granted") iniciarGPS(); } }catch(e){}
+  atualizarChipDrive(); if(autoLigado() && navigator.onLine){ carregarGIS().catch(()=>{}); agendarSync(2000); }
 })();
 
 
