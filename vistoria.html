@@ -877,7 +877,7 @@ function strip(fotos,prefixo){ return `<div class="strip">${(fotos||[]).map((f,i
 function camBtn(tgt,txt,n){ return `<label class="mini ${n?"has":""}">${ICON.cam}${txt||"Foto"}${n?` (${n})`:""}<input type="file" accept="image/*" capture="environment" data-addph="${esc(tgt)}"></label>`; }
 
 /* ============================== Cabeçalho e navegação ============================== */
-function agendarSalvar(){ S.v.updatedAt=Date.now(); toastSave("Salvando…"); clearTimeout(S.saveTimer); S.saveTimer=setTimeout(salvar,500); atualizarChrome(); }
+function agendarSalvar(){ S.v.updatedAt=Date.now(); toastSave("Salvando…"); clearTimeout(S.saveTimer); S.saveTimer=setTimeout(()=>{ S.saveTimer=null; salvar(); },500); atualizarChrome(); }
 function atualizarChrome(){
   document.getElementById("hdTitle").textContent=titulo(S.v);
   const r=resumo(S.v); document.getElementById("progBar").style.width=(r.total?Math.round(r.feitos/r.total*100):0)+"%";
@@ -983,7 +983,7 @@ function rVisual(){
         <span class="cnt" id="etc_${e.id}">${x.on?(x.nc?`<span class="pill crit">${x.nc} NC</span> `:"")+x.feitos+"/"+x.total:"não se aplica"}</span><span class="chev">▾</span></button>
       <div class="et-b">
         ${e.opc?`<div class="et-off"><label class="sw"><input type="checkbox" data-aplica="${e.id}" ${x.on?"checked":""}>${esc(e.pergunta)}</label></div>`:""}
-        ${x.on? (e.id==="3"? rQuadros(e) : e.itens.map(([id,m,t])=>itemHTML(id,m,t)).join("")) : ""}
+        ${x.on? (e.id==="3"? rQuadros(e) : e.itens.map(([id,m,t])=>itemHTML(id,m,t)).join("")+(COR_ET[e.id]?rCorEtapa(e.id):"")) : ""}
       </div></section>`; }).join("")}
   ${rCorOutros()}
   ${rTermoOutros()}`;
@@ -1019,10 +1019,13 @@ function marcar(id,val){
 
 /* ============================== Medições de corrente ============================== */
 function sevCor(c){ return c.flags.some(f=>f.sev==="crit")?"crit": c.flags.length?"warn": c.imax!=null?"ok":""; }
+/* etapas (fora dos quadros) que também têm bloco de correntes */
+const COR_ET={"1":{local:"Padrão de entrada", circ:"Disjuntor geral", titulo:"Correntes na entrada", lead:"Meça fases e neutro na saída do disjuntor geral. O app compara com a In do disjuntor e a Iz do cabo e calcula o desequilíbrio."}};
+function etDe(r){ return r&&r.et&&COR_ET[r.et]? r.et : ""; }
 function qdDe(r){ return r&&r.qd? (S.v.quadros||[]).find(q=>q.id===r.qd)||null : null; }
 function vincularMedicoes(v){ (v.correntes||[]).forEach(r=>{ if(r.qd && !(v.quadros||[]).some(q=>q.id===r.qd)) delete r.qd;
-  if(!r.qd && r.quadro){ const k=String(r.quadro).trim().toLowerCase(); const q=(v.quadros||[]).find(q=>String(q.nome||"").trim().toLowerCase()===k); if(q) r.qd=q.id; } }); }
-function cardCor(r,i){ const v=S.v; const c=calcCorrente(r,v.cfg.deseq); const sv=sevCor(c); const open=S.openCor===r.id; const noQd=!!qdDe(r);
+  if(!r.qd && !r.et && r.quadro){ const k=String(r.quadro).trim().toLowerCase(); const q=(v.quadros||[]).find(q=>String(q.nome||"").trim().toLowerCase()===k); if(q) r.qd=q.id; } }); }
+function cardCor(r,i){ const v=S.v; const c=calcCorrente(r,v.cfg.deseq); const sv=sevCor(c); const open=S.openCor===r.id; const noQd=!!qdDe(r)||!!etDe(r);
     const num=(k,l)=>`<label class="f num"><span>${l}</span><input type="text" inputmode="decimal" enterkeyhint="next" data-cor="${i}" data-k="${k}" value="${esc(r[k]??"")}" autocomplete="off"></label>`;
     const circ=`<label class="f"><span>Circuito</span><input type="text" enterkeyhint="next" data-cor="${i}" data-k="circuito" value="${esc(r.circuito??"")}" placeholder="Ex.: Alimentador, C3 – tomadas sala 2" autocomplete="off"></label>`;
     return `<div class="mc" data-sev="${sv}" data-open="${open}" id="mc_${esc(r.id)}">
@@ -1037,18 +1040,23 @@ function cardCor(r,i){ const v=S.v; const c=calcCorrente(r,v.cfg.deseq); const s
         ${audBox("cor:"+i,r.audio)}
         <div class="row" style="justify-content:space-between"><button type="button" class="mini ${r.audio&&r.audio.id?"has":""}" data-mic="cor:${i}">${ICON.mic}${r.audio&&r.audio.id?"Regravar áudio":"Gravar áudio"}</button><button class="btn sm ghost danger" type="button" data-act="delCor" data-i="${i}">Excluir medição</button></div>
       </div></div>`; }
-function tituloCor(r,i){ return qdDe(r)? esc(r.circuito||"Circuito "+(i+1)) : esc(r.quadro||"Medição")+" · "+esc(r.circuito||"circuito "+(i+1)); }
+function tituloCor(r,i){ return (qdDe(r)||etDe(r))? esc(r.circuito||"Circuito "+(i+1)) : esc(r.quadro||"Medição")+" · "+esc(r.circuito||"circuito "+(i+1)); }
 /* bloco de correntes dentro do quadro (etapa 3) */
 function rCorQd(q){ const v=S.v; const L=v.correntes.map((r,i)=>[r,i]).filter(([r])=>r.qd===q.id);
   return `<div class="qd-med"><div class="passo"><b>A</b> Correntes deste quadro <span class="status">(alicate amperímetro)</span></div>
     <p class="lead">Meça fases e neutro do alimentador e dos circuitos mais carregados. O app compara com a In do disjuntor e a Iz do cabo.</p>
     ${L.map(([r,i])=>cardCor(r,i)).join("")}
     <button class="btn" type="button" data-act="addCor" data-qd="${q.id}">+ Circuito medido</button></div>`; }
+function rCorEtapa(eid){ const v=S.v; const cf=COR_ET[eid]; const L=v.correntes.map((r,i)=>[r,i]).filter(([r])=>r.et===eid);
+  return `<div class="qd-med"><div class="passo"><b>A</b> ${esc(cf.titulo)} <span class="status">(alicate amperímetro)</span></div>
+    <p class="lead">${esc(cf.lead)}</p>
+    ${L.map(([r,i])=>cardCor(r,i)).join("")}
+    <button class="btn" type="button" data-act="addCor" data-et="${eid}">+ Circuito medido</button></div>`; }
 /* medições fora dos quadros + critérios, no fim da Inspeção */
-function rCorOutros(){ const v=S.v; const L=v.correntes.map((r,i)=>[r,i]).filter(([r])=>!qdDe(r));
+function rCorOutros(){ const v=S.v; const L=v.correntes.map((r,i)=>[r,i]).filter(([r])=>!qdDe(r)&&!etDe(r));
   return `<datalist id="dlQd">${(v.quadros||[]).map((q,i)=>nomeQd(q,i)).map(x=>`<option value="${esc(x)}">`).join("")}</datalist>
   <section class="card" id="secCor"><div class="card-h"><h3>Correntes – outros pontos</h3><span class="status">${v.correntes.length} medição(ões) no total</span></div>
-    <p class="lead">As correntes de cada quadro ficam no próprio quadro (etapa 3). Aqui entram as de outros pontos: padrão de entrada, transformador, equipamentos.</p>
+    <p class="lead">As correntes de cada quadro ficam no próprio quadro (etapa 3). As da entrada de energia ficam na etapa 1. Aqui entram as de outros pontos: transformador, equipamentos, circuitos avulsos.</p>
     ${L.map(([r,i])=>cardCor(r,i)).join("")}
     <button class="btn" type="button" data-act="addCor">+ Outra medição</button>
     <details class="como"><summary>Critérios <small>desequilíbrio: ${v.cfg.deseq}%</small></summary>
@@ -1269,12 +1277,13 @@ document.addEventListener("click", async ev=>{
   if(act==="toggleTer"){ S.openTer = S.openTer===b.dataset.id? "" : b.dataset.id; render(true); return; }
   if(act==="addCor"){ const r={id:uid8()}; const q=b.dataset.qd? S.v.quadros.find(x=>x.id===b.dataset.qd) : null;
     if(q){ r.qd=q.id; r.quadro=nomeQd(q,S.v.quadros.indexOf(q)); const ant=S.v.correntes.filter(x=>x.qd===q.id).pop(); if(!ant) r.circuito="Alimentador"; }
+    const et=COR_ET[b.dataset.et]? b.dataset.et : ""; if(et){ r.et=et; r.quadro=COR_ET[et].local; if(!S.v.correntes.some(x=>x.et===et)) r.circuito=COR_ET[et].circ; }
     S.v.correntes.push(r); S.openCor=r.id; agendarSalvar(); render(true);
-    const el=document.getElementById("mc_"+r.id); if(el){ el.scrollIntoView({block:"center"}); const f=el.querySelector(q?'input[data-k="ia"]':'input[data-k="quadro"]'); f&&f.focus(); } return; }
+    const el=document.getElementById("mc_"+r.id); if(el){ el.scrollIntoView({block:"center"}); const f=el.querySelector((q||et)?'input[data-k="ia"]':'input[data-k="quadro"]'); f&&f.focus(); } return; }
   if(act==="delCor"){ if(await confirmar("Excluir esta medição?")){ S.v.correntes.splice(+b.dataset.i,1); agendarSalvar(); render(true); } return; }
   if(act==="addTer"){ const ant=S.v.termo[S.v.termo.length-1]; const r={id:uid8(),refTipo:"similar"}; if(b.dataset.ponto) r.item=b.dataset.ponto;
     const ultQ=(ant&&ant.local)||((S.v.correntes[S.v.correntes.length-1]||{}).quadro)||""; if(ultQ && (b.dataset.mesmo||r.item)) r.local=ultQ;
-    if(r.item){ const inf=infoItem(r.item); if(inf&&inf.qn) r.local=inf.qn; }
+    if(r.item){ const inf=infoItem(r.item); if(inf&&inf.qn) r.local=inf.qn; if(r.item==="e5") r.local=COR_ET["1"].local; }
     if(r.item==="e5"||r.item==="s5") r.componente=r.item==="e5"?"Disjuntor geral":"Transformador";
     S.v.termo.push(r); S.openTer=r.id; agendarSalvar(); render(true);
     const el=document.getElementById("tc_"+r.id); el && el.scrollIntoView({block:"center"}); return; }
@@ -1572,6 +1581,10 @@ function rDrive(){
 window.addEventListener("online",()=>{ atualizarChipDrive(); agendarSync(500); });
 window.addEventListener("offline",atualizarChipDrive);
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") agendarSync(800); });
+/* grava na hora se o app for para segundo plano ou fechado com alteração pendente */
+function gravarPendente(){ if(S.saveTimer){ clearTimeout(S.saveTimer); S.saveTimer=null; salvar(); } }
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="hidden") gravarPendente(); });
+window.addEventListener("pagehide",gravarPendente);
 setInterval(()=>{ if(totalPendentes()) sincronizarDrive(); else atualizarChipDrive(); },90000);
 
 /* ============================== Áudio e transcrição ============================== */
