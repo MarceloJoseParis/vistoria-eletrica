@@ -11,214 +11,274 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="icon" href="icons/icon-192.png">
 <style>
-/* Plano: ferramenta de campo, cinza-azulado de quadro elétrico com âmbar de placa de advertência.
-   Layout: barra fixa com etapas numeradas; cada etapa é um formulário de uma coluna que vira duas no desktop. */
+/* Plano: ferramenta de campo para uma mão só. Cinza-azulado de quadro elétrico, âmbar de placa de advertência.
+   Layout: cabeçalho fino com progresso, conteúdo em cartões, navegação no polegar (rodapé) no celular e trilho lateral no computador. */
 :root{
-  --bg:#EDF0F2; --panel:#FFFFFF; --ink:#1A222A; --muted:#566370; --line:#D2D8DD;
+  --bg:#EDF0F3; --panel:#FFFFFF; --ink:#121A21; --muted:#56626F; --line:#D3D9DF; --soft:#F4F6F8;
   --accent:#C27A00; --accent-ink:#7A4A00; --accent-soft:#FBEFD9;
-  --ok:#2E7D4F; --ok-soft:#E3F2E8; --warn:#A76A00; --warn-soft:#FBF0D6; --crit:#B83226; --crit-soft:#FBE5E2; --na:#7B8691; --na-soft:#ECEFF1;
+  --ok:#23784A; --ok-soft:#E0F2E7; --warn:#9A6200; --warn-soft:#FBF0D3; --crit:#B3261E; --crit-soft:#FBE3E0; --na:#6E7A86; --na-soft:#E8ECEF;
   --f-display:"Roboto Condensed","Arial Narrow",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
   --f-body:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
   --f-mono:ui-monospace,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
-  --r:8px;
+  --r:12px; --nav-h:64px;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#11161B; --panel:#192027; --ink:#E5EAEE; --muted:#9AA6B1; --line:#2C3640;
+    --bg:#0F1418; --panel:#182027; --ink:#E6EBEF; --muted:#9AA6B1; --line:#2B353F; --soft:#1E2730;
     --accent:#F0A640; --accent-ink:#F6C27A; --accent-soft:#33291A;
-    --ok:#5BC98A; --ok-soft:#173025; --warn:#E9B44C; --warn-soft:#332A15; --crit:#F07A6B; --crit-soft:#3A1F1C; --na:#8C98A3; --na-soft:#222B33;
+    --ok:#5BC98A; --ok-soft:#163023; --warn:#E9B44C; --warn-soft:#322914; --crit:#F2786A; --crit-soft:#3A1E1B; --na:#8C98A3; --na-soft:#222B33;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#11161B; --panel:#192027; --ink:#E5EAEE; --muted:#9AA6B1; --line:#2C3640;
+  --bg:#0F1418; --panel:#182027; --ink:#E6EBEF; --muted:#9AA6B1; --line:#2B353F; --soft:#1E2730;
   --accent:#F0A640; --accent-ink:#F6C27A; --accent-soft:#33291A;
-  --ok:#5BC98A; --ok-soft:#173025; --warn:#E9B44C; --warn-soft:#332A15; --crit:#F07A6B; --crit-soft:#3A1F1C; --na:#8C98A3; --na-soft:#222B33;
+  --ok:#5BC98A; --ok-soft:#163023; --warn:#E9B44C; --warn-soft:#322914; --crit:#F2786A; --crit-soft:#3A1E1B; --na:#8C98A3; --na-soft:#222B33;
   color-scheme:dark;
 }
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body)}
-h1,h2,h3{font-family:var(--f-display);font-weight:600;text-wrap:balance;margin:0}
-h1{font-size:20px;letter-spacing:.01em}
-h2{font-size:22px}
-h3{font-size:17px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--f-body)}
+body{padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 24px)}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance}
+h2{font-size:20px} h3{font-size:17px}
 button,input,select,textarea{font:inherit;color:inherit}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.num,input[type=number]{font-variant-numeric:tabular-nums}
-.mono{font-family:var(--f-mono)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 
-header.top{position:sticky;top:0;padding-top:env(safe-area-inset-top);z-index:10;background:var(--panel);border-bottom:1px solid var(--line)}
-.top-row{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 16px;flex-wrap:wrap}
-.brand{display:flex;gap:10px;align-items:center;min-width:0}
-.brand .tag{font-family:var(--f-mono);font-size:12px;background:var(--accent);color:#1A1200;padding:2px 6px;border-radius:4px;white-space:nowrap}
-.brand .sub{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}
-.top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.save{font-size:12px;color:var(--muted)}
-.save.err{color:var(--crit)}
-nav.steps{display:flex;gap:4px;overflow-x:auto;padding:0 12px 8px;scrollbar-width:thin}
-nav.steps button{flex:0 0 auto;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer;display:flex;gap:6px;align-items:center}
-nav.steps button .n{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
-nav.steps button[aria-current="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
-nav.steps button[aria-current="true"] .n{color:var(--accent)}
-.summary{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 10px}
-.chip{display:inline-flex;gap:6px;align-items:center;font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--panel);white-space:nowrap}
-.chip b{font-family:var(--f-mono);font-weight:500}
-.chip.crit{background:var(--crit-soft);border-color:transparent;color:var(--crit)}
-.chip.warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
-.chip.ok{background:var(--ok-soft);border-color:transparent;color:var(--ok)}
+/* cabeçalho */
+.hd{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--line);padding:calc(env(safe-area-inset-top) + 8px) 12px 0;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.hd-t{display:grid;text-align:left;border:0;background:none;padding:2px 0 6px;min-width:0;cursor:pointer}
+.hd-title{font-family:var(--f-display);font-weight:600;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hd-title::after{content:" ▾";color:var(--muted);font-size:13px}
+.hd-sub{font-size:12.5px;color:var(--muted);display:flex;gap:8px;align-items:center;white-space:nowrap;overflow:hidden}
+.hd-sub .err{color:var(--crit)}
+.net{display:inline-flex;align-items:center;gap:4px}
+.net::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--na)}
+.net.ok::before{background:var(--ok)} .net.warn::before{background:var(--warn)}
+.icon-btn{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--soft);font-size:24px;line-height:1;cursor:pointer;display:grid;place-items:center}
+.prog{grid-column:1/-1;height:4px;background:var(--soft);margin:0 -12px}
+.prog i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
 
-main{max-width:980px;margin:0 auto;padding:20px 16px 80px;display:grid;gap:18px}
-.banner{border-radius:var(--r);padding:10px 14px;font-size:14px;background:var(--warn-soft);color:var(--ink);border-left:4px solid var(--warn)}
-.banner.info{background:var(--accent-soft);border-left-color:var(--accent)}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:14px}
-.card > header{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
-.lead{color:var(--muted);font-size:14px;max-width:68ch;margin:0}
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
-label.f{display:grid;gap:4px;font-size:13px;color:var(--muted)}
-label.f > span b{color:var(--ink);font-weight:500}
-input[type=text],input[type=number],input[type=date],input[type=time],select,textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;color:var(--ink)}
-textarea{min-height:70px;resize:vertical}
-input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none}
-.btn{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:8px 14px;cursor:pointer;font-weight:500;display:inline-flex;gap:6px;align-items:center}
-.btn:hover{border-color:var(--ink)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:#1A1200}
-.btn.primary:hover{filter:brightness(1.05)}
+main{max-width:760px;margin:0 auto;padding:14px 12px;display:grid;gap:14px}
+
+/* navegação */
+.bn{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--panel);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom)}
+.bn button{border:0;background:none;height:var(--nav-h);display:grid;place-items:center;align-content:center;gap:2px;font-size:11.5px;color:var(--muted);cursor:pointer;position:relative}
+.bn button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.bn button[aria-current="true"]{color:var(--ink);font-weight:600}
+.bn button[aria-current="true"]::before{content:"";position:absolute;top:0;left:22%;right:22%;height:3px;border-radius:0 0 3px 3px;background:var(--accent)}
+.bn .bdg{position:absolute;top:8px;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;font-size:11px;font-weight:600;line-height:18px;background:var(--crit);color:#fff}
+.bn .bdg.warn{background:var(--warn)}
+@media (min-width:900px){
+  body{padding-bottom:24px;padding-left:96px}
+  .bn{top:0;right:auto;width:96px;grid-template-columns:1fr;grid-auto-rows:76px;align-content:start;padding-top:80px;border-top:0;border-right:1px solid var(--line)}
+  .bn button{height:76px}
+  .bn button[aria-current="true"]::before{top:18%;bottom:18%;left:0;right:auto;width:3px;height:auto;border-radius:0 3px 3px 0}
+  .hd{padding-left:24px} main{padding:20px 24px}
+}
+
+/* botão de câmera flutuante e folha de ações */
+.fab{position:fixed;right:16px;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 16px);z-index:24;width:62px;height:62px;border-radius:50%;border:0;background:var(--accent);color:#1A1200;box-shadow:0 6px 18px rgba(0,0,0,.25);cursor:pointer;display:grid;place-items:center}
+.fab svg{width:28px;height:28px;stroke:#1A1200;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.fab[hidden]{display:none}
+@media (min-width:900px){.fab{bottom:24px;right:24px}}
+.sheet-bg{position:fixed;inset:0;z-index:40;background:rgba(8,12,16,.5);display:flex;align-items:flex-end;justify-content:center}
+.sheet-bg[hidden]{display:none}
+.sheet{background:var(--panel);width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:10px 12px calc(14px + env(safe-area-inset-bottom));display:grid;gap:8px}
+.sheet .grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:2px auto 6px}
+.sheet button{min-height:54px;border:1px solid var(--line);background:var(--soft);border-radius:10px;text-align:left;padding:8px 14px;font-weight:600;cursor:pointer}
+.sheet button small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+
+/* blocos */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:12px}
+.card-h{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.lead{color:var(--muted);font-size:14px;margin:0}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media (max-width:380px){.g4{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.g2.st{grid-template-columns:1fr}}
+label.f{display:grid;gap:4px;font-size:13px;color:var(--muted);min-width:0}
+input[type=text],input[type=date],input[type=time],input[type=number],select,textarea{width:100%;min-height:46px;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--ink);font-size:16px}
+textarea{min-height:52px;resize:vertical;line-height:1.4}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;background:var(--panel)}
+.num input{font-family:var(--f-mono);font-size:18px;text-align:center;padding:8px 4px}
+.btn{min-height:46px;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 16px;cursor:pointer;font-weight:600;display:inline-flex;gap:8px;align-items:center;justify-content:center}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#1A1200}
+.btn.sm{min-height:38px;padding:6px 12px;font-size:14px}
 .btn.ghost{background:transparent}
-.btn.small{padding:5px 10px;font-size:13px}
 .btn.danger{color:var(--crit)}
-.btn[disabled]{opacity:.5;cursor:not-allowed}
-.row-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-
-/* escopo */
-.instr{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
-.instr .box{border:1px solid var(--line);border-radius:var(--r);padding:12px;display:grid;gap:10px;border-top:4px solid var(--accent)}
-.notdone{margin:0;padding-left:18px;display:grid;gap:2px;font-size:14px}
-.notdone li::marker{color:var(--crit)}
-.scope-text{background:var(--bg);border:1px dashed var(--line);border-radius:6px;padding:12px;font-size:14px;max-width:none}
-
-/* checklist */
-.etapa{display:grid;gap:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--panel)}
-.etapa > .eh{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;background:var(--bg);border-bottom:1px solid var(--line);flex-wrap:wrap}
-.etapa > .eh h3 .n{font-family:var(--f-mono);color:var(--accent-ink);margin-right:6px}
-.etapa.off .item{display:none}
-.toggle{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
-.item{display:grid;grid-template-columns:1fr auto;gap:8px 14px;padding:12px 14px;border-bottom:1px solid var(--line);border-left:4px solid transparent}
-.item:last-child{border-bottom:0}
-.item[data-s="C"]{border-left-color:var(--ok)}
-.item[data-s="NC"]{border-left-color:var(--crit)}
-.item[data-s="NA"],.item[data-s="NV"]{border-left-color:var(--na)}
-.item .t{font-size:14.5px}
-.item .m{display:inline-block;font-family:var(--f-mono);font-size:11px;padding:1px 5px;border-radius:3px;margin-right:6px;background:var(--na-soft);color:var(--muted);vertical-align:1px}
-.item .m.T{background:var(--accent-soft);color:var(--accent-ink)}
-.item .m.A{background:var(--accent-soft);color:var(--accent-ink)}
-.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;height:fit-content}
-.seg button{border:0;background:var(--panel);padding:6px 9px;font-size:12.5px;cursor:pointer;border-right:1px solid var(--line);font-weight:500}
-.seg button:last-child{border-right:0}
-.seg button[aria-pressed="true"][data-v="C"]{background:var(--ok);color:#fff}
-.seg button[aria-pressed="true"][data-v="NC"]{background:var(--crit);color:#fff}
-.seg button[aria-pressed="true"][data-v="NA"],.seg button[aria-pressed="true"][data-v="NV"]{background:var(--na);color:#fff}
-.item .more{grid-column:1/-1;display:grid;gap:8px}
-.item .more textarea{min-height:44px}
-.photos{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.ph{position:relative;width:84px;height:84px;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:var(--bg)}
-.ph img{width:100%;height:100%;object-fit:cover;display:block}
-.ph button{position:absolute;top:2px;right:2px;border:0;background:rgba(0,0,0,.6);color:#fff;border-radius:4px;font-size:11px;padding:1px 5px;cursor:pointer}
-.ph .lbl{position:absolute;left:0;bottom:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:10px;padding:1px 4px;font-family:var(--f-mono)}
-.addph{width:84px;height:84px;border:1px dashed var(--muted);border-radius:6px;display:grid;place-items:center;font-size:12px;color:var(--muted);cursor:pointer;text-align:center;padding:4px;background:transparent}
-.addph input{display:none}
-
-/* tabelas */
-.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r)}
-table.t{border-collapse:collapse;width:100%;min-width:860px;font-size:13.5px}
-table.t th{text-align:left;font-weight:500;color:var(--muted);font-size:12px;padding:8px 6px;border-bottom:1px solid var(--line);background:var(--bg);white-space:nowrap}
-table.t td{padding:4px 4px;border-bottom:1px solid var(--line);vertical-align:top}
-table.t tr:last-child td{border-bottom:0}
-table.t input,table.t select{padding:6px 6px;font-size:13.5px}
-table.t input[type=number]{width:74px}
-table.t td.calc{font-family:var(--f-mono);font-size:12.5px;white-space:nowrap;padding:8px 6px}
-.pill{display:inline-block;font-size:11.5px;font-family:var(--f-body);font-weight:500;padding:2px 8px;border-radius:999px;white-space:nowrap}
-.pill.ok{background:var(--ok-soft);color:var(--ok)}
-.pill.warn{background:var(--warn-soft);color:var(--warn)}
-.pill.crit{background:var(--crit-soft);color:var(--crit)}
-.pill.na{background:var(--na-soft);color:var(--muted)}
-.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;font-size:13px}
-.legend div{background:var(--bg);border-radius:6px;padding:8px 10px}
-.tcards{display:grid;gap:12px}
-.tcard{border:1px solid var(--line);border-radius:var(--r);padding:12px;display:grid;gap:10px;border-left:4px solid var(--line)}
-.tcard[data-sev="1"]{border-left-color:var(--warn)}
-.tcard[data-sev="2"]{border-left-color:var(--warn)}
-.tcard[data-sev="3"]{border-left-color:var(--crit)}
-.tcard[data-sev="4"]{border-left-color:var(--crit)}
-.tcard .res{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
-.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
-
-/* pendências */
-.pend{display:grid;gap:10px}
-.pitem{border:1px solid var(--line);border-radius:var(--r);padding:12px;display:grid;gap:8px;border-left:4px solid var(--line)}
-.pitem[data-c="Grave"]{border-left-color:var(--crit)}
-.pitem[data-c="Moderada"]{border-left-color:var(--warn)}
-.pitem[data-c="Documental"]{border-left-color:var(--na)}
-.pitem .src{font-size:12px;color:var(--muted);font-family:var(--f-mono)}
-.pitem .g{display:grid;grid-template-columns:160px 1fr 120px;gap:8px}
-@media (max-width:640px){.pitem .g{grid-template-columns:1fr}}
-
-/* relatório */
-#rep{min-height:420px;font-family:var(--f-body);font-size:14px;line-height:1.55}
+.btn[disabled]{opacity:.5}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row.end{justify-content:flex-end}
 .status{font-size:13px;color:var(--muted)}
-.empty{padding:16px;border:1px dashed var(--line);border-radius:var(--r);color:var(--muted);font-size:14px}
+.empty{padding:14px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:14px;text-align:center}
+.banner{border-radius:10px;padding:10px 12px;font-size:14px;background:var(--warn-soft);border-left:4px solid var(--warn)}
+.banner.info{background:var(--accent-soft);border-left-color:var(--accent)}
+details.card > summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;font-family:var(--f-display);font-weight:600;font-size:17px}
+details.card > summary::-webkit-details-marker{display:none}
+details.card > summary::after{content:"▾";color:var(--muted)}
+details.card[open] > summary::after{content:"▴"}
+details.card > summary small{font-family:var(--f-body);font-weight:400;font-size:13px;color:var(--muted);margin-left:auto}
+.notdone{margin:0;padding-left:18px;font-size:14px;display:grid;gap:2px}
+.notdone li::marker{color:var(--crit)}
+.scope{background:var(--soft);border-radius:10px;padding:12px;font-size:14px;margin:0}
+.pill{display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.crit{background:var(--crit-soft);color:var(--crit)} .pill.na{background:var(--na-soft);color:var(--muted)}
+.sw{display:flex;align-items:center;gap:10px;font-size:15px;min-height:46px;cursor:pointer}
+.sw input{width:22px;height:22px;accent-color:var(--accent)}
 
-/* lista de vistorias */
-dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);padding:0;max-width:560px;width:calc(100% - 32px)}
-dialog::backdrop{background:rgba(10,14,18,.55)}
-dialog .dh{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
-dialog .db{padding:12px 16px;display:grid;gap:8px;max-height:60vh;overflow:auto}
-.vrow{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:8px}
+/* inspeção */
+.et{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.et-h{width:100%;border:0;background:none;display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;padding:14px;text-align:left;cursor:pointer;min-height:58px}
+.et-h .n{font-family:var(--f-mono);width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink);font-weight:600}
+.et.done .et-h .n{background:var(--ok-soft);color:var(--ok)}
+.et-h .tt{font-family:var(--f-display);font-weight:600;font-size:16.5px}
+.et-h .cnt{font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.et-h .chev{color:var(--muted);transition:transform .2s}
+.et[data-open="true"] .et-h .chev{transform:rotate(180deg)}
+.et-b{display:none;border-top:1px solid var(--line)}
+.et[data-open="true"] .et-b{display:block}
+.et-off{padding:4px 14px 12px}
+.it{padding:12px 14px;border-bottom:1px solid var(--line);display:grid;gap:10px;border-left:5px solid transparent}
+.it:last-child{border-bottom:0}
+.it[data-s="C"]{border-left-color:var(--ok)} .it[data-s="NC"]{border-left-color:var(--crit);background:linear-gradient(90deg,var(--crit-soft),transparent 40%)} .it[data-s="NA"],.it[data-s="NV"]{border-left-color:var(--na)}
+.it-t{font-size:15px}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px;margin-right:6px;vertical-align:1px;background:var(--na-soft);color:var(--muted)}
+.tag.T{background:var(--accent-soft);color:var(--accent-ink)}
+.seg4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.seg4 button{min-height:48px;border:1px solid var(--line);background:var(--soft);border-radius:10px;font-weight:700;font-size:15px;cursor:pointer;color:var(--muted)}
+.seg4 button[aria-pressed="true"]{color:#fff;border-color:transparent}
+.seg4 button[aria-pressed="true"][data-v="C"]{background:var(--ok)}
+.seg4 button[aria-pressed="true"][data-v="NC"]{background:var(--crit)}
+.seg4 button[aria-pressed="true"][data-v="NA"],.seg4 button[aria-pressed="true"][data-v="NV"]{background:var(--na)}
+.it-x{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mini{min-height:40px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 14px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
+.mini.has{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft)}
+.mini input{display:none}
+.mini svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.strip:empty{display:none}
+.th{flex:0 0 auto;width:76px;height:76px;border-radius:10px;overflow:hidden;border:1px solid var(--line);padding:0;background:var(--soft);cursor:zoom-in;position:relative}
+.th img{width:100%;height:100%;object-fit:cover;display:block}
+.th .lbl{position:absolute;left:0;right:0;bottom:0;font-size:10px;font-weight:600;color:#fff;background:rgba(0,0,0,.55);padding:1px 4px}
+.legend{font-size:13px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap}
+.legend b{color:var(--ink)}
+
+/* notas */
+.nota{border:1px solid var(--line);border-radius:10px;padding:10px;display:grid;gap:8px;background:var(--soft)}
+.nota .when{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+
+/* cartões de medição e termografia */
+.mc{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;border-left:5px solid var(--line)}
+.mc[data-sev="ok"]{border-left-color:var(--ok)} .mc[data-sev="warn"]{border-left-color:var(--warn)} .mc[data-sev="crit"]{border-left-color:var(--crit)}
+.mc-h{width:100%;border:0;background:none;text-align:left;padding:12px 14px;display:grid;gap:4px;cursor:pointer}
+.mc-h .l1{display:flex;justify-content:space-between;gap:8px;align-items:center;font-weight:600}
+.mc-h .l2{font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.mc-b{display:none;padding:0 14px 14px;gap:10px}
+.mc[data-open="true"] .mc-b{display:grid}
+.res{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13.5px}
+.slots{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.slot{aspect-ratio:4/3;border-radius:10px;border:2px dashed var(--line);background:var(--soft);display:grid;place-items:center;text-align:center;font-weight:600;font-size:14px;color:var(--muted);cursor:pointer;overflow:hidden;position:relative;padding:0}
+.slot input{display:none}
+.slot svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.8}
+.slot.has{border-style:solid;cursor:zoom-in}
+.slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.slot .lbl{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);color:#fff;font-size:12px;padding:2px 6px}
+.seg2{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg2 button{min-height:46px;border:0;background:var(--soft);cursor:pointer;font-weight:600;color:var(--muted)}
+.seg2 button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media (max-width:520px){.tiles{grid-template-columns:1fr 1fr}}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px}
+.tile b{display:block;font-family:var(--f-mono);font-size:22px}
+.tile span{font-size:12.5px;color:var(--muted)}
+.tile.crit b{color:var(--crit)} .tile.warn b{color:var(--warn)}
+.pend{border:1px solid var(--line);border-radius:10px;padding:10px;display:grid;gap:8px;border-left:5px solid var(--line)}
+.pend[data-c="Grave"]{border-left-color:var(--crit)} .pend[data-c="Moderada"]{border-left-color:var(--warn)} .pend[data-c="Documental"]{border-left-color:var(--na)}
+.pend .src{font-size:12px;color:var(--muted)}
+.pend .gp{display:grid;grid-template-columns:150px 1fr 110px;gap:8px}
+@media (max-width:600px){.pend .gp{grid-template-columns:1fr 1fr}.pend .gp input[data-k="prov"]{grid-column:1/-1;order:3}}
+#rep{min-height:50vh;font-size:15px}
+
+/* visualizador de fotos */
+.vw{position:fixed;inset:0;z-index:60;background:#000;color:#fff;display:grid;grid-template-rows:auto 1fr auto}
+.vw[hidden]{display:none}
+.vw-top{display:flex;justify-content:space-between;align-items:center;padding:calc(env(safe-area-inset-top) + 6px) 10px 6px;gap:8px}
+.vw-top button,.vw-acts button{min-height:46px;min-width:46px;border:0;border-radius:10px;background:rgba(255,255,255,.12);color:#fff;font-weight:600;padding:6px 14px;cursor:pointer}
+.vw-stage{position:relative;overflow:hidden;touch-action:none;display:grid;place-items:center;user-select:none;-webkit-user-select:none}
+.vw-stage img{max-width:100%;max-height:100%;transform-origin:center center;will-change:transform;-webkit-user-drag:none}
+.vw-bot{padding:8px 10px calc(env(safe-area-inset-bottom) + 10px);display:grid;gap:8px;background:linear-gradient(transparent,rgba(0,0,0,.6))}
+.vw-cap{font-size:14px} .vw-meta{font-size:12.5px;color:#C9D1D8;font-family:var(--f-mono)}
+.vw-bot input{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff}
+.vw-acts{display:grid;grid-template-columns:auto 1fr 1fr auto;gap:8px}
+.vw-acts .del{color:#FF9A8F}
+.vw-hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:12px;color:#aab}
+
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--ink);padding:0;max-width:560px;width:calc(100% - 24px)}
+dialog::backdrop{background:rgba(8,12,16,.55)}
+.dh{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.db{padding:12px 14px;display:grid;gap:10px;max-height:70vh;overflow:auto}
+.vrow{display:grid;gap:8px;padding:10px;border:1px solid var(--line);border-radius:10px}
 .vrow.cur{border-color:var(--accent)}
-.vrow .meta{font-size:12px;color:var(--muted)}
-.vrow .acts{display:flex;gap:6px;flex-shrink:0}
-@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+.vrow .meta{font-size:12.5px;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
-<header class="top">
-  <div class="top-row">
-    <div class="brand">
-      <span class="tag">SEDUC-MT · CIPI-SNP</span>
-      <div style="min-width:0">
-        <h1>Vistoria Elétrica Básica</h1>
-        <div class="sub" id="subtitle">Nova vistoria</div>
-      </div>
-    </div>
-    <div class="top-actions">
-      <span class="save" id="saveState" aria-live="polite">Carregando…</span>
-      <span class="chip" id="netSt">…</span>
-      <button class="btn small" id="btnList" type="button">Vistorias</button>
-      <button class="btn small" id="btnNew" type="button">Nova</button>
-    </div>
-  </div>
-  <nav class="steps" id="steps" aria-label="Etapas da vistoria"></nav>
-  <div class="summary" id="summary"></div>
+<header class="hd">
+  <button class="hd-t" id="btnList" type="button" aria-label="Abrir lista de vistorias">
+    <span class="hd-title" id="hdTitle">Nova vistoria</span>
+    <span class="hd-sub"><span id="saveState">Carregando…</span><span class="net" id="netSt">…</span></span>
+  </button>
+  <button class="icon-btn" id="btnNew" type="button" aria-label="Nova vistoria" title="Nova vistoria">+</button>
+  <div class="prog" aria-hidden="true"><i id="progBar"></i></div>
 </header>
 
 <main id="main"></main>
 
+<nav class="bn" id="bnav" aria-label="Seções"></nav>
+
+<button class="fab" id="fab" type="button" aria-label="Foto ou registro rápido" hidden>
+  <svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="4"/></svg>
+</button>
+<input type="file" id="fabFile" accept="image/*" capture="environment" hidden>
+
+<div class="sheet-bg" id="sheet" hidden>
+  <div class="sheet" role="dialog" aria-label="Registro rápido">
+    <div class="grab"></div>
+    <button type="button" data-act="fabNota">Registro de campo com foto<small>Abre a câmera; depois escreva a anotação</small></button>
+    <button type="button" data-act="fabNotaTxt">Registro de campo só texto<small>Anotação livre, fora do checklist</small></button>
+    <button type="button" data-act="fabGeral">Foto da vista geral<small>Fachada, placa da obra, padrão de entrada</small></button>
+    <button type="button" data-act="fecharSheet" style="text-align:center">Cancelar</button>
+  </div>
+</div>
+
+<div class="vw" id="vw" hidden role="dialog" aria-label="Visualizar foto">
+  <div class="vw-top"><span id="vwCount" class="mono"></span><button type="button" id="vwClose">Fechar</button></div>
+  <div class="vw-stage" id="vwStage"><img id="vwImg" alt=""><div class="vw-hint">Pinça ou toque duplo para ampliar · arraste para trocar de foto</div></div>
+  <div class="vw-bot">
+    <div class="vw-cap" id="vwCap"></div>
+    <div class="vw-meta" id="vwMeta"></div>
+    <input type="text" id="vwLeg" placeholder="Legenda (opcional, entra no relatório)" aria-label="Legenda da foto">
+    <div class="vw-acts"><button type="button" id="vwPrev" aria-label="Foto anterior">‹</button><button type="button" id="vwShare">Compartilhar</button><button type="button" id="vwDel" class="del">Excluir</button><button type="button" id="vwNext" aria-label="Próxima foto">›</button></div>
+  </div>
+</div>
+
 <dialog id="dlgList" aria-labelledby="dlgListT">
-  <div class="dh"><h3 id="dlgListT">Vistorias salvas</h3><button class="btn small ghost" id="dlgClose" type="button">Fechar</button></div>
+  <div class="dh"><h3 id="dlgListT">Vistorias</h3><button class="btn sm ghost" id="dlgClose" type="button">Fechar</button></div>
   <div class="db" id="dlgBody"></div>
 </dialog>
 <dialog id="dlgConfirm" aria-labelledby="dlgConfirmT">
   <div class="dh"><h3 id="dlgConfirmT">Confirmar</h3></div>
   <div class="db"><p id="dlgConfirmMsg" style="margin:0"></p>
-    <div class="row-actions" style="justify-content:flex-end"><button class="btn" id="cfNo" type="button">Cancelar</button><button class="btn primary" id="cfYes" type="button">Confirmar</button></div>
+    <div class="row end"><button class="btn" id="cfNo" type="button">Cancelar</button><button class="btn pri" id="cfYes" type="button">Confirmar</button></div>
   </div>
 </dialog>
-
 <script src="lib/docx.umd.js"></script>
 <script src="lib/exifr.lite.umd.js"></script>
 <script>
 "use strict";
-/* ============================== Conteúdo técnico ============================== */
 const ETAPAS = [
   {id:"1", t:"Entrada de energia e medição", opc:false, itens:[
     ["e1","V","Padrão de entrada conforme projeto aprovado (NDU-001 ou NDU-002 Energisa)"],
@@ -288,10 +348,11 @@ const ESCOPO_TXT = "Vistoria in loco de caráter visual, complementada por medi�
   ". Esses ensaios integram a verificação final prevista na seção 7 da ABNT NBR 5410:2004 e na ABNT NBR 5419:2015 e permanecem sob responsabilidade do responsável técnico da executora, a serem comprovados por laudo acompanhado de ART. As medições de corrente e temperatura refletem as condições de carga no momento da vistoria e não representam a demanda máxima da instalação. Esta vistoria não substitui o laudo técnico das instalações elétricas.";
 const TERMO_CRIT = "Critério de severidade térmica: ANSI/NETA MTS, Tabela 100.18, por diferença de temperatura (ΔT) em relação a componente similar sob carga similar ou em relação à temperatura do ar ambiente. O critério é considerado válido com carga igual ou superior a 40% da nominal; abaixo disso a anomalia pode estar subestimada.";
 
-/* ============================== Estado ============================== */
-const S = { v:null, list:[], idb:null, gps:null, gpsWatch:null, swReg:null,
-  store:"none", tab:"ident", saveTimer:null, saving:false, pendingSave:false, urls:{}, genAbort:null };
-const TABS = [["ident","Identificação"],["escopo","Escopo e equipamentos"],["visual","Inspeção visual"],["correntes","Correntes"],["termo","Termografia"],["pend","Pendências"],["rel","Relatório"]];
+
+const idbGet=(st,k)=>idbReq(st,"readonly",s=>s.get(k));
+const idbPut=(st,v)=>idbReq(st,"readwrite",s=>s.put(v));
+const idbDel=(st,k)=>idbReq(st,"readwrite",s=>s.delete(k));
+const idbAll=st=>idbReq(st,"readonly",s=>s.getAll());
 
 function uid8(){ return Math.random().toString(36).slice(2,10); }
 function hojeISO(){ const d=new Date(); const z=n=>String(n).padStart(2,"0"); return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate()); }
@@ -300,19 +361,16 @@ function novaVistoria(cfg){
     ident:{convenio:"",processo:"",municipio:"",escola:"",objeto:"",executora:"",rt:"",art:"",data:hojeISO(),horaIni:"",horaFim:"",
       fiscal:(cfg&&cfg.fiscal)||"Marcelo Jose Paris",cargo:(cfg&&cfg.cargo)||"Engenheiro Eletricista – Fiscal de Convênio SEDUC-MT (CIPI-SNP)",acompanhantes:"",clima:"",tAmb:"",funcionamento:"",etapaObra:""},
     instr:{alicate:{modelo:"",serie:"",calib:""}, termo:{modelo:"",serie:"",calib:"",emiss:"0,95",faixa:""}, obsLimit:""},
-    aplica:{"2":false,"7":true,"8":false}, local:{endereco:"",coords:"",lat:null,lon:null,fonte:""}, carimbo:true, check:{}, correntes:[], termo:[], fotosGerais:[], pend:{},
+    aplica:{"2":false,"7":true,"8":false}, local:{endereco:"",coords:"",lat:null,lon:null,fonte:""}, carimbo:true, check:{}, correntes:[], termo:[], fotosGerais:[], notas:[], pend:{},
     cfg:{deseq:10}, rel:{texto:"",geradoEm:0,fonte:""} };
 }
 function getPath(o,p){ return p.split(".").reduce((a,k)=>a==null?a:a[k],o); }
 function setPath(o,p,val){ const ks=p.split("."); let a=o; for(let i=0;i<ks.length-1;i++){ if(a[ks[i]]==null) a[ks[i]]={}; a=a[ks[i]]; } a[ks[ks.length-1]]=val; }
-function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function n(v){ if(v===""||v==null) return null; const x=parseFloat(String(v).replace(",",".")); return isFinite(x)?x:null; }
 function fmt(x,d){ if(x==null) return "–"; return x.toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d}); }
 function maskConv(s){ const d=String(s).replace(/\D/g,"").slice(0,8); return d.length>4? d.slice(0,4)+"-"+d.slice(4) : d; }
 function dataBR(iso){ if(!iso) return ""; const [y,m,d]=iso.split("-"); return d+"/"+m+"/"+y; }
 function titulo(v){ const i=v.ident; const p=[]; if(i.convenio) p.push("Conv. "+i.convenio); if(i.escola) p.push(i.escola); if(i.municipio) p.push(i.municipio); return p.join(" · ")||"Nova vistoria"; }
-
-/* ============================== Cálculos ============================== */
 function calcCorrente(r, limDeseq){
   const fases=[n(r.ia),n(r.ib),n(r.ic)].filter(x=>x!=null);
   const imax = fases.length? Math.max(...fases) : null;
@@ -360,8 +418,6 @@ function resumo(v){
   let ter=0; v.termo.forEach(r=>{ if(calcTermo(r).sev>=2) ter++; });
   return {total:it.length,feitos,nc,cor,ter};
 }
-
-/* ============================== Fotos ============================== */
 function fotoURL(f){ if(!S.urls[f.id]) carregarURL(f.id); return S.urls[f.id] || ""; }
 async function carregarURL(id){ if(S.urls[id]!==undefined) return; S.urls[id]=""; try{ const r=await idbGet("fotos",id); if(r&&r.blob){ S.urls[id]=URL.createObjectURL(r.blob); document.querySelectorAll(`img[data-fid="${id}"]`).forEach(im=>im.src=S.urls[id]); } }catch(e){} }
 async function reduzirImagem(file, max, linhas){
@@ -397,30 +453,15 @@ async function guardarBlob(r){
 }
 async function fotoBlob(f){ const r=await idbGet("fotos",f.id); if(!r||!r.blob) throw new Error("foto não encontrada no aparelho"); return r.blob; }
 function metaTxt(f){ const m=f.meta; if(!m) return ""; const p=[]; if(m.dt) p.push(dtBR(new Date(m.dt))); if(m.lat!=null) p.push(fmtCoord(m.lat,m.lon)+" ("+m.gpsFonte+")"); return p.length?" – "+p.join(" – "):""; }
-function listaFotos(v){
-  const out=[]; let k=0;
-  itensAtivos(v).forEach(x=>{ (x.st.fotos||[]).forEach(f=>out.push({f, cap:"Item "+x.id.toUpperCase()+" – "+x.t+(f.leg?" ("+f.leg+")":""), ref:"chk:"+x.id})); });
-  v.termo.forEach((r,i)=>{ const c=calcTermo(r);
-    if(r.fotoIR) out.push({f:r.fotoIR, cap:"Termograma – "+(r.local||"ponto "+(i+1))+" / "+(r.componente||"")+(c.dt!=null?" (Tmáx "+fmt(n(r.tmax),1)+" °C; ΔT "+fmt(c.dt,1)+" °C)":""), ref:"ter:"+r.id});
-    if(r.fotoVis) out.push({f:r.fotoVis, cap:"Imagem visual – "+(r.local||"ponto "+(i+1))+" / "+(r.componente||""), ref:"ter:"+r.id}); });
-  (v.fotosGerais||[]).forEach(f=>out.push({f, cap:f.leg||"Vista geral", ref:"geral"}));
-  out.forEach(o=>{ o.num=++k; o.cap+=metaTxt(o.f); }); return out;
-}
-
-/* ============================== Persistência ============================== */
 function withTimeout(p,ms){ return Promise.race([p,new Promise(r=>setTimeout(()=>r(null),ms))]); }
 function idbOpen(){ return new Promise((res,rej)=>{ const rq=indexedDB.open("vistoriaEletrica-dados",1);
   rq.onupgradeneeded=()=>{ const d=rq.result; if(!d.objectStoreNames.contains("vistorias")) d.createObjectStore("vistorias",{keyPath:"id"}); if(!d.objectStoreNames.contains("fotos")) d.createObjectStore("fotos",{keyPath:"id"}); };
   rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error); }); }
 function idbReq(store,mode,fn){ return new Promise((res,rej)=>{ const tx=S.idb.transaction(store,mode); const st=tx.objectStore(store); const r=fn(st); tx.oncomplete=()=>res(r&&r.result); tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error); }); }
-const idbGet=(st,k)=>idbReq(st,"readonly",s=>s.get(k));
-const idbPut=(st,v)=>idbReq(st,"readwrite",s=>s.put(v));
-const idbDel=(st,k)=>idbReq(st,"readwrite",s=>s.delete(k));
-const idbAll=st=>idbReq(st,"readonly",s=>s.getAll());
 async function initCaps(){
   try{ S.idb=await idbOpen(); S.store="idb"; }catch(e){ S.store="none"; toastSave("Este navegador bloqueou o armazenamento local; os dados não serão guardados.",true); }
   try{ if(navigator.storage&&navigator.storage.persist) await navigator.storage.persist(); }catch(e){}
-  if("serviceWorker" in navigator){ try{ S.swReg=await navigator.serviceWorker.register("sw.js"); navigator.serviceWorker.addEventListener("message",ev=>{ if(ev.data&&ev.data.tipo==="atualizado"){ S.novaVersao=true; render(); } }); }catch(e){} }
+  if("serviceWorker" in navigator){ try{ S.tinhaSW=!!navigator.serviceWorker.controller; S.swReg=await navigator.serviceWorker.register("sw.js"); navigator.serviceWorker.addEventListener("message",ev=>{ if(ev.data&&ev.data.tipo==="atualizado" && S.tinhaSW){ S.novaVersao=true; render(); } }); }catch(e){} }
 }
 async function carregar(){
   let lista=[];
@@ -432,7 +473,6 @@ async function carregar(){
   normalizar(S.v);
 }
 function normalizar(v){ const b=novaVistoria(); for(const k of Object.keys(b)){ if(v[k]==null) v[k]=b[k]; } ["ident","instr","cfg","rel","aplica","local"].forEach(k=>{ v[k]=Object.assign({},b[k],v[k]); }); }
-function agendarSalvar(){ S.v.updatedAt=Date.now(); toastSave("Alterações não salvas"); clearTimeout(S.saveTimer); S.saveTimer=setTimeout(salvar,600); renderTop(); }
 async function salvar(){
   if(S.saving){ S.pendingSave=true; return; }
   S.saving=true;
@@ -442,7 +482,7 @@ async function salvar(){
   catch(e){ toastSave("Erro ao salvar: "+(e&&e.message||e), true); }
   S.saving=false; if(S.pendingSave){ S.pendingSave=false; salvar(); }
 }
-/* GPS do aparelho */
+function toastSave(msg,err){ const el=document.getElementById("saveState"); el.textContent=msg; el.classList.toggle("err",!!err); }
 function iniciarGPS(){ if(!("geolocation" in navigator) || S.gpsWatch!=null) return;
   S.gpsWatch=navigator.geolocation.watchPosition(p=>{ S.gps={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()}; atualizarGPSst(); },
     e=>{ S.gpsErro=e.code===1?"permissão negada":"sem sinal de GPS"; atualizarGPSst(); },{enableHighAccuracy:true,maximumAge:30000,timeout:30000}); }
@@ -462,87 +502,9 @@ async function buscarEndereco(){
     else st.textContent="Endereço não encontrado para essas coordenadas.";
   }catch(e){ st.textContent="Não foi possível buscar: "+(e&&e.message||e); }
 }
-function toastSave(msg,err){ const el=document.getElementById("saveState"); el.textContent=msg; el.classList.toggle("err",!!err); }
-
-/* ============================== Render ============================== */
-const M = document.getElementById("main");
-function renderTop(){
-  document.getElementById("subtitle").textContent = titulo(S.v);
-  document.getElementById("steps").innerHTML = TABS.map(([k,l],i)=>`<button type="button" data-tab="${k}" aria-current="${S.tab===k}"><span class="n">${i+1}</span>${l}</button>`).join("");
-  const r=resumo(S.v);
-  document.getElementById("summary").innerHTML =
-    `<span class="chip"><b>${r.feitos}/${r.total}</b> itens avaliados</span>`+
-    `<span class="chip ${r.nc?"crit":"ok"}"><b>${r.nc}</b> não conformes</span>`+
-    `<span class="chip ${r.cor?"warn":""}"><b>${r.cor}</b> alertas de corrente</span>`+
-    `<span class="chip ${r.ter?"crit":""}"><b>${r.ter}</b> anomalias térmicas</span>`;
-}
-function field(path,label,opts={}){
-  const v=getPath(S.v,path)??""; const id="f_"+path.replace(/\./g,"_");
-  const type=opts.type||"text";
-  const inp = opts.area? `<textarea id="${id}" data-path="${path}" placeholder="${esc(opts.ph||"")}">${esc(v)}</textarea>`
-    : opts.sel? `<select id="${id}" data-path="${path}">${opts.sel.map(o=>`<option ${o===v?"selected":""}>${esc(o)}</option>`).join("")}</select>`
-    : `<input id="${id}" type="${type}" data-path="${path}" value="${esc(v)}" placeholder="${esc(opts.ph||"")}" ${opts.mode?`inputmode="${opts.mode}"`:""} ${opts.mask?`data-mask="${opts.mask}"`:""}>`;
-  return `<label class="f" for="${id}"><span>${label}</span>${inp}</label>`;
-}
-function render(){
-  renderTop();
-  const fn = {ident:rIdent, escopo:rEscopo, visual:rVisual, correntes:rCorrentes, termo:rTermo, pend:rPend, rel:rRel}[S.tab];
-  const banners = [];
-  if(S.novaVersao) banners.push(`<div class="banner info">Nova versão do app instalada. <button class="btn small" type="button" id="recarregar">Recarregar agora</button></div>`);
-  if(S.store==="none") banners.push(`<div class="banner">O armazenamento do aparelho não está disponível neste navegador. Nada será guardado: gere o .docx antes de fechar.</div>`);
-  if(S.v.carimbo && ["visual","termo","ident"].includes(S.tab) && (!S.v.ident.convenio || !S.v.ident.escola || !S.v.local.endereco)) banners.push(`<div class="banner info">Preencha convênio, unidade escolar e endereço em Identificação antes de tirar as fotos: o carimbo é gravado na foto no momento em que ela é adicionada.</div>`);
-  M.innerHTML = banners.join("") + fn();
-  if(S.tab==="ident") atualizarGPSst();
-}
-function rIdent(){
-  return `<section class="card"><header><div><h2>Identificação</h2><p class="lead">Dados do convênio e da visita. O número do convênio é formatado como 0000-0000.</p></div></header>
-  <div class="grid2">
-    ${field("ident.convenio","Convênio nº",{ph:"0000-0000",mask:"conv",mode:"numeric"})}
-    ${field("ident.processo","Processo SEDUC",{ph:"SEDUC-PRO-2026/00000"})}
-    ${field("ident.municipio","Município",{ph:"Sinop"})}
-    ${field("ident.escola","Unidade escolar",{ph:"E. E. …"})}
-  </div>
-  ${field("ident.objeto","Objeto do convênio",{area:true,ph:"Construção, reforma ou ampliação de …"})}
-  <div class="grid2">
-    ${field("ident.executora","Empresa executora")}
-    ${field("ident.etapaObra","Fase da obra",{sel:["","Em execução","Medição","Recebimento provisório","Recebimento definitivo","Prestação de contas final"]})}
-    ${field("ident.rt","Responsável técnico da executora")}
-    ${field("ident.art","ART de execução / laudo nº")}
-  </div></section>
-  <section class="card"><header><div><h2>Visita</h2></div></header>
-  <div class="grid2">
-    ${field("ident.data","Data",{type:"date"})}
-    <div class="grid2" style="gap:8px">${field("ident.horaIni","Início",{type:"time"})}${field("ident.horaFim","Término",{type:"time"})}</div>
-    ${field("ident.fiscal","Fiscal")}
-    ${field("ident.cargo","Cargo / função")}
-    ${field("ident.acompanhantes","Acompanharam a vistoria",{ph:"Nome – função – entidade"})}
-    ${field("ident.funcionamento","Condição de uso no momento",{sel:["","Escola em funcionamento (aulas)","Escola sem aulas, com cargas ligadas","Obra sem ocupação","Instalação desenergizada"]})}
-    ${field("ident.clima","Condições do tempo",{ph:"Ensolarado, nublado, chuva…"})}
-    ${field("ident.tAmb","Temperatura ambiente (°C)",{type:"text",mode:"decimal",ph:"32"})}
-  </div></section>
-  ${rLocal()}
-  ${rFotosGerais()}`;
-}
-function rLocal(){
-  const L=S.v.local; const ok=L.lat!=null&&L.lon!=null;
-  return `<section class="card"><header><div><h2>Local e carimbo das fotos</h2><p class="lead">Cada foto recebe uma faixa abaixo da imagem com data e hora, coordenadas, endereço e identificação (convênio, escola, item e fiscal). A faixa fica fora da imagem e não cobre a escala do termograma.</p></div>
-    <label class="toggle"><input type="checkbox" id="carimbo" ${S.v.carimbo?"checked":""}> Carimbar as fotos novas</label></header>
-  <div class="grid2">
-    ${field("local.endereco","Endereço da unidade escolar",{ph:"Rua…, nº…, bairro, Sinop-MT, CEP…"})}
-    <label class="f" for="f_local_coords"><span>Coordenadas da escola (latitude, longitude)</span><input id="f_local_coords" type="text" data-path="local.coords" value="${esc(L.coords||"")}" placeholder="-11.86412, -55.50321" inputmode="decimal"><span class="status" id="coordSt">${ok?"Lidas: "+fmtCoord(L.lat,L.lon)+(L.fonte?" ("+esc(L.fonte)+")":""):"Cole do Google Maps: toque e segure no local e copie os números."}</span></label>
-  </div>
-  <div class="row-actions"><button class="btn" type="button" id="usarGPS">Usar minha posição atual</button><button class="btn" type="button" id="buscarEnd">Buscar endereço pelas coordenadas</button><span class="status" id="gpsSt"></span></div>
-  <p class="status" id="endSt"></p>
-  <p class="lead">Ordem usada no carimbo de cada foto: GPS gravado na foto; se não houver, GPS do aparelho no momento (com a precisão em metros); se o GPS falhar, as coordenadas da escola acima, marcadas como "informadas pelo fiscal". O GPS funciona sem internet. A busca de endereço precisa de internet e usa o OpenStreetMap.</p>
-  </section>`;
-}
 function fmtCoord(lat,lon){ return lat.toFixed(6).replace(".",",")+"°, "+lon.toFixed(6).replace(".",",")+"°"; }
 function parseCoords(t){ const m=String(t).replace(/;/g," ").match(/-?\d+(?:[.,]\d+)?/g); if(!m||m.length<2) return null; const a=parseFloat(m[0].replace(",",".")), b=parseFloat(m[1].replace(",",".")); if(!(Math.abs(a)<=90&&Math.abs(b)<=180)) return null; return {lat:a,lon:b}; }
 function dtBR(d){ const z=x=>String(x).padStart(2,"0"); return z(d.getDate())+"/"+z(d.getMonth()+1)+"/"+d.getFullYear()+" "+z(d.getHours())+":"+z(d.getMinutes())+":"+z(d.getSeconds()); }
-function rotulo(tgt){ const v=S.v; const [k,a,b]=String(tgt).split(":");
-  if(k==="c"){ for(const e of ETAPAS) for(const [id,m,t] of e.itens) if(id===a) return "Item "+id.toUpperCase()+" – "+t; }
-  if(k==="t"){ const r=v.termo[+a]||{}; return (b==="ir"?"Termograma":"Foto visual")+" – "+(r.local||"ponto "+(+a+1))+(r.componente?" / "+r.componente:""); }
-  return "Vista geral"; }
 async function lerMeta(file){
   const out={dt:null,dtFonte:"",lat:null,lon:null,gpsFonte:""};
   try{ if(window.exifr){ const x=await exifr.parse(file,{tiff:true,exif:true,gps:true});
@@ -558,115 +520,9 @@ function linhasCarimbo(meta,tgt){
   L.push(v.local.endereco||"Endereço não informado");
   L.push([i.convenio?"Convênio "+i.convenio:"", i.escola, i.municipio?i.municipio+"-MT":""].filter(Boolean).join(" · ")||"Identificação do convênio não preenchida");
   L.push(rotulo(tgt));
-  if(i.fiscal) L.push("Fiscal: "+i.fiscal+(i.cargo?" – "+i.cargo:""));
+  if(i.fiscal) L.push("Fiscal: "+i.fiscal+" – SEDUC-MT");
   return L;
 }
-function rFotosGerais(){
-  return `<section class="card"><header><div><h3>Fotos gerais</h3><p class="lead">Fachada, placa da obra, padrão de entrada visto de fora.</p></div></header>
-  <div class="photos">${(S.v.fotosGerais||[]).map((f,i)=>thumb(f,"g:"+i)).join("")}${addPh("g")}</div></section>`;
-}
-function thumb(f,ref,lbl){ return `<div class="ph"><img data-fid="${esc(f.id)}" src="${esc(fotoURL(f))}" alt="${esc(f.leg||"Foto")}" loading="lazy">${lbl?`<span class="lbl">${esc(lbl)}</span>`:""}<button type="button" data-delph="${esc(ref)}" aria-label="Remover foto">✕</button></div>`; }
-function addPh(target,txt){ return `<label class="addph">${txt||"+ Foto"}<input type="file" accept="image/*" capture="environment" data-addph="${esc(target)}"></label>`; }
-
-function rEscopo(){
-  const i=S.v.instr;
-  return `<section class="card"><header><div><h2>Escopo e equipamentos</h2><p class="lead">A vistoria usa só dois instrumentos. Este texto entra no relatório como limitação de escopo.</p></div></header>
-  <div class="instr">
-    <div class="box"><h3>Alicate amperímetro</h3><p class="lead">Corrente nas fases e no neutro dos alimentadores e circuitos, no momento da visita.</p>
-      ${field("instr.alicate.modelo","Marca e modelo")}<div class="grid2" style="gap:8px">${field("instr.alicate.serie","Nº de série")}${field("instr.alicate.calib","Certificado / data de calibração")}</div></div>
-    <div class="box"><h3>Câmera termográfica</h3><p class="lead">Temperatura de conexões, disjuntores e barramentos com a instalação sob carga.</p>
-      ${field("instr.termo.modelo","Marca e modelo")}<div class="grid2" style="gap:8px">${field("instr.termo.serie","Nº de série")}${field("instr.termo.calib","Certificado / data de calibração")}${field("instr.termo.emiss","Emissividade adotada")}${field("instr.termo.faixa","Faixa de medição (°C)")}</div></div>
-  </div></section>
-  <section class="card"><header><div><h3>Ensaios não realizados</h3><p class="lead">Ficam a cargo do responsável técnico da executora, a comprovar por laudo com ART.</p></div></header>
-    <ul class="notdone">${NAO_REALIZADOS.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
-    <p class="scope-text">${esc(ESCOPO_TXT)}</p>
-    ${field("instr.obsLimit","Outras limitações desta visita",{area:true,ph:"Ex.: cobertura sem acesso seguro, quadro da cozinha trancado, sem carga na quadra…"})}
-  </section>
-  <section class="card"><header><div><h3>Segurança</h3></div></header>
-    <ul class="notdone" style="list-style:square">
-      <li>Quadros abertos e manobrados só pelo eletricista ou RT da executora; o fiscal mede e fotografa, sem tocar partes vivas.</li>
-      <li>Alicate apenas em condutor isolado; termografia à distância segura, sem retirar proteções além da contra-tampa.</li>
-      <li>Sem subida em cobertura sem acesso seguro e proteção contra queda; SPDA observado do solo quando não houver.</li>
-    </ul></section>`;
-}
-function rVisual(){
-  return `<section class="card"><header><div><h2>Inspeção visual</h2><p class="lead">Marque cada item: <b>C</b> conforme, <b>NC</b> não conforme, <b>NA</b> não se aplica, <b>NV</b> não verificado. Itens marcados <span class="m T" style="font-family:var(--f-mono);font-size:11px;padding:1px 5px;border-radius:3px;background:var(--accent-soft);color:var(--accent-ink)">Termovisor</span> usam a câmera; registre os pontos na etapa Termografia.</p></div></header></section>
-  ${ETAPAS.map(e=>{ const on = !e.opc || S.v.aplica[e.id];
-    return `<section class="etapa ${on?"":"off"}"><div class="eh"><h3><span class="n">${e.id}</span>${esc(e.t)}</h3>
-      ${e.opc?`<label class="toggle"><input type="checkbox" data-aplica="${e.id}" ${on?"checked":""}> ${esc(e.pergunta)}</label>`:""}</div>
-      ${e.itens.map(([id,m,t])=>{ const st=S.v.check[id]||{};
-        return `<div class="item" data-s="${st.s||""}" id="it_${id}"><div class="t"><span class="m ${m}">${METODO[m]}</span>${esc(t)}</div>
-        <div class="seg" role="group" aria-label="Situação do item">${["C","NC","NA","NV"].map(s=>`<button type="button" data-item="${id}" data-v="${s}" aria-pressed="${st.s===s}">${s}</button>`).join("")}</div>
-        <div class="more"><textarea data-itemobs="${id}" placeholder="Observação (local, o que foi visto, valor de placa…)" aria-label="Observação do item ${id}">${esc(st.obs||"")}</textarea>
-        <div class="photos">${(st.fotos||[]).map((f,i)=>thumb(f,"c:"+id+":"+i)).join("")}${addPh("c:"+id)}</div></div></div>`; }).join("")}
-    </section>`; }).join("")}`;
-}
-function rCorrentes(){
-  const v=S.v;
-  const rows = v.correntes.map((r,i)=>{ const c=calcCorrente(r,v.cfg.deseq);
-    const st = c.flags.some(f=>f.sev==="crit")?`<span class="pill crit">Alerta</span>`: c.flags.length?`<span class="pill warn">Atenção</span>`: (c.imax!=null?`<span class="pill ok">OK</span>`:`<span class="pill na">–</span>`);
-    const inp=(k,ph,w)=>`<input type="${w?"number":"text"}" ${w?'step="0.1" inputmode="decimal"':""} data-cor="${i}" data-k="${k}" value="${esc(r[k]??"")}" placeholder="${ph||""}" aria-label="${k}">`;
-    return `<tr data-row="${i}"><td>${inp("quadro","QGBT")}</td><td>${inp("circuito","Alimentador")}</td><td>${inp("disjIn","",1)}</td><td>${inp("cabo","mm²")}</td><td>${inp("iz","",1)}</td>
-      <td>${inp("ia","",1)}</td><td>${inp("ib","",1)}</td><td>${inp("ic","",1)}</td><td>${inp("ineutro","",1)}</td>
-      <td class="calc" data-calc="${i}">${fmt(c.pctIn,0)}% · ${c.deseq!=null?fmt(c.deseq,1)+"%":"–"}</td><td class="calc" data-st="${i}">${st}</td>
-      <td><button class="btn small ghost danger" type="button" data-delcor="${i}" aria-label="Remover linha">✕</button></td></tr>
-      <tr data-rowobs="${i}"><td colspan="12" style="padding-top:0"><input type="text" data-cor="${i}" data-k="obs" value="${esc(r.obs||"")}" placeholder="Cargas ligadas no momento, observação" aria-label="Observação"><div class="status" data-flags="${i}">${c.flags.map(f=>esc(f.txt)).join(" · ")}</div></td></tr>`; }).join("");
-  return `<section class="card"><header><div><h2>Medições de corrente</h2><p class="lead">Uma linha por alimentador ou circuito medido com o alicate. O app calcula a corrente máxima em relação à In do disjuntor e o desequilíbrio entre fases, pela maior diferença em relação à média.</p></div>
-    <div class="row-actions">${field("cfg.deseq","Limite de atenção para desequilíbrio (%)",{type:"number"})}</div></header>
-  ${v.correntes.length? `<div class="tbl-wrap"><table class="t"><thead><tr><th>Quadro</th><th>Circuito</th><th>In disj. (A)</th><th>Cabo</th><th>Iz cabo (A)</th><th>Fase A (A)</th><th>Fase B (A)</th><th>Fase C (A)</th><th>Neutro (A)</th><th>% In · deseq.</th><th>Situação</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`
-    : `<div class="empty">Nenhuma medição ainda. Comece pelo alimentador do quadro geral.</div>`}
-  <div class="row-actions"><button class="btn primary" type="button" id="addCor">+ Adicionar medição</button></div>
-  <p class="lead">Iz é a capacidade de condução do cabo, tirada do projeto; deixe em branco se não souber. O limite de desequilíbrio é critério da fiscalização, não da norma. Uma leitura pontual não representa a demanda máxima.</p></section>`;
-}
-function rTermo(){
-  const v=S.v;
-  const cards=v.termo.map((r,i)=>{ const c=calcTermo(r);
-    const pill = c.sev<0?`<span class="pill na">${c.txt}</span>`: c.sev===0?`<span class="pill ok">${c.txt}</span>`: c.sev<=2?`<span class="pill warn">${c.txt}</span>`:`<span class="pill crit">${c.txt}</span>`;
-    const inp=(k,lbl,ph,num)=>`<label class="f"><span>${lbl}</span><input type="text" ${num?'inputmode="decimal"':""} data-ter="${i}" data-k="${k}" value="${esc(r[k]??"")}" placeholder="${ph||""}"></label>`;
-    return `<div class="tcard" data-sev="${c.sev}" data-tcard="${i}">
-      <div class="grid2">${inp("local","Local","QGBT – bloco administrativo")}${inp("componente","Componente","Borne do disjuntor geral, fase B")}</div>
-      <div class="grid4">${inp("tmax","T máx. (°C)","",1)}${inp("tref","T referência (°C)","",1)}
-        <label class="f"><span>Referência</span><select data-ter="${i}" data-k="refTipo"><option value="similar" ${r.refTipo!=="ambiente"?"selected":""}>Componente similar</option><option value="ambiente" ${r.refTipo==="ambiente"?"selected":""}>Ar ambiente</option></select></label>
-        ${inp("iMed","Corrente no momento (A)","",1)}${inp("iNom","Corrente nominal (A)","",1)}</div>
-      <div class="res" data-tres="${i}">${pill}${c.dt!=null?`<span class="mono">ΔT = ${fmt(c.dt,1)} °C</span><span>· ${esc(c.acao)}</span>`:""}${c.carga!=null?`<span class="mono">· carga ${fmt(c.carga,0)}%</span>`:""}${c.baixaCarga?`<span class="pill warn">Carga abaixo de 40%</span>`:""}</div>
-      <label class="f"><span>Observação</span><input type="text" data-ter="${i}" data-k="obs" value="${esc(r.obs||"")}" placeholder="Causa provável, condição da conexão"></label>
-      <div class="photos">${r.fotoIR?thumb(r.fotoIR,"t:"+i+":ir","IR"):addPh("t:"+i+":ir","+ Termograma")}${r.fotoVis?thumb(r.fotoVis,"t:"+i+":vis","Visual"):addPh("t:"+i+":vis","+ Foto visual")}
-        <button class="btn small ghost danger" type="button" data-delter="${i}">Remover ponto</button></div>
-      <div class="status" data-irst="${i}"></div></div>`; }).join("");
-  return `<section class="card"><header><div><h2>Termografia</h2><p class="lead">Registre cada ponto com a temperatura máxima e uma referência: o mesmo componente em outra fase (preferível) ou o ar ambiente. O app classifica pela Tabela 100.18 da ANSI/NETA MTS.</p></div></header>
-  <div class="legend">
-    <div><b>vs. componente similar</b><br>ΔT 1–3 °C: possível deficiência, investigar<br>ΔT 4–15 °C: provável deficiência, reparar quando possível<br>ΔT &gt; 15 °C: discrepância grave, reparar imediatamente</div>
-    <div><b>vs. ar ambiente</b><br>ΔT 1–10 °C: possível · 11–20 °C: provável<br>ΔT 21–40 °C: deficiência, monitorar até corrigir<br>ΔT &gt; 40 °C: discrepância grave, reparar imediatamente</div>
-    <div><b>Validade</b><br>Critério válido com carga ≥ 40% da nominal. Meça a corrente com o alicate no mesmo ponto para registrar a carga.</div>
-  </div>
-  ${v.termo.length? `<div class="tcards">${cards}</div>` : `<div class="empty">Nenhum ponto registrado. Fotografe primeiro o quadro geral sob carga.</div>`}
-  <div class="row-actions"><button class="btn primary" type="button" id="addTer">+ Adicionar ponto</button></div></section>`;
-}
-function rPend(){
-  const L=pendencias(S.v);
-  return `<section class="card"><header><div><h2>Pendências</h2><p class="lead">Lista montada a partir dos itens não conformes, dos alertas de corrente e das anomalias térmicas prováveis ou graves. Ajuste a classe e escreva a providência; tudo entra no relatório.</p></div></header>
-  <div class="legend"><div><b>Grave</b>: risco imediato de choque ou incêndio; impede o recebimento.</div><div><b>Moderada</b>: executado diferente do projeto, sem risco imediato; corrigir com prazo.</div><div><b>Documental</b>: falta de comprovação (as built, ART, laudo).</div></div>
-  ${L.length? `<div class="pend">${L.map(p=>`<div class="pitem" data-c="${esc(p.classe)}"><div class="src">${esc(p.origem)}</div><div>${esc(p.desc)}</div>
-    <div class="g"><select data-pend="${esc(p.key)}" data-k="classe" aria-label="Classe">${["Grave","Moderada","Documental"].map(c=>`<option ${c===p.classe?"selected":""}>${c}</option>`).join("")}</select>
-    <input type="text" data-pend="${esc(p.key)}" data-k="prov" value="${esc(p.prov)}" placeholder="Providência a exigir da executora" aria-label="Providência">
-    <input type="text" data-pend="${esc(p.key)}" data-k="prazo" value="${esc(p.prazo)}" placeholder="Prazo (dias)" inputmode="numeric" aria-label="Prazo"></div></div>`).join("")}</div>`
-    : `<div class="empty">Nenhuma pendência até agora. Itens marcados NC, alertas de corrente e anomalias térmicas aparecem aqui automaticamente.</div>`}</section>`;
-}
-function rRel(){
-  const r=S.v.rel; const share=!!(navigator.canShare && window.File);
-  return `<section class="card"><header><div><h2>Relatório</h2><p class="lead">O rascunho automático funciona sem internet. Para o Claude redigir, copie o pedido, cole numa conversa com o Claude quando houver sinal e cole a resposta no campo abaixo. Tabelas de medição, termografia, pendências e o registro fotográfico entram como anexos no .docx.</p></div></header>
-  <div class="row-actions">
-    <button class="btn primary" type="button" id="genDraft">Rascunho automático</button>
-    <button class="btn" type="button" id="cpPrompt">Copiar pedido para o Claude</button>
-    <span class="status" id="genSt">${r.geradoEm?("Texto de "+new Date(r.geradoEm).toLocaleString("pt-BR")+(r.fonte?" ("+esc(r.fonte)+")":"")):""}</span></div>
-  <textarea id="rep" data-path="rel.texto" placeholder="O texto do relatório aparece aqui. Títulos de seção começam com ##.">${esc(r.texto)}</textarea>
-  <div class="row-actions">
-    <button class="btn primary" type="button" id="dlDocx">Baixar .docx</button>
-    ${share?`<button class="btn" type="button" id="shDocx">Compartilhar .docx</button>`:""}
-    <button class="btn" type="button" id="cpTxt">Copiar texto</button>
-    <span class="status" id="dlSt"></span></div></section>`;
-}
-/* ============================== Relatório: rascunho ============================== */
 function dadosParaClaude(v){
   const fotos=listaFotos(v); const fotosDe=ref=>fotos.filter(f=>f.ref===ref).map(f=>"Foto "+f.num);
   return {
@@ -679,6 +535,7 @@ function dadosParaClaude(v){
     limite_desequilibrio_adotado_pct:v.cfg.deseq,
     termografia: v.termo.map(r=>{ const c=calcTermo(r); return {local:r.local,componente:r.componente,Tmax_C:r.tmax,Tref_C:r.tref,referencia:r.refTipo==="ambiente"?"ar ambiente":"componente similar",deltaT_C:c.dt!=null?+c.dt.toFixed(1):null,classificacao_NETA:c.txt,acao:c.acao,carga_pct:c.carga!=null?+c.carga.toFixed(0):null,carga_abaixo_40:!!c.baixaCarga,obs:r.obs,fotos:fotosDe("ter:"+r.id)}; }),
     pendencias: pendencias(v).map(p=>({origem:p.origem,descricao:p.desc,classe:p.classe,providencia:p.prov,prazo_dias:p.prazo})),
+    registros_de_campo:(v.notas||[]).map((nt,k)=>({registro:k+1,data_hora:dtBR(new Date(nt.t)),texto:nt.txt||"",fotos:fotosDe("nota:"+nt.id)})),
     total_fotos:fotos.length
   };
 }
@@ -693,7 +550,7 @@ Regras obrigatórias:
 5. Termografia: cite o critério da ANSI/NETA MTS Tabela 100.18. Quando a carga for menor que 40% ou não informada, registre que a severidade pode estar subestimada.
 6. As tabelas de medição de corrente, de termografia, de pendências e o registro fotográfico são anexados automaticamente como Anexos A, B, C e D. Não reproduza essas tabelas; resuma os resultados e remeta aos anexos e às fotos pelo número (ex.: "Foto 3").
 7. Formato de saída: texto puro. Títulos de seção em linhas iniciadas por "## " (ex.: "## 1. IDENTIFICAÇÃO"). Listas com "- ". Sem negrito, sem tabelas, sem markdown além disso. Não inclua bloco de assinatura; ele é acrescentado no documento.
-8. Seções, nesta ordem: 1. IDENTIFICAÇÃO; 2. OBJETIVO; 3. ESCOPO, EQUIPAMENTOS E LIMITAÇÕES; 4. METODOLOGIA; 5. CONSTATAÇÕES DA INSPEÇÃO VISUAL (por etapa, destacando não conformidades); 6. MEDIÇÕES DE CORRENTE; 7. INSPEÇÃO TERMOGRÁFICA; 8. PENDÊNCIAS E PROVIDÊNCIAS (por classe: Grave, Moderada, Documental, com prazos quando informados); 9. CONCLUSÃO (se há impedimento ao recebimento/medição dos itens elétricos, e reiterar que os ensaios da seção 7 da NBR 5410 e o laudo com ART do RT da executora são exigíveis).
+8. Seções, nesta ordem: 1. IDENTIFICAÇÃO; 2. OBJETIVO; 3. ESCOPO, EQUIPAMENTOS E LIMITAÇÕES; 4. METODOLOGIA; 5. CONSTATAÇÕES DA INSPEÇÃO VISUAL (por etapa, destacando não conformidades, e ao final os registros de campo); 6. MEDIÇÕES DE CORRENTE; 7. INSPEÇÃO TERMOGRÁFICA; 8. PENDÊNCIAS E PROVIDÊNCIAS (por classe: Grave, Moderada, Documental, com prazos quando informados); 9. CONCLUSÃO (se há impedimento ao recebimento/medição dos itens elétricos, e reiterar que os ensaios da seção 7 da NBR 5410 e o laudo com ART do RT da executora são exigíveis).
 9. Frases curtas e objetivas, tom de manifestação técnica.
 10. Na metodologia, informe que as fotos levam carimbo com data, hora, coordenadas, endereço e identificação, e que a origem de cada dado (metadados da câmera ou informado pelo fiscal) consta no próprio carimbo. Endereço da unidade: ${v.local.endereco||"não informado"}. Coordenadas: ${v.local.lat!=null?fmtCoord(v.local.lat,v.local.lon)+" ("+(v.local.fonte||"")+")":"não informadas"}.
 
@@ -731,6 +588,7 @@ function rascunhoAuto(v){
     nc.forEach(x=>P("- "+x.id.toUpperCase()+" não conforme: "+x.tx+(x.obs?". "+x.obs:"")+fr("chk:"+x.id)));
     its.filter(x=>x.s==="C"&&x.obs).forEach(x=>P("- "+x.id.toUpperCase()+": "+x.obs+fr("chk:"+x.id)));
   });
+  if((v.notas||[]).length){ P("Registros de campo:"); v.notas.forEach((nt,k)=>P("- Registro "+(k+1)+" ("+dtBR(new Date(nt.t)).slice(0,16)+"): "+(nt.txt||"sem anotação")+fr("nota:"+nt.id))); }
   H("6. MEDIÇÕES DE CORRENTE");
   if(!v.correntes.length) P("Não foram registradas medições de corrente.");
   else { P(v.correntes.length+" circuito(s) medido(s); valores no Anexo A."); v.correntes.forEach(r=>{ const c=calcCorrente(r,v.cfg.deseq); if(c.flags.length) P("- "+(r.quadro||"")+" / "+(r.circuito||"")+": "+c.flags.map(f=>f.txt).join("; ")+"."); }); if(!v.correntes.some(r=>calcCorrente(r,v.cfg.deseq).flags.length)) P("Nenhuma corrente acima da nominal dos disjuntores e nenhum desequilíbrio acima do limite de atenção de "+v.cfg.deseq+"%."); }
@@ -748,8 +606,6 @@ function rascunhoAuto(v){
   P("Os ensaios da seção 7 da ABNT NBR 5410:2004 e, quando houver SPDA, os da ABNT NBR 5419:2015 devem ser comprovados por laudo do responsável técnico da executora, com ART.");
   return L.join("\n").trim();
 }
-
-/* ============================== .docx ============================== */
 async function gerarDocx(v){
   const D=window.docx; if(!D) throw new Error("biblioteca de Word não carregou; verifique a conexão");
   const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,WidthType,AlignmentType,ImageRun,BorderStyle,PageBreak}=D;
@@ -799,95 +655,10 @@ async function gerarDocx(v){
     sections:[{properties:{page:{margin:{top:1134,bottom:1134,left:1418,right:1134}}},children:kids}]});
   return {blob:await Packer.toBlob(doc), falhas};
 }
-
-/* ============================== Eventos ============================== */
-document.addEventListener("click", async ev=>{
-  const b=ev.target.closest("button"); if(!b) return;
-  if(b.dataset.tab){ S.tab=b.dataset.tab; render(); window.scrollTo({top:0}); return; }
-  if(b.dataset.item){ const id=b.dataset.item; const st=S.v.check[id]||(S.v.check[id]={}); st.s = st.s===b.dataset.v? "" : b.dataset.v;
-    const it=document.getElementById("it_"+id); it.dataset.s=st.s; it.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===st.s))); agendarSalvar(); return; }
-  if(b.id==="addCor"){ S.v.correntes.push({id:uid8()}); agendarSalvar(); render(); return; }
-  if(b.dataset.delcor!=null){ const i=+b.dataset.delcor; if(await confirmar("Remover esta medição?")){ S.v.correntes.splice(i,1); agendarSalvar(); render(); } return; }
-  if(b.id==="addTer"){ S.v.termo.push({id:uid8(),refTipo:"similar"}); agendarSalvar(); render(); return; }
-  if(b.dataset.delter!=null){ const i=+b.dataset.delter; if(await confirmar("Remover este ponto termográfico e suas fotos?")){ S.v.termo.splice(i,1); agendarSalvar(); render(); } return; }
-  if(b.dataset.delph){ if(!(await confirmar("Remover esta foto do relatório?"))) return; removerFoto(b.dataset.delph); agendarSalvar(); render(); return; }
-  if(b.id==="genDraft"){ if(S.v.rel.texto && !(await confirmar("Substituir o texto atual pelo rascunho automático?"))) return; S.v.rel.texto=rascunhoAuto(S.v); S.v.rel.geradoEm=Date.now(); S.v.rel.fonte="rascunho automático"; agendarSalvar(); render(); return; }
-  if(b.id==="cpPrompt"){ const st=document.getElementById("genSt"); try{ await navigator.clipboard.writeText(promptClaude(S.v)); st.textContent="Pedido copiado. Cole numa conversa com o Claude e traga a resposta para o campo abaixo."; }catch(e){ st.textContent="Não foi possível copiar automaticamente."; } return; }
-  if(b.id==="dlDocx"){ baixarDocx(false); return; }
-  if(b.id==="shDocx"){ baixarDocx(true); return; }
-  if(b.id==="usarGPS"){ const st=document.getElementById("gpsSt"); st.textContent="Obtendo posição…"; const g=await posicaoAtual(); if(g){ const L=S.v.local; L.lat=g.lat; L.lon=g.lon; L.coords=g.lat.toFixed(6)+", "+g.lon.toFixed(6); L.fonte="GPS do aparelho, ±"+Math.round(g.acc)+" m"; agendarSalvar(); render(); } else st.textContent="Não foi possível obter a posição. Verifique se a localização está ligada e permitida para o navegador."; return; }
-  if(b.id==="buscarEnd"){ buscarEndereco(); return; }
-  if(b.id==="recarregar"){ location.reload(); return; }
-  if(b.id==="bkExp"){ exportarBackup(); return; }
-  if(b.id==="cpTxt"){ try{ await navigator.clipboard.writeText(S.v.rel.texto||rascunhoAuto(S.v)); document.getElementById("dlSt").textContent="Texto copiado."; }catch(e){ document.getElementById("dlSt").textContent="Não foi possível copiar; selecione o texto e copie manualmente."; } return; }
-  if(b.id==="btnNew"){ await salvarAgora(); S.v=novaVistoria({fiscal:S.v.ident.fiscal,cargo:S.v.ident.cargo}); S.list.unshift(S.v); S.tab="ident"; agendarSalvar(); render(); return; }
-  if(b.id==="btnList"){ abrirLista(); return; }
-  if(b.id==="dlgClose"){ document.getElementById("dlgList").close(); return; }
-  if(b.dataset.open){ await salvarAgora(); const x=S.list.find(v=>v.id===b.dataset.open); if(x){ S.v=x; normalizar(x); try{localStorage.setItem("vistoriaEletrica.cur",x.id);}catch(e){} } document.getElementById("dlgList").close(); S.tab="ident"; render(); return; }
-  if(b.dataset.dup){ const x=S.list.find(v=>v.id===b.dataset.dup); if(x){ const c=JSON.parse(JSON.stringify(x)); c.id="v-"+Date.now().toString(36)+uid8().slice(0,4); c.createdAt=Date.now(); c.ident.data=hojeISO(); c.check={}; c.correntes=[]; c.termo=[]; c.fotosGerais=[]; c.pend={}; c.rel={texto:"",geradoEm:0,fonte:""}; S.v=c; S.list.unshift(c); agendarSalvar(); document.getElementById("dlgList").close(); S.tab="ident"; render(); } return; }
-  if(b.dataset.delv){ if(!(await confirmar("Excluir esta vistoria? Esta ação não pode ser desfeita."))) return; await excluirVistoria(b.dataset.delv); abrirLista(); return; }
-});
-document.addEventListener("input", ev=>{
-  const el=ev.target;
-  if(el.dataset.path==="local.coords"){ S.v.local.coords=el.value; const c=parseCoords(el.value); const st=document.getElementById("coordSt");
-    if(c){ S.v.local.lat=c.lat; S.v.local.lon=c.lon; S.v.local.fonte="informadas pelo fiscal"; st.textContent="Lidas: "+fmtCoord(c.lat,c.lon); } else { S.v.local.lat=null; S.v.local.lon=null; st.textContent=el.value?"Não reconheci duas coordenadas válidas.":"Cole do Google Maps: toque e segure no local e copie os números."; }
-    agendarSalvar(); return; }
-  if(el.dataset.path){ let val=el.value; if(el.dataset.mask==="conv"){ val=maskConv(val); el.value=val; } if(el.dataset.path==="cfg.deseq"){ val=n(val)??10; } setPath(S.v,el.dataset.path,val); agendarSalvar(); if(el.dataset.path==="cfg.deseq") atualizarCorrentes(); return; }
-  if(el.dataset.itemobs){ const st=S.v.check[el.dataset.itemobs]||(S.v.check[el.dataset.itemobs]={}); st.obs=el.value; agendarSalvar(); return; }
-  if(el.dataset.cor!=null){ S.v.correntes[+el.dataset.cor][el.dataset.k]=el.value; agendarSalvar(); atualizarCorrentes(+el.dataset.cor); return; }
-  if(el.dataset.ter!=null){ S.v.termo[+el.dataset.ter][el.dataset.k]=el.value; agendarSalvar(); atualizarTermo(+el.dataset.ter); return; }
-  if(el.dataset.pend){ const k=el.dataset.pend; const p=S.v.pend[k]||(S.v.pend[k]={}); p[el.dataset.k]=el.value; if(el.dataset.k==="classe") el.closest(".pitem").dataset.c=el.value; agendarSalvar(); return; }
-});
-document.addEventListener("change", async ev=>{
-  const el=ev.target;
-  if(el.id==="bkImp" && el.files && el.files[0]){ importarBackup(el.files[0]); return; }
-  if(el.id==="carimbo"){ S.v.carimbo=el.checked; agendarSalvar(); return; }
-  if(el.dataset.aplica){ S.v.aplica[el.dataset.aplica]=el.checked; el.closest(".etapa").classList.toggle("off",!el.checked); agendarSalvar(); return; }
-  if(el.dataset.ter!=null && el.tagName==="SELECT"){ S.v.termo[+el.dataset.ter][el.dataset.k]=el.value; agendarSalvar(); atualizarTermo(+el.dataset.ter); return; }
-  if(el.dataset.addph && el.files && el.files[0]){
-    const tgt=el.dataset.addph; const file=el.files[0]; el.closest("label").textContent="Enviando…";
-    try{ const f=await guardarFoto(file,tgt); colocarFoto(tgt,f); agendarSalvar(); }catch(e){ toastSave("Não foi possível ler a imagem: "+(e&&e.message||e), true); }
-    render(); return; }
-});
-function colocarFoto(tgt,f){
-  const v=S.v; const [k,a,b]=tgt.split(":");
-  if(k==="g"){ v.fotosGerais.push(f); }
-  else if(k==="c"){ const st=v.check[a]||(v.check[a]={}); (st.fotos||(st.fotos=[])).push(f); }
-  else if(k==="t"){ const r=v.termo[+a]; if(b==="ir") r.fotoIR=f; else r.fotoVis=f; }
-}
-function removerFoto(ref){
-  const v=S.v; const [k,a,b]=ref.split(":"); let f=null;
-  try{ f = k==="g"? v.fotosGerais[+a] : k==="c"? v.check[a].fotos[+b] : (b==="ir"? v.termo[+a].fotoIR : v.termo[+a].fotoVis); }catch(e){}
-  if(f&&f.id&&S.idb) idbDel("fotos",f.id).catch(()=>{});
-  if(k==="g") v.fotosGerais.splice(+a,1);
-  else if(k==="c"){ v.check[a].fotos.splice(+b,1); }
-  else if(k==="t"){ const r=v.termo[+a]; if(b==="ir") delete r.fotoIR; else delete r.fotoVis; }
-}
-function atualizarCorrentes(only){
-  S.v.correntes.forEach((r,i)=>{ if(only!=null && i!==only) return; const c=calcCorrente(r,S.v.cfg.deseq);
-    const a=document.querySelector(`[data-calc="${i}"]`); if(a) a.textContent=fmt(c.pctIn,0)+"% · "+(c.deseq!=null?fmt(c.deseq,1)+"%":"–");
-    const s=document.querySelector(`[data-st="${i}"]`); if(s) s.innerHTML = c.flags.some(f=>f.sev==="crit")?`<span class="pill crit">Alerta</span>`: c.flags.length?`<span class="pill warn">Atenção</span>`: (c.imax!=null?`<span class="pill ok">OK</span>`:`<span class="pill na">–</span>`);
-    const fl=document.querySelector(`[data-flags="${i}"]`); if(fl) fl.textContent=c.flags.map(f=>f.txt).join(" · "); });
-}
-function atualizarTermo(i){
-  const r=S.v.termo[i]; const c=calcTermo(r); const el=document.querySelector(`[data-tres="${i}"]`); if(!el) return;
-  const pill = c.sev<0?`<span class="pill na">${c.txt}</span>`: c.sev===0?`<span class="pill ok">${c.txt}</span>`: c.sev<=2?`<span class="pill warn">${c.txt}</span>`:`<span class="pill crit">${c.txt}</span>`;
-  el.innerHTML = pill+(c.dt!=null?`<span class="mono">ΔT = ${fmt(c.dt,1)} °C</span><span>· ${esc(c.acao)}</span>`:"")+(c.carga!=null?`<span class="mono">· carga ${fmt(c.carga,0)}%</span>`:"")+(c.baixaCarga?`<span class="pill warn">Carga abaixo de 40%</span>`:"");
-  const card=document.querySelector(`[data-tcard="${i}"]`); if(card) card.dataset.sev=c.sev;
-}
 async function salvarAgora(){ if(S.saveTimer){ clearTimeout(S.saveTimer); S.saveTimer=null; await salvar(); } }
 function confirmar(msg){ return new Promise(res=>{ const d=document.getElementById("dlgConfirm"); document.getElementById("dlgConfirmMsg").textContent=msg;
   const y=document.getElementById("cfYes"), no=document.getElementById("cfNo");
   const done=v=>{ y.onclick=no.onclick=null; d.close(); res(v); }; y.onclick=()=>done(true); no.onclick=()=>done(false); d.showModal(); }); }
-function abrirLista(){
-  const body=document.getElementById("dlgBody");
-  body.innerHTML = S.list.length? S.list.map(v=>`<div class="vrow ${v.id===S.v.id?"cur":""}"><div><div>${esc(titulo(v))}</div><div class="meta">${esc(dataBR(v.ident&&v.ident.data))} · atualizada ${new Date(v.updatedAt||0).toLocaleString("pt-BR")}</div></div>
-    <div class="acts"><button class="btn small" type="button" data-open="${esc(v.id)}">Abrir</button><button class="btn small ghost" type="button" data-dup="${esc(v.id)}" title="Nova vistoria com os mesmos dados de identificação">Copiar dados</button><button class="btn small ghost danger" type="button" data-delv="${esc(v.id)}">Excluir</button></div></div>`).join("")
-    : `<div class="empty">Nenhuma vistoria salva ainda.</div>`;
-  body.innerHTML += `<div class="card" style="padding:12px"><h3>Backup</h3><p class="lead">As vistorias e fotos ficam só neste aparelho. Exporte um backup ao terminar cada vistoria e guarde no Drive ou no computador. O arquivo também serve para passar as vistorias para outro aparelho.</p>
-    <div class="row-actions"><button class="btn" type="button" id="bkExp">Exportar backup</button><label class="btn">Importar backup<input type="file" id="bkImp" accept="application/json,.json" hidden></label></div><span class="status" id="bkSt"></span></div>`;
-  const d=document.getElementById("dlgList"); if(!d.open) d.showModal();
-}
 async function excluirVistoria(id){
   S.list=S.list.filter(v=>v.id!==id);
   try{ await idbDel("vistorias",id); const fs=await idbAll("fotos"); for(const f of fs) if(f.vid===id) await idbDel("fotos",f.id); }catch(e){ toastSave("Erro ao excluir: "+(e&&e.message||e),true); }
@@ -903,7 +674,6 @@ async function baixarDocx(share){
     st.textContent="Arquivo gerado: "+nome+(falhas?". "+falhas+" foto(s) não puderam ser incluídas.":"");
   }catch(e){ st.textContent = e&&e.name==="AbortError"? "Compartilhamento cancelado." : "Não foi possível gerar o .docx: "+(e&&e.message||e); }
 }
-/* Backup */
 function b64(blob){ return new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); }); }
 async function exportarBackup(){
   const st=document.getElementById("bkSt"); st.textContent="Preparando backup…";
@@ -925,17 +695,439 @@ async function importarBackup(file){
     await carregar(); st.textContent="Importado: "+nv+" vistoria(s) e "+nf+" foto(s)."; render(); abrirLista();
   }catch(e){ st.textContent="Não foi possível importar: "+(e&&e.message||e); }
 }
-function atualizarRede(){ const el=document.getElementById("netSt"); if(!el) return; const on=navigator.onLine; el.textContent=on?"Online":"Offline"; el.className="chip "+(on?"ok":"warn"); }
-window.addEventListener("online",atualizarRede); window.addEventListener("offline",atualizarRede);
+function atualizarRede(){ const el=document.getElementById("netSt"); if(!el) return; const on=navigator.onLine; el.textContent=on?"Online":"Offline"; el.className="net "+(on?"ok":"warn"); }
+
+/* ============================== Estado ============================== */
+const S = { v:null, list:[], idb:null, gps:null, gpsWatch:null, swReg:null, store:"none", tab:"visual",
+  saveTimer:null, saving:false, pendingSave:false, urls:{}, openEt:null, openCor:null, openTer:null, obsOpen:new Set(), novaVersao:false, fabMode:null, vw:null };
+const ICON = {
+  dados:'<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM8.5 11h7M8.5 15h5"/></svg>',
+  visual:'<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/></svg>',
+  cor:'<svg viewBox="0 0 24 24"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></svg>',
+  termo:'<svg viewBox="0 0 24 24"><path d="M10 14V5a2 2 0 014 0v9a4 4 0 11-4 0z"/><path d="M12 9v7"/></svg>',
+  rel:'<svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg>',
+  cam:'<svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="4"/></svg>',
+  obs:'<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>'
+};
+const TABS = [["dados","Dados"],["visual","Inspeção"],["cor","Medições"],["termo","Termo"],["rel","Relatório"]];
+
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function vib(){ try{ navigator.vibrate && navigator.vibrate(8); }catch(e){} }
+
+/* ============================== Fotos: referências ============================== */
+function rotulo(tgt){ const v=S.v; const [k,a,b]=String(tgt).split(":");
+  if(k==="c"){ for(const e of ETAPAS) for(const [id,m,t] of e.itens) if(id===a) return "Item "+id.toUpperCase()+" – "+t; }
+  if(k==="t"){ const r=v.termo[+a]||{}; return (b==="ir"?"Termograma":"Foto visual")+" – "+(r.local||"ponto "+(+a+1))+(r.componente?" / "+r.componente:""); }
+  if(k==="n"){ const i=(v.notas||[]).findIndex(x=>x.id===a); const nt=v.notas[i]; return "Registro de campo "+(i+1)+(nt&&nt.txt?" – "+nt.txt.slice(0,60):""); }
+  return "Vista geral"; }
+function listaFotos(v){
+  const out=[];
+  (v.fotosGerais||[]).forEach((f,i)=>out.push({f, cap:f.leg||"Vista geral", ref:"geral", pref:"g:"+i}));
+  itensAtivos(v).forEach(x=>{ (x.st.fotos||[]).forEach((f,i)=>out.push({f, cap:"Item "+x.id.toUpperCase()+" – "+x.t+(f.leg?" ("+f.leg+")":""), ref:"chk:"+x.id, pref:"c:"+x.id+":"+i})); });
+  (v.notas||[]).slice().reverse().forEach(nt=>{ const k=v.notas.indexOf(nt); (nt.fotos||[]).forEach((f,i)=>out.push({f, cap:"Registro de campo "+(k+1)+(nt.txt?" – "+nt.txt:"")+(f.leg?" ("+f.leg+")":""), ref:"nota:"+nt.id, pref:"n:"+nt.id+":"+i})); });
+  v.termo.forEach((r,i)=>{ const c=calcTermo(r);
+    if(r.fotoIR) out.push({f:r.fotoIR, cap:"Termograma – "+(r.local||"ponto "+(i+1))+(r.componente?" / "+r.componente:"")+(c.dt!=null?" (Tmáx "+fmt(n(r.tmax),1)+" °C; ΔT "+fmt(c.dt,1)+" °C)":"")+(r.fotoIR.leg?" ("+r.fotoIR.leg+")":""), ref:"ter:"+r.id, pref:"t:"+i+":ir"});
+    if(r.fotoVis) out.push({f:r.fotoVis, cap:"Imagem visual – "+(r.local||"ponto "+(i+1))+(r.componente?" / "+r.componente:"")+(r.fotoVis.leg?" ("+r.fotoVis.leg+")":""), ref:"ter:"+r.id, pref:"t:"+i+":vis"}); });
+  let k=0; out.forEach(o=>{ o.num=++k; o.cap+=metaTxt(o.f); }); return out;
+}
+function colocarFoto(tgt,f){
+  const v=S.v; const [k,a,b]=tgt.split(":");
+  if(k==="g") v.fotosGerais.push(f);
+  else if(k==="c"){ const st=v.check[a]||(v.check[a]={}); (st.fotos||(st.fotos=[])).push(f); }
+  else if(k==="t"){ const r=v.termo[+a]; if(b==="ir") r.fotoIR=f; else r.fotoVis=f; }
+  else if(k==="n"){ const nt=v.notas.find(x=>x.id===a); if(nt) (nt.fotos||(nt.fotos=[])).push(f); }
+}
+function fotoPorRef(pref){ const v=S.v; const [k,a,b]=pref.split(":");
+  try{ if(k==="g") return v.fotosGerais[+a]; if(k==="c") return v.check[a].fotos[+b]; if(k==="n") return v.notas.find(x=>x.id===a).fotos[+b]; if(k==="t") return b==="ir"? v.termo[+a].fotoIR : v.termo[+a].fotoVis; }catch(e){} return null; }
+function removerFoto(pref){
+  const v=S.v; const [k,a,b]=pref.split(":"); const f=fotoPorRef(pref);
+  if(f&&f.id&&S.idb) idbDel("fotos",f.id).catch(()=>{});
+  if(k==="g") v.fotosGerais.splice(+a,1);
+  else if(k==="c") v.check[a].fotos.splice(+b,1);
+  else if(k==="n"){ const nt=v.notas.find(x=>x.id===a); if(nt) nt.fotos.splice(+b,1); }
+  else if(k==="t"){ const r=v.termo[+a]; if(b==="ir") delete r.fotoIR; else delete r.fotoVis; }
+}
+function th(f,pref,lbl){ return `<button type="button" class="th" data-ver="${esc(pref)}" aria-label="Ampliar foto"><img data-fid="${esc(f.id)}" src="${esc(fotoURL(f))}" alt="">${lbl?`<span class="lbl">${esc(lbl)}</span>`:""}</button>`; }
+function strip(fotos,prefixo){ return `<div class="strip">${(fotos||[]).map((f,i)=>th(f,prefixo+":"+i)).join("")}</div>`; }
+function camBtn(tgt,txt,n){ return `<label class="mini ${n?"has":""}">${ICON.cam}${txt||"Foto"}${n?` (${n})`:""}<input type="file" accept="image/*" capture="environment" data-addph="${esc(tgt)}"></label>`; }
+
+/* ============================== Cabeçalho e navegação ============================== */
+function agendarSalvar(){ S.v.updatedAt=Date.now(); toastSave("Salvando…"); clearTimeout(S.saveTimer); S.saveTimer=setTimeout(salvar,500); atualizarChrome(); }
+function atualizarChrome(){
+  document.getElementById("hdTitle").textContent=titulo(S.v);
+  const r=resumo(S.v); document.getElementById("progBar").style.width=(r.total?Math.round(r.feitos/r.total*100):0)+"%";
+  const np=pendencias(S.v).length;
+  const bd={visual:r.nc?`<span class="bdg">${r.nc}</span>`:"", cor:r.cor?`<span class="bdg warn">${r.cor}</span>`:"", termo:r.ter?`<span class="bdg">${r.ter}</span>`:"", rel:np?`<span class="bdg warn">${np}</span>`:""};
+  document.getElementById("bnav").innerHTML=TABS.map(([k,l])=>`<button type="button" data-tab="${k}" aria-current="${S.tab===k}">${ICON[k]}<span>${l}</span>${bd[k]||""}</button>`).join("");
+  document.getElementById("fab").hidden = !(S.tab==="visual"||S.tab==="dados");
+}
+const M=document.getElementById("main");
+function render(keep){
+  const y=window.scrollY;
+  atualizarChrome();
+  const fn={dados:rDados,visual:rVisual,cor:rCor,termo:rTermo,rel:rRel}[S.tab];
+  const ban=[];
+  if(S.novaVersao) ban.push(`<div class="banner info row">Nova versão do app instalada. <button class="btn sm" type="button" data-act="recarregar">Recarregar</button></div>`);
+  if(S.store==="none") ban.push(`<div class="banner">O armazenamento do aparelho não está disponível neste navegador. Nada será guardado.</div>`);
+  if(S.v.carimbo && (S.tab==="visual"||S.tab==="termo") && (!S.v.ident.convenio||!S.v.ident.escola||!S.v.local.endereco)) ban.push(`<div class="banner info">Preencha convênio, escola e endereço em <b>Dados</b> antes das fotos: o carimbo é gravado na hora da foto.</div>`);
+  M.innerHTML=ban.join("")+fn();
+  M.querySelectorAll("textarea").forEach(autoGrow);
+  if(S.tab==="dados") atualizarGPSst();
+  if(keep) window.scrollTo(0,y);
+}
+function autoGrow(t){ t.style.height="auto"; t.style.height=Math.min(t.scrollHeight+2,420)+"px"; }
+function irPara(tab){ S.tab=tab; render(); window.scrollTo(0,0); }
+function field(path,label,o={}){
+  const v=getPath(S.v,path)??""; const id="f_"+path.replace(/\./g,"_");
+  const inp = o.area? `<textarea id="${id}" data-path="${path}" placeholder="${esc(o.ph||"")}" rows="2">${esc(v)}</textarea>`
+    : o.sel? `<select id="${id}" data-path="${path}">${o.sel.map(x=>`<option ${x===v?"selected":""}>${esc(x)}</option>`).join("")}</select>`
+    : `<input id="${id}" type="${o.type||"text"}" data-path="${path}" value="${esc(v)}" placeholder="${esc(o.ph||"")}" ${o.mode?`inputmode="${o.mode}"`:""} ${o.mask?`data-mask="${o.mask}"`:""} enterkeyhint="next" autocomplete="off">`;
+  return `<label class="f" for="${id}"><span>${label}</span>${inp}</label>`;
+}
+
+/* ============================== Dados ============================== */
+function rDados(){
+  const L=S.v.local, ok=L.lat!=null&&L.lon!=null, i=S.v.instr;
+  return `<section class="card"><div class="card-h"><h2>Convênio e escola</h2></div>
+    <div class="g2 st">${field("ident.convenio","Convênio nº",{ph:"0000-0000",mask:"conv",mode:"numeric"})}${field("ident.municipio","Município",{ph:"Sinop"})}</div>
+    ${field("ident.escola","Unidade escolar",{ph:"E. E. …"})}
+    ${field("local.endereco","Endereço da unidade",{ph:"Rua…, nº…, bairro, Sinop-MT"})}
+    <div class="g2 st">${field("ident.data","Data",{type:"date"})}${field("ident.funcionamento","Condição de uso",{sel:["","Escola em funcionamento (aulas)","Escola sem aulas, com cargas ligadas","Obra sem ocupação","Instalação desenergizada"]})}</div>
+  </section>
+  <section class="card"><div class="card-h"><h3>Localização e carimbo</h3><label class="sw"><input type="checkbox" id="carimbo" ${S.v.carimbo?"checked":""}>Carimbar fotos</label></div>
+    <div class="row"><button class="btn pri" type="button" data-act="usarGPS">Usar minha posição</button><button class="btn" type="button" data-act="buscarEnd">Buscar endereço</button></div>
+    <span class="status" id="gpsSt"></span>
+    <label class="f" for="f_local_coords"><span>Coordenadas da escola (lat, long)</span><input id="f_local_coords" type="text" data-path="local.coords" value="${esc(L.coords||"")}" placeholder="-11.86412, -55.50321" inputmode="decimal"><span class="status" id="coordSt">${ok?"Lidas: "+fmtCoord(L.lat,L.lon)+(L.fonte?" ("+esc(L.fonte)+")":""):"Ou cole as coordenadas do Google Maps."}</span></label>
+    <span class="status" id="endSt"></span>
+    <p class="lead">Cada foto recebe uma faixa com data, hora, GPS, endereço e identificação. Ordem do GPS: o da foto, o do aparelho no momento, ou as coordenadas acima.</p>
+  </section>
+  <details class="card"><summary>Visita e executora <small>${esc([S.v.ident.executora,S.v.ident.etapaObra].filter(Boolean).join(" · "))}</small></summary>
+    ${field("ident.processo","Processo SEDUC",{ph:"SEDUC-PRO-2026/00000"})}
+    ${field("ident.objeto","Objeto do convênio",{area:true,ph:"Construção, reforma ou ampliação de …"})}
+    <div class="g2 st">${field("ident.executora","Empresa executora")}${field("ident.etapaObra","Fase da obra",{sel:["","Em execução","Medição","Recebimento provisório","Recebimento definitivo","Prestação de contas final"]})}</div>
+    <div class="g2 st">${field("ident.rt","Responsável técnico")}${field("ident.art","ART nº")}</div>
+    <div class="g2">${field("ident.horaIni","Início",{type:"time"})}${field("ident.horaFim","Término",{type:"time"})}</div>
+    ${field("ident.acompanhantes","Acompanharam a vistoria",{ph:"Nome – função – entidade"})}
+    <div class="g2 st">${field("ident.clima","Tempo",{ph:"Ensolarado, nublado…"})}${field("ident.tAmb","Temperatura ambiente (°C)",{mode:"decimal",ph:"32"})}</div>
+    <div class="g2 st">${field("ident.fiscal","Fiscal")}${field("ident.cargo","Cargo / função")}</div>
+  </details>
+  <details class="card"><summary>Equipamentos <small>${esc([i.alicate.modelo,i.termo.modelo].filter(Boolean).join(" · ")||"alicate e câmera")}</small></summary>
+    <h3>Alicate amperímetro</h3>
+    ${field("instr.alicate.modelo","Marca e modelo")}
+    <div class="g2">${field("instr.alicate.serie","Nº de série")}${field("instr.alicate.calib","Calibração")}</div>
+    <h3>Câmera termográfica</h3>
+    ${field("instr.termo.modelo","Marca e modelo")}
+    <div class="g2">${field("instr.termo.serie","Nº de série")}${field("instr.termo.calib","Calibração")}</div>
+    <div class="g2">${field("instr.termo.emiss","Emissividade")}${field("instr.termo.faixa","Faixa (°C)")}</div>
+  </details>
+  <details class="card"><summary>Escopo e limitações <small>entra no relatório</small></summary>
+    <p class="lead">Ensaios não realizados nesta vistoria (cabem ao RT da executora, com laudo e ART):</p>
+    <ul class="notdone">${NAO_REALIZADOS.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
+    <p class="scope">${esc(ESCOPO_TXT)}</p>
+    ${field("instr.obsLimit","Outras limitações desta visita",{area:true,ph:"Cobertura sem acesso seguro, quadro trancado…"})}
+    <p class="lead">Segurança: quadros abertos e manobrados só pelo eletricista ou RT da executora; alicate só em condutor isolado; termografia a distância segura.</p>
+  </details>
+  <section class="card"><div class="card-h"><h3>Fotos gerais</h3>${camBtn("g","Adicionar",0)}</div>
+    ${(S.v.fotosGerais||[]).length? strip(S.v.fotosGerais,"g") : `<p class="lead">Fachada, placa da obra, padrão de entrada visto de fora.</p>`}
+  </section>`;
+}
+
+/* ============================== Inspeção ============================== */
+function etapaInfo(e){ const on=!e.opc||S.v.aplica[e.id]; const its=e.itens.map(([id])=>(S.v.check[id]||{}).s||"");
+  return {on, feitos:its.filter(Boolean).length, total:its.length, nc:its.filter(s=>s==="NC").length}; }
+function etapaAberta(){ if(S.openEt!==null) return S.openEt;
+  const e=ETAPAS.find(e=>{ const x=etapaInfo(e); return x.on && x.feitos<x.total; }); return e? e.id : ""; }
+function rVisual(){
+  const aberta=etapaAberta();
+  const notas=S.v.notas||[];
+  return `<div class="legend"><span><b>C</b> conforme</span><span><b>NC</b> não conforme</span><span><b>NA</b> não se aplica</span><span><b>NV</b> não verificado</span></div>
+  ${notas.length?`<section class="card"><div class="card-h"><h3>Registros de campo</h3><button class="btn sm" type="button" data-act="novaNota">+ Registro</button></div>
+    ${notas.slice().reverse().map(nt=>`<div class="nota" data-nota="${esc(nt.id)}"><div class="when"><span>${dtBR(new Date(nt.t)).slice(0,16)}</span><button class="btn sm ghost danger" type="button" data-act="delNota" data-id="${esc(nt.id)}">Excluir</button></div>
+      <textarea data-notatxt="${esc(nt.id)}" placeholder="O que foi observado, onde" rows="2">${esc(nt.txt||"")}</textarea>
+      <div class="it-x">${camBtn("n:"+nt.id,"Foto",(nt.fotos||[]).length)}</div>${strip(nt.fotos,"n:"+nt.id)}</div>`).join("")}</section>`:""}
+  ${ETAPAS.map(e=>{ const x=etapaInfo(e); const open=e.id===aberta;
+    return `<section class="et ${x.on&&x.feitos===x.total?"done":""}" id="et_${e.id}" data-open="${open}">
+      <button class="et-h" type="button" data-act="toggleEt" data-et="${e.id}" aria-expanded="${open}"><span class="n">${e.id}</span><span class="tt">${esc(e.t)}</span>
+        <span class="cnt" id="etc_${e.id}">${x.on?(x.nc?`<span class="pill crit">${x.nc} NC</span> `:"")+x.feitos+"/"+x.total:"não se aplica"}</span><span class="chev">▾</span></button>
+      <div class="et-b">
+        ${e.opc?`<div class="et-off"><label class="sw"><input type="checkbox" data-aplica="${e.id}" ${x.on?"checked":""}>${esc(e.pergunta)}</label></div>`:""}
+        ${x.on? e.itens.map(([id,m,t])=>itemHTML(id,m,t)).join("") : ""}
+      </div></section>`; }).join("")}`;
+}
+function itemHTML(id,m,t){ const st=S.v.check[id]||{}; const nf=(st.fotos||[]).length; const showObs=!!st.obs||S.obsOpen.has(id);
+  return `<div class="it" id="it_${id}" data-s="${st.s||""}">
+    <div class="it-t"><span class="tag ${m}">${m==="T"?"Câmera":"Visual"}</span>${esc(t)}</div>
+    <div class="seg4" role="group" aria-label="Situação">${["C","NC","NA","NV"].map(s=>`<button type="button" data-item="${id}" data-v="${s}" aria-pressed="${st.s===s}">${s}</button>`).join("")}</div>
+    <div class="it-x"><button type="button" class="mini ${st.obs?"has":""}" data-act="obs" data-id="${id}">${ICON.obs}Obs</button>${camBtn("c:"+id,"Foto",nf)}</div>
+    <textarea data-itemobs="${id}" placeholder="Observação: local, o que foi visto, valor de placa…" rows="2" ${showObs?"":"hidden"}>${esc(st.obs||"")}</textarea>
+    ${strip(st.fotos,"c:"+id)}</div>`; }
+function marcar(id,val){
+  const st=S.v.check[id]||(S.v.check[id]={}); st.s = st.s===val? "" : val; vib();
+  const it=document.getElementById("it_"+id); it.dataset.s=st.s;
+  it.querySelectorAll(".seg4 button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===st.s)));
+  if(st.s==="NC"){ const ta=it.querySelector("textarea[data-itemobs]"); ta.hidden=false; S.obsOpen.add(id); if(!ta.value) ta.focus({preventScroll:false}); }
+  agendarSalvar();
+  const e=ETAPAS.find(e=>e.itens.some(x=>x[0]===id)); const x=etapaInfo(e);
+  document.getElementById("etc_"+e.id).innerHTML=(x.nc?`<span class="pill crit">${x.nc} NC</span> `:"")+x.feitos+"/"+x.total;
+  const sec=document.getElementById("et_"+e.id); sec.classList.toggle("done",x.feitos===x.total);
+  if(x.feitos===x.total && st.s && st.s!=="NC"){
+    const prox=ETAPAS.slice(ETAPAS.indexOf(e)+1).find(z=>{ const y=etapaInfo(z); return z.opc || y.feitos<y.total; });
+    setTimeout(()=>{ S.openEt=prox?prox.id:""; render(true); if(prox){ const el=document.getElementById("et_"+prox.id); el && el.scrollIntoView({behavior:"smooth",block:"start"}); } },380);
+  }
+}
+
+/* ============================== Medições de corrente ============================== */
+function sevCor(c){ return c.flags.some(f=>f.sev==="crit")?"crit": c.flags.length?"warn": c.imax!=null?"ok":""; }
+function rCor(){
+  const v=S.v; if(S.openCor===null && v.correntes.length) S.openCor=v.correntes[v.correntes.length-1].id;
+  const cards=v.correntes.map((r,i)=>{ const c=calcCorrente(r,v.cfg.deseq); const sv=sevCor(c); const open=S.openCor===r.id;
+    const num=(k,l)=>`<label class="f num"><span>${l}</span><input type="text" inputmode="decimal" enterkeyhint="next" data-cor="${i}" data-k="${k}" value="${esc(r[k]??"")}" autocomplete="off"></label>`;
+    return `<div class="mc" data-sev="${sv}" data-open="${open}" id="mc_${esc(r.id)}">
+      <button class="mc-h" type="button" data-act="toggleCor" data-id="${esc(r.id)}"><span class="l1"><span id="corT_${i}">${esc(r.quadro||"Quadro")} · ${esc(r.circuito||"circuito "+(i+1))}</span><span id="corPill_${i}">${pillCor(c)}</span></span>
+        <span class="l2" id="corL2_${i}">${resumoCor(r,c)}</span></button>
+      <div class="mc-b">
+        <div class="g2">${["quadro","circuito"].map((k,j)=>`<label class="f"><span>${j?"Circuito":"Quadro"}</span><input type="text" enterkeyhint="next" data-cor="${i}" data-k="${k}" value="${esc(r[k]??"")}" placeholder="${j?"Alimentador":"QGBT"}" autocomplete="off"></label>`).join("")}</div>
+        <div class="g4">${num("ia","Fase A (A)")}${num("ib","Fase B (A)")}${num("ic","Fase C (A)")}${num("ineutro","Neutro (A)")}</div>
+        <div class="g4">${num("disjIn","In disj. (A)")}<label class="f num"><span>Cabo (mm²)</span><input type="text" inputmode="decimal" enterkeyhint="next" data-cor="${i}" data-k="cabo" value="${esc(r.cabo??"")}" autocomplete="off"></label>${num("iz","Iz cabo (A)")}<span></span></div>
+        <div class="status" id="corFl_${i}">${c.flags.map(f=>esc(f.txt)).join(" · ")}</div>
+        <input type="text" data-cor="${i}" data-k="obs" value="${esc(r.obs||"")}" placeholder="Cargas ligadas no momento, observação" aria-label="Observação" enterkeyhint="done">
+        <div class="row end"><button class="btn sm ghost danger" type="button" data-act="delCor" data-i="${i}">Excluir medição</button></div>
+      </div></div>`; }).join("");
+  return `<section class="card"><div class="card-h"><h2>Medições de corrente</h2><span class="status">alicate amperímetro</span></div>
+    <p class="lead">Fases e neutro de cada circuito. O app compara com a In do disjuntor e a Iz do cabo e calcula o desequilíbrio entre fases.</p></section>
+  ${cards || `<div class="empty">Nenhuma medição ainda. Comece pelo alimentador do quadro geral.</div>`}
+  <div class="g2"><button class="btn pri" type="button" data-act="addCor" data-mesmo="1" ${v.correntes.length?"":"hidden"}>+ Mesmo quadro</button><button class="btn ${v.correntes.length?"":"pri"}" type="button" data-act="addCor">+ Novo quadro</button></div>
+  <details class="card"><summary>Critérios <small>desequilíbrio: ${v.cfg.deseq}%</small></summary>
+    ${field("cfg.deseq","Limite de atenção para desequilíbrio (%)",{mode:"decimal"})}
+    <p class="lead">O limite é critério da fiscalização, não da norma. Uma leitura pontual não representa a demanda máxima. Iz vem do projeto; deixe em branco se não souber.</p></details>`;
+}
+function pillCor(c){ const s=sevCor(c); return s==="crit"?`<span class="pill crit">Alerta</span>`: s==="warn"?`<span class="pill warn">Atenção</span>`: s==="ok"?`<span class="pill ok">OK</span>`:""; }
+function resumoCor(r,c){ const p=[]; ["ia","ib","ic"].forEach((k,j)=>{ if(r[k]) p.push("ABC"[j]+" "+r[k]); }); if(r.ineutro) p.push("N "+r.ineutro);
+  if(c.pctIn!=null) p.push(fmt(c.pctIn,0)+"% In"); if(c.deseq!=null) p.push("deseq. "+fmt(c.deseq,0)+"%"); return esc(p.join(" · ")||"toque para preencher"); }
+function atualizarCor(i){ const r=S.v.correntes[i]; if(!r) return; const c=calcCorrente(r,S.v.cfg.deseq);
+  const set=(id,h)=>{ const el=document.getElementById(id); if(el) el.innerHTML=h; };
+  set("corPill_"+i,pillCor(c)); set("corT_"+i,esc(r.quadro||"Quadro")+" · "+esc(r.circuito||"circuito "+(i+1))); set("corL2_"+i,resumoCor(r,c)); set("corFl_"+i,c.flags.map(f=>esc(f.txt)).join(" · "));
+  const card=document.getElementById("mc_"+r.id); if(card) card.dataset.sev=sevCor(c); atualizarChrome(); }
+
+/* ============================== Termografia ============================== */
+function sevTer(c){ return c.sev<0?"": c.sev===0?"ok": c.sev<=2?"warn":"crit"; }
+function pillTer(c){ return c.sev<0?"": `<span class="pill ${sevTer(c)}">${esc(c.txt)}</span>`; }
+function rTermo(){
+  const v=S.v; if(S.openTer===null && v.termo.length) S.openTer=v.termo[v.termo.length-1].id;
+  const cards=v.termo.map((r,i)=>{ const c=calcTermo(r); const open=S.openTer===r.id;
+    const slot=(k,lbl)=>{ const f=k==="ir"?r.fotoIR:r.fotoVis; return f? `<button type="button" class="slot has" data-ver="t:${i}:${k}"><img data-fid="${esc(f.id)}" src="${esc(fotoURL(f))}" alt=""><span class="lbl">${lbl}</span></button>`
+      : `<label class="slot">${ICON.cam}<span>${lbl}</span><input type="file" accept="image/*" capture="environment" data-addph="t:${i}:${k}"></label>`; };
+    const inp=(k,l,ph,num)=>`<label class="f ${num?"num":""}"><span>${l}</span><input type="text" ${num?'inputmode="decimal"':""} enterkeyhint="next" data-ter="${i}" data-k="${k}" value="${esc(r[k]??"")}" placeholder="${ph||""}" autocomplete="off"></label>`;
+    return `<div class="mc" data-sev="${sevTer(c)}" data-open="${open}" id="tc_${esc(r.id)}">
+      <button class="mc-h" type="button" data-act="toggleTer" data-id="${esc(r.id)}"><span class="l1"><span id="terT_${i}">${esc(r.local||"Ponto "+(i+1))}${r.componente?" · "+esc(r.componente):""}</span><span id="terPill_${i}">${pillTer(c)}</span></span>
+        <span class="l2" id="terL2_${i}">${resumoTer(r,c)}</span></button>
+      <div class="mc-b">
+        <div class="slots">${slot("ir","Termograma")}${slot("vis","Foto visual")}</div>
+        <div class="g2">${inp("local","Local","QGBT – bloco adm.")}${inp("componente","Componente","Borne fase C")}</div>
+        <div class="g2">${inp("tmax","T máx. (°C)","",1)}${inp("tref","T referência (°C)","",1)}</div>
+        <div class="seg2" role="group" aria-label="Referência de temperatura"><button type="button" data-act="refTipo" data-i="${i}" data-v="similar" aria-pressed="${r.refTipo!=="ambiente"}">vs. fase similar</button><button type="button" data-act="refTipo" data-i="${i}" data-v="ambiente" aria-pressed="${r.refTipo==="ambiente"}">vs. ambiente</button></div>
+        <div class="g2">${inp("iMed","Corrente agora (A)","",1)}${inp("iNom","Corrente nominal (A)","",1)}</div>
+        <div class="res" id="terRes_${i}">${resTer(c)}</div>
+        <input type="text" data-ter="${i}" data-k="obs" value="${esc(r.obs||"")}" placeholder="Causa provável, condição da conexão" aria-label="Observação" enterkeyhint="done">
+        <div class="row end"><button class="btn sm ghost danger" type="button" data-act="delTer" data-i="${i}">Excluir ponto</button></div>
+      </div></div>`; }).join("");
+  return `<section class="card"><div class="card-h"><h2>Termografia</h2><span class="status">câmera termográfica</span></div>
+    <p class="lead">Temperatura máxima e uma referência: a mesma peça em outra fase (preferível) ou o ar ambiente. Classificação pela ANSI/NETA MTS, Tabela 100.18.</p></section>
+  ${cards || `<div class="empty">Nenhum ponto. Comece pelo quadro geral sob carga.</div>`}
+  <div class="g2"><button class="btn pri" type="button" data-act="addTer" data-mesmo="1" ${v.termo.length?"":"hidden"}>+ Mesmo local</button><button class="btn ${v.termo.length?"":"pri"}" type="button" data-act="addTer">+ Novo ponto</button></div>
+  <details class="card"><summary>Critérios <small>NETA 100.18</small></summary>
+    <p class="lead"><b>vs. fase similar:</b> ΔT 1–3 °C possível deficiência (investigar) · 4–15 °C provável (reparar quando possível) · acima de 15 °C grave (reparar imediatamente).</p>
+    <p class="lead"><b>vs. ambiente:</b> 1–10 °C possível · 11–20 °C provável · 21–40 °C deficiência (monitorar) · acima de 40 °C grave.</p>
+    <p class="lead">Válido com carga a partir de 40% da nominal; meça a corrente com o alicate no mesmo ponto.</p></details>`;
+}
+function resumoTer(r,c){ const p=[]; if(r.tmax) p.push("Tmáx "+r.tmax+" °C"); if(c.dt!=null) p.push("ΔT "+fmt(c.dt,1)+" °C "+(r.refTipo==="ambiente"?"(amb.)":"(sim.)")); if(c.carga!=null) p.push("carga "+fmt(c.carga,0)+"%");
+  const nf=(r.fotoIR?1:0)+(r.fotoVis?1:0); if(nf) p.push(nf+" foto"+(nf>1?"s":"")); return esc(p.join(" · ")||"toque para preencher"); }
+function resTer(c){ return (c.sev<0?`<span class="status">Informe T máx. e referência</span>`:pillTer(c)+(c.dt!=null?`<span class="mono">ΔT ${fmt(c.dt,1)} °C</span><span>${esc(c.acao)}</span>`:""))+(c.carga!=null?`<span class="mono">carga ${fmt(c.carga,0)}%</span>`:"")+(c.baixaCarga?`<span class="pill warn">carga &lt; 40%</span>`:""); }
+function atualizarTer(i){ const r=S.v.termo[i]; if(!r) return; const c=calcTermo(r);
+  const set=(id,h)=>{ const el=document.getElementById(id); if(el) el.innerHTML=h; };
+  set("terPill_"+i,pillTer(c)); set("terT_"+i,esc(r.local||"Ponto "+(i+1))+(r.componente?" · "+esc(r.componente):"")); set("terL2_"+i,resumoTer(r,c)); set("terRes_"+i,resTer(c));
+  const card=document.getElementById("tc_"+r.id); if(card) card.dataset.sev=sevTer(c); atualizarChrome(); }
+
+/* ============================== Relatório ============================== */
+function rRel(){
+  const r=S.v.rel, R=resumo(S.v), L=pendencias(S.v); const share=!!(navigator.canShare && window.File);
+  return `<div class="tiles"><div class="tile"><b>${R.feitos}/${R.total}</b><span>itens avaliados</span></div><div class="tile ${R.nc?"crit":""}"><b>${R.nc}</b><span>não conformes</span></div><div class="tile ${R.cor?"warn":""}"><b>${R.cor}</b><span>alertas de corrente</span></div><div class="tile ${R.ter?"crit":""}"><b>${R.ter}</b><span>anomalias térmicas</span></div></div>
+  <section class="card"><div class="card-h"><h2>Pendências</h2><span class="status">${L.length} item(ns)</span></div>
+    ${L.length? L.map(p=>`<div class="pend" data-c="${esc(p.classe)}"><div class="src">${esc(p.origem)}</div><div>${esc(p.desc)}</div>
+      <div class="gp"><select data-pend="${esc(p.key)}" data-k="classe" aria-label="Classe">${["Grave","Moderada","Documental"].map(c=>`<option ${c===p.classe?"selected":""}>${c}</option>`).join("")}</select>
+      <input type="text" data-pend="${esc(p.key)}" data-k="prov" value="${esc(p.prov)}" placeholder="Providência a exigir" aria-label="Providência">
+      <input type="text" data-pend="${esc(p.key)}" data-k="prazo" value="${esc(p.prazo)}" placeholder="Prazo (dias)" inputmode="numeric" aria-label="Prazo"></div></div>`).join("")
+    : `<div class="empty">Sem pendências. Itens NC, alertas de corrente e anomalias térmicas aparecem aqui sozinhos.</div>`}
+    <p class="lead"><b>Grave</b>: risco imediato, impede o recebimento · <b>Moderada</b>: diferente do projeto, corrigir com prazo · <b>Documental</b>: falta de comprovação.</p>
+  </section>
+  <section class="card"><div class="card-h"><h2>Relatório</h2></div>
+    <p class="lead">O rascunho automático funciona sem internet. Para o Claude redigir, copie o pedido, cole numa conversa com o Claude e traga a resposta para o campo abaixo. Tabelas e fotos entram como anexos no .docx.</p>
+    <div class="g2"><button class="btn pri" type="button" data-act="genDraft">Rascunho automático</button><button class="btn" type="button" data-act="cpPrompt">Copiar pedido para o Claude</button></div>
+    <span class="status" id="genSt">${r.geradoEm?("Texto de "+new Date(r.geradoEm).toLocaleString("pt-BR")+(r.fonte?" ("+esc(r.fonte)+")":"")):""}</span>
+    <textarea id="rep" data-path="rel.texto" placeholder="O texto do relatório aparece aqui. Títulos de seção começam com ##.">${esc(r.texto)}</textarea>
+    <div class="g2"><button class="btn pri" type="button" id="dlDocx" data-act="dlDocx">Baixar .docx</button>${share?`<button class="btn" type="button" data-act="shDocx">Compartilhar .docx</button>`:`<button class="btn" type="button" data-act="cpTxt">Copiar texto</button>`}</div>
+    ${share?`<button class="btn ghost" type="button" data-act="cpTxt">Copiar texto</button>`:""}
+    <span class="status" id="dlSt"></span>
+  </section>`;
+}
+
+/* ============================== Visualizador de fotos ============================== */
+const VW={el:document.getElementById("vw"), img:document.getElementById("vwImg"), stage:document.getElementById("vwStage"), list:[], i:0, s:1, x:0, y:0, ptr:new Map(), start:null, lastTap:0, swipeX:0};
+function abrirVisualizador(pref){
+  VW.list=listaFotos(S.v); VW.i=Math.max(0,VW.list.findIndex(o=>o.pref===pref)); if(!VW.list.length) return;
+  VW.el.hidden=false; document.body.style.overflow="hidden"; try{ history.pushState({vw:1},""); }catch(e){}
+  mostrarFoto();
+}
+function fecharVisualizador(viaHist){ if(VW.el.hidden) return; VW.el.hidden=true; document.body.style.overflow=""; if(!viaHist){ try{ if(history.state&&history.state.vw) history.back(); }catch(e){} } render(true); }
+function mostrarFoto(){
+  const o=VW.list[VW.i]; if(!o){ fecharVisualizador(); return; }
+  VW.s=1; VW.x=0; VW.y=0; aplicarZoom();
+  const u=fotoURL(o.f); VW.img.src=u||""; if(!u) carregarURL(o.f.id).then(()=>{ if(VW.list[VW.i]===o) VW.img.src=fotoURL(o.f); });
+  document.getElementById("vwCount").textContent="Foto "+o.num+" de "+VW.list.length;
+  document.getElementById("vwCap").textContent=o.cap.split(" – ").slice(0,2).join(" – ");
+  const m=o.f.meta; document.getElementById("vwMeta").textContent=m? [m.dt?dtBR(new Date(m.dt)):"", m.lat!=null?fmtCoord(m.lat,m.lon)+" ("+m.gpsFonte+")":"sem coordenadas"].filter(Boolean).join(" · ") : "";
+  document.getElementById("vwLeg").value=o.f.leg||"";
+  document.getElementById("vwPrev").disabled=VW.i===0; document.getElementById("vwNext").disabled=VW.i===VW.list.length-1;
+}
+function aplicarZoom(){ VW.img.style.transform=`translate(${VW.x}px,${VW.y}px) scale(${VW.s})`; }
+function limitarPan(){ const r=VW.img.getBoundingClientRect(), st=VW.stage.getBoundingClientRect(); const w=r.width/VW.s, h=r.height/VW.s;
+  const mx=Math.max(0,(w*VW.s-st.width)/2), my=Math.max(0,(h*VW.s-st.height)/2); VW.x=Math.max(-mx,Math.min(mx,VW.x)); VW.y=Math.max(-my,Math.min(my,VW.y)); }
+function zoomEm(ns,cx,cy){ const st=VW.stage.getBoundingClientRect(); const ox=cx-(st.left+st.width/2), oy=cy-(st.top+st.height/2);
+  ns=Math.max(1,Math.min(6,ns)); VW.x=ox-(ox-VW.x)*(ns/VW.s); VW.y=oy-(oy-VW.y)*(ns/VW.s); VW.s=ns; if(VW.s===1){VW.x=0;VW.y=0;} limitarPan(); aplicarZoom(); }
+VW.stage.addEventListener("pointerdown",e=>{ VW.stage.setPointerCapture(e.pointerId); VW.ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(VW.ptr.size===2){ const [a,b]=[...VW.ptr.values()]; VW.start={d:Math.hypot(a.x-b.x,a.y-b.y), s:VW.s}; }
+  else if(VW.ptr.size===1){ VW.start={px:e.clientX,py:e.clientY,x:VW.x,y:VW.y,t:Date.now()}; VW.swipeX=0; } });
+VW.stage.addEventListener("pointermove",e=>{ if(!VW.ptr.has(e.pointerId)) return; VW.ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(VW.ptr.size===2 && VW.start && VW.start.d){ const [a,b]=[...VW.ptr.values()]; const d=Math.hypot(a.x-b.x,a.y-b.y); zoomEm(VW.start.s*d/VW.start.d,(a.x+b.x)/2,(a.y+b.y)/2); }
+  else if(VW.ptr.size===1 && VW.start && VW.start.px!=null){ const dx=e.clientX-VW.start.px, dy=e.clientY-VW.start.py;
+    if(VW.s>1){ VW.x=VW.start.x+dx; VW.y=VW.start.y+dy; limitarPan(); aplicarZoom(); } else { VW.swipeX=dx; VW.img.style.transform=`translateX(${dx}px)`; } } });
+function fimPtr(e){ if(!VW.ptr.has(e.pointerId)) return; VW.ptr.delete(e.pointerId);
+  if(VW.ptr.size===0 && VW.start && VW.start.px!=null){
+    if(VW.s===1){ const dx=VW.swipeX; VW.img.style.transform=""; if(dx<-60 && VW.i<VW.list.length-1){ VW.i++; mostrarFoto(); } else if(dx>60 && VW.i>0){ VW.i--; mostrarFoto(); } }
+    const now=Date.now(); const moved=Math.abs(e.clientX-VW.start.px)+Math.abs(e.clientY-VW.start.py);
+    if(moved<10){ if(now-VW.lastTap<300){ zoomEm(VW.s>1?1:2.5,e.clientX,e.clientY); VW.lastTap=0; } else VW.lastTap=now; }
+  }
+  if(VW.ptr.size<2 && VW.start && VW.start.d){ VW.start=null; if(VW.ptr.size===1){ const p=[...VW.ptr.values()][0]; VW.start={px:p.x,py:p.y,x:VW.x,y:VW.y}; } }
+}
+VW.stage.addEventListener("pointerup",fimPtr); VW.stage.addEventListener("pointercancel",fimPtr);
+VW.stage.addEventListener("wheel",e=>{ e.preventDefault(); zoomEm(VW.s*(e.deltaY<0?1.15:1/1.15),e.clientX,e.clientY); },{passive:false});
+document.getElementById("vwClose").onclick=()=>fecharVisualizador();
+document.getElementById("vwPrev").onclick=()=>{ if(VW.i>0){ VW.i--; mostrarFoto(); } };
+document.getElementById("vwNext").onclick=()=>{ if(VW.i<VW.list.length-1){ VW.i++; mostrarFoto(); } };
+document.getElementById("vwLeg").addEventListener("input",e=>{ const o=VW.list[VW.i]; if(!o) return; o.f.leg=e.target.value; agendarSalvar(); });
+document.getElementById("vwDel").onclick=async()=>{ const o=VW.list[VW.i]; if(!o) return;
+  if(!(await confirmar("Excluir a foto "+o.num+"? Ela sai do relatório e do aparelho."))) return;
+  removerFoto(o.pref); agendarSalvar(); VW.list=listaFotos(S.v); if(!VW.list.length){ fecharVisualizador(); return; } VW.i=Math.min(VW.i,VW.list.length-1); mostrarFoto(); };
+document.getElementById("vwShare").onclick=async()=>{ const o=VW.list[VW.i]; if(!o) return;
+  try{ const b=await fotoBlob(o.f); const nome="foto_"+o.num+"_"+(S.v.ident.convenio||"vistoria")+".jpg"; const f=new File([b],nome,{type:"image/jpeg"});
+    if(navigator.canShare && navigator.canShare({files:[f]})) await navigator.share({files:[f],title:nome});
+    else { const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download=nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),30000); } }catch(e){} };
+window.addEventListener("popstate",()=>{ if(!VW.el.hidden) fecharVisualizador(true); });
+document.addEventListener("keydown",e=>{ if(VW.el.hidden) return; if(e.key==="Escape") fecharVisualizador(); else if(e.key==="ArrowRight") document.getElementById("vwNext").click(); else if(e.key==="ArrowLeft") document.getElementById("vwPrev").click(); });
+
+/* ============================== Lista de vistorias ============================== */
+function abrirLista(){
+  const body=document.getElementById("dlgBody");
+  body.innerHTML = (S.list.length? S.list.map(v=>`<div class="vrow ${v.id===S.v.id?"cur":""}"><div><b>${esc(titulo(v))}</b><div class="meta">${esc(dataBR(v.ident&&v.ident.data))} · atualizada ${new Date(v.updatedAt||0).toLocaleString("pt-BR")}</div></div>
+    <div class="row"><button class="btn sm pri" type="button" data-open="${esc(v.id)}">Abrir</button><button class="btn sm" type="button" data-dup="${esc(v.id)}">Nova com estes dados</button><button class="btn sm ghost danger" type="button" data-delv="${esc(v.id)}">Excluir</button></div></div>`).join("")
+    : `<div class="empty">Nenhuma vistoria salva ainda.</div>`)
+  + `<div class="card"><h3>Backup</h3><p class="lead">Vistorias e fotos ficam só neste aparelho. Exporte um backup ao terminar cada vistoria; o arquivo também passa as vistorias para outro aparelho ou para o computador.</p>
+    <div class="row"><button class="btn" type="button" id="bkExp">Exportar backup</button><label class="btn">Importar backup<input type="file" id="bkImp" accept="application/json,.json" hidden></label></div><span class="status" id="bkSt"></span></div>`;
+  const d=document.getElementById("dlgList"); if(!d.open) d.showModal();
+}
+
+/* ============================== Eventos ============================== */
+document.addEventListener("click", async ev=>{
+  const ver=ev.target.closest("[data-ver]"); if(ver){ abrirVisualizador(ver.dataset.ver); return; }
+  const b=ev.target.closest("button"); if(!b) return;
+  const act=b.dataset.act;
+  if(b.dataset.tab){ irPara(b.dataset.tab); return; }
+  if(b.dataset.item){ marcar(b.dataset.item,b.dataset.v); return; }
+  if(act==="toggleEt"){ const id=b.dataset.et; const cur=etapaAberta(); S.openEt = cur===id? "" : id; render(true); const el=document.getElementById("et_"+id); if(S.openEt===id && el) el.scrollIntoView({block:"start"}); return; }
+  if(act==="obs"){ const id=b.dataset.id; const ta=document.querySelector(`textarea[data-itemobs="${id}"]`); ta.hidden=!ta.hidden; if(ta.hidden) S.obsOpen.delete(id); else { S.obsOpen.add(id); autoGrow(ta); ta.focus(); } return; }
+  if(act==="toggleCor"){ S.openCor = S.openCor===b.dataset.id? "" : b.dataset.id; render(true); return; }
+  if(act==="toggleTer"){ S.openTer = S.openTer===b.dataset.id? "" : b.dataset.id; render(true); return; }
+  if(act==="addCor"){ const ant=S.v.correntes[S.v.correntes.length-1]; const r={id:uid8()}; if(b.dataset.mesmo && ant){ r.quadro=ant.quadro; } S.v.correntes.push(r); S.openCor=r.id; agendarSalvar(); render(true);
+    const el=document.getElementById("mc_"+r.id); if(el){ el.scrollIntoView({block:"center"}); const f=el.querySelector(b.dataset.mesmo?'input[data-k="circuito"]':'input[data-k="quadro"]'); f&&f.focus(); } return; }
+  if(act==="delCor"){ if(await confirmar("Excluir esta medição?")){ S.v.correntes.splice(+b.dataset.i,1); agendarSalvar(); render(true); } return; }
+  if(act==="addTer"){ const ant=S.v.termo[S.v.termo.length-1]; const r={id:uid8(),refTipo:"similar"}; if(b.dataset.mesmo && ant){ r.local=ant.local; } S.v.termo.push(r); S.openTer=r.id; agendarSalvar(); render(true);
+    const el=document.getElementById("tc_"+r.id); el && el.scrollIntoView({block:"center"}); return; }
+  if(act==="delTer"){ if(await confirmar("Excluir este ponto e suas fotos?")){ const r=S.v.termo[+b.dataset.i]; [r.fotoIR,r.fotoVis].forEach(f=>{ if(f&&f.id) idbDel("fotos",f.id).catch(()=>{}); }); S.v.termo.splice(+b.dataset.i,1); agendarSalvar(); render(true); } return; }
+  if(act==="refTipo"){ const i=+b.dataset.i; S.v.termo[i].refTipo=b.dataset.v; b.parentElement.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); agendarSalvar(); atualizarTer(i); return; }
+  if(act==="novaNota"||act==="fabNotaTxt"){ fecharSheet(); const nt=novaNota(); if(S.tab!=="visual") S.tab="visual"; render(); focarNota(nt.id); return; }
+  if(act==="delNota"){ if(!(await confirmar("Excluir este registro de campo e suas fotos?"))) return; const i=S.v.notas.findIndex(x=>x.id===b.dataset.id); if(i>=0){ (S.v.notas[i].fotos||[]).forEach(f=>idbDel("fotos",f.id).catch(()=>{})); S.v.notas.splice(i,1); } agendarSalvar(); render(true); return; }
+  if(b.id==="fab"){ document.getElementById("sheet").hidden=false; return; }
+  if(act==="fecharSheet"){ fecharSheet(); return; }
+  if(act==="fabNota"||act==="fabGeral"){ S.fabMode=act; fecharSheet(); document.getElementById("fabFile").click(); return; }
+  if(act==="usarGPS"){ const st=document.getElementById("gpsSt"); st.textContent="Obtendo posição…"; const g=await posicaoAtual();
+    if(g){ const L=S.v.local; L.lat=g.lat; L.lon=g.lon; L.coords=g.lat.toFixed(6)+", "+g.lon.toFixed(6); L.fonte="GPS do aparelho, ±"+Math.round(g.acc)+" m"; agendarSalvar(); render(true); if(navigator.onLine && !L.endereco) buscarEndereco(); }
+    else st.textContent="Não foi possível obter a posição. Verifique se a localização está ligada e permitida."; return; }
+  if(act==="buscarEnd"){ buscarEndereco(); return; }
+  if(act==="recarregar"){ location.reload(); return; }
+  if(act==="genDraft"){ if(S.v.rel.texto && !(await confirmar("Substituir o texto atual pelo rascunho automático?"))) return; S.v.rel.texto=rascunhoAuto(S.v); S.v.rel.geradoEm=Date.now(); S.v.rel.fonte="rascunho automático"; agendarSalvar(); render(true); return; }
+  if(act==="cpPrompt"){ const st=document.getElementById("genSt"); try{ await navigator.clipboard.writeText(promptClaude(S.v)); st.textContent="Pedido copiado. Cole numa conversa com o Claude e traga a resposta para o campo abaixo."; }catch(e){ st.textContent="Não foi possível copiar automaticamente."; } return; }
+  if(act==="dlDocx"){ baixarDocx(false); return; }
+  if(act==="shDocx"){ baixarDocx(true); return; }
+  if(act==="cpTxt"){ try{ await navigator.clipboard.writeText(S.v.rel.texto||rascunhoAuto(S.v)); document.getElementById("dlSt").textContent="Texto copiado."; }catch(e){ document.getElementById("dlSt").textContent="Não foi possível copiar."; } return; }
+  if(b.id==="btnNew"){ if(!(await confirmar("Começar uma nova vistoria? A atual fica salva na lista."))) return; await salvarAgora(); S.v=novaVistoria({fiscal:S.v.ident.fiscal,cargo:S.v.ident.cargo}); S.list.unshift(S.v); S.openEt=null; S.openCor=null; S.openTer=null; S.tab="dados"; agendarSalvar(); render(); return; }
+  if(b.id==="btnList"){ abrirLista(); return; }
+  if(b.id==="dlgClose"){ document.getElementById("dlgList").close(); return; }
+  if(b.id==="bkExp"){ exportarBackup(); return; }
+  if(b.dataset.open){ await salvarAgora(); const x=S.list.find(v=>v.id===b.dataset.open); if(x){ S.v=x; normalizar(x); try{localStorage.setItem("vistoriaEletrica.cur",x.id);}catch(e){} } document.getElementById("dlgList").close(); S.openEt=null; S.openCor=null; S.openTer=null; render(); return; }
+  if(b.dataset.dup){ const x=S.list.find(v=>v.id===b.dataset.dup); if(x){ const c=JSON.parse(JSON.stringify(x)); c.id="v-"+Date.now().toString(36)+uid8().slice(0,4); c.createdAt=Date.now(); c.ident.data=hojeISO(); c.check={}; c.correntes=[]; c.termo=[]; c.fotosGerais=[]; c.notas=[]; c.pend={}; c.rel={texto:"",geradoEm:0,fonte:""}; S.v=c; S.list.unshift(c); agendarSalvar(); document.getElementById("dlgList").close(); S.tab="dados"; render(); } return; }
+  if(b.dataset.delv){ if(!(await confirmar("Excluir esta vistoria e as fotos dela? Não dá para desfazer."))) return; await excluirVistoria(b.dataset.delv); abrirLista(); return; }
+});
+document.getElementById("sheet").addEventListener("click",e=>{ if(e.target.id==="sheet") fecharSheet(); });
+function fecharSheet(){ document.getElementById("sheet").hidden=true; }
+function novaNota(){ const nt={id:"n"+uid8(),t:Date.now(),txt:"",fotos:[]}; (S.v.notas||(S.v.notas=[])).push(nt); agendarSalvar(); return nt; }
+function focarNota(id){ const ta=document.querySelector(`textarea[data-notatxt="${id}"]`); if(ta){ ta.scrollIntoView({block:"center"}); ta.focus(); } }
+document.getElementById("fabFile").addEventListener("change",async e=>{ const file=e.target.files&&e.target.files[0]; e.target.value=""; if(!file) return;
+  let tgt="g", nid=null; if(S.fabMode==="fabNota"){ const nt=novaNota(); nid=nt.id; tgt="n:"+nt.id; }
+  toastSave("Processando foto…");
+  try{ const f=await guardarFoto(file,tgt); colocarFoto(tgt,f); agendarSalvar(); }catch(er){ toastSave("Não foi possível ler a imagem: "+(er&&er.message||er),true); }
+  if(nid){ S.tab="visual"; render(); focarNota(nid); } else render(true);
+});
+document.addEventListener("input", ev=>{
+  const el=ev.target;
+  if(el.tagName==="TEXTAREA") autoGrow(el);
+  if(el.dataset.path==="local.coords"){ S.v.local.coords=el.value; const c=parseCoords(el.value); const st=document.getElementById("coordSt");
+    if(c){ S.v.local.lat=c.lat; S.v.local.lon=c.lon; S.v.local.fonte="informadas pelo fiscal"; st.textContent="Lidas: "+fmtCoord(c.lat,c.lon); } else { S.v.local.lat=null; S.v.local.lon=null; st.textContent=el.value?"Não reconheci duas coordenadas válidas.":"Ou cole as coordenadas do Google Maps."; }
+    agendarSalvar(); return; }
+  if(el.dataset.path){ let val=el.value; if(el.dataset.mask==="conv"){ val=maskConv(val); el.value=val; } if(el.dataset.path==="cfg.deseq") val=n(val)??10; setPath(S.v,el.dataset.path,val); agendarSalvar(); return; }
+  if(el.dataset.itemobs){ const id=el.dataset.itemobs; const st=S.v.check[id]||(S.v.check[id]={}); st.obs=el.value; const btn=document.querySelector(`button[data-act="obs"][data-id="${id}"]`); btn&&btn.classList.toggle("has",!!el.value); agendarSalvar(); return; }
+  if(el.dataset.notatxt){ const nt=S.v.notas.find(x=>x.id===el.dataset.notatxt); if(nt){ nt.txt=el.value; agendarSalvar(); } return; }
+  if(el.dataset.cor!=null){ S.v.correntes[+el.dataset.cor][el.dataset.k]=el.value; agendarSalvar(); atualizarCor(+el.dataset.cor); return; }
+  if(el.dataset.ter!=null){ S.v.termo[+el.dataset.ter][el.dataset.k]=el.value; agendarSalvar(); atualizarTer(+el.dataset.ter); return; }
+  if(el.dataset.pend){ const k=el.dataset.pend; const p=S.v.pend[k]||(S.v.pend[k]={}); p[el.dataset.k]=el.value; if(el.dataset.k==="classe") el.closest(".pend").dataset.c=el.value; agendarSalvar(); return; }
+});
+document.addEventListener("change", async ev=>{
+  const el=ev.target;
+  if(el.id==="bkImp" && el.files && el.files[0]){ importarBackup(el.files[0]); return; }
+  if(el.id==="carimbo"){ S.v.carimbo=el.checked; agendarSalvar(); return; }
+  if(el.dataset.aplica){ S.v.aplica[el.dataset.aplica]=el.checked; S.openEt=el.dataset.aplica; agendarSalvar(); render(true); return; }
+  if(el.dataset.addph && el.files && el.files[0]){
+    const tgt=el.dataset.addph, file=el.files[0]; const lab=el.closest("label"); if(lab) lab.style.opacity=".5"; toastSave("Processando foto…");
+    try{ const f=await guardarFoto(file,tgt); colocarFoto(tgt,f); agendarSalvar(); }catch(e){ toastSave("Não foi possível ler a imagem: "+(e&&e.message||e), true); }
+    render(true); return; }
+});
+document.addEventListener("keydown", ev=>{
+  const el=ev.target; if(ev.key!=="Enter" || el.tagName!=="INPUT") return;
+  const card=el.closest(".mc-b,.card"); if(!card) return;
+  const ins=[...card.querySelectorAll("input[type=text],input[type=date],input[type=time]")].filter(x=>x.offsetParent);
+  const i=ins.indexOf(el); if(i>=0 && i<ins.length-1){ ev.preventDefault(); ins[i+1].focus(); } else { ev.preventDefault(); el.blur(); }
+});
+
 /* ============================== Início ============================== */
 (async function(){
   S.v=novaVistoria(); render();
   await initCaps();
   await carregar();
+  if(!S.v.ident.convenio && !S.v.ident.escola) S.tab="dados";
   render(); atualizarRede();
   toastSave(S.store==="idb"?"Salvo no aparelho":"Sem armazenamento");
   try{ if(navigator.permissions){ const p=await navigator.permissions.query({name:"geolocation"}); if(p.state==="granted") iniciarGPS(); } }catch(e){}
 })();
+
 </script>
 </body>
 </html>
