@@ -220,6 +220,20 @@ details.card > summary small{font-family:var(--f-body);font-weight:400;font-size
 .vw-acts{display:grid;grid-template-columns:auto 1fr 1fr auto;gap:8px}
 .vw-acts .del{color:#FF9A8F}
 .vw-link{color:#F6C27A;font-weight:600}
+.vw-aud{display:grid;gap:6px}
+.vw-aud audio{width:100%;height:40px}
+.vw-aud textarea{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff;min-height:44px;font-size:14px}
+.vw-aud .row button{min-height:40px;border:0;border-radius:10px;background:rgba(255,255,255,.12);color:#fff;font-weight:600;padding:6px 12px;cursor:pointer}
+.vw-aud .st{font-size:12px;color:#C9D1D8}
+.rec-top{display:flex;gap:10px;align-items:center;font-size:22px}
+.rec-dot{width:14px;height:14px;border-radius:50%;background:var(--crit);animation:pisca 1s infinite}
+@keyframes pisca{50%{opacity:.25}}
+.rec-txt{min-height:80px;max-height:40vh;overflow:auto;background:var(--soft);border-radius:10px;padding:10px 12px;font-size:15px}
+.sheet .rec-stop{background:var(--crit);color:#fff;border-color:var(--crit);text-align:center}
+.th .aud,.slot .aud{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.65);color:#fff;font-size:10.5px;font-weight:600;border-radius:999px;padding:1px 6px}
+.audbox{display:grid;gap:6px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--soft)}
+.audbox audio{width:100%;height:36px}
+.audbox .h{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
 .vw-hint{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:12px;color:#aab}
 
 dialog{border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--ink);padding:0;max-width:560px;width:calc(100% - 24px)}
@@ -262,6 +276,15 @@ dialog::backdrop{background:rgba(8,12,16,.55)}
   </div>
 </div>
 
+<div class="sheet-bg" id="recSheet" hidden style="z-index:80">
+  <div class="sheet" role="dialog" aria-label="Gravando relato em áudio">
+    <div class="rec-top"><span class="rec-dot" aria-hidden="true"></span><b id="recTempo" class="mono">0:00</b><span class="status">máx. 3:00</span></div>
+    <div class="status" id="recAlvo"></div>
+    <div class="rec-txt" id="recTxt" aria-live="polite"></div>
+    <div class="g2"><button type="button" data-act="recCancel" style="text-align:center">Cancelar</button><button type="button" data-act="recStop" class="rec-stop">Parar e salvar</button></div>
+  </div>
+</div>
+
 <div class="vw" id="vw" hidden role="dialog" aria-label="Visualizar foto">
   <div class="vw-top"><span id="vwCount" class="mono"></span><button type="button" id="vwClose">Fechar</button></div>
   <div class="vw-stage" id="vwStage"><img id="vwImg" alt=""><div class="vw-hint">Pinça ou toque duplo para ampliar · arraste para trocar de foto</div></div>
@@ -269,6 +292,7 @@ dialog::backdrop{background:rgba(8,12,16,.55)}
     <div class="vw-cap" id="vwCap"></div>
     <div class="vw-meta" id="vwMeta"></div>
     <div class="vw-meta"><span id="vwQual"></span> <a id="vwDrive" class="vw-link" target="_blank" rel="noopener" hidden>Abrir original no Drive</a></div>
+    <div id="vwAud" class="vw-aud"></div>
     <input type="text" id="vwLeg" placeholder="Legenda (opcional, entra no relatório)" aria-label="Legenda da foto">
     <div class="vw-acts"><button type="button" id="vwPrev" aria-label="Foto anterior">‹</button><button type="button" id="vwShare">Compartilhar</button><button type="button" id="vwDel" class="del">Excluir</button><button type="button" id="vwNext" aria-label="Próxima foto">›</button></div>
   </div>
@@ -559,6 +583,7 @@ function dadosParaClaude(v){
     limite_desequilibrio_adotado_pct:v.cfg.deseq,
     termografia: v.termo.map(r=>{ const c=calcTermo(r); return {local:r.local,componente:r.componente,Tmax_C:r.tmax,Tref_C:r.tref,referencia:r.refTipo==="ambiente"?"ar ambiente":"componente similar",deltaT_C:c.dt!=null?+c.dt.toFixed(1):null,classificacao_NETA:c.txt,acao:c.acao,carga_pct:c.carga!=null?+c.carga.toFixed(0):null,carga_abaixo_40:!!c.baixaCarga,obs:r.obs,fotos:fotosDe("ter:"+r.id)}; }),
     pendencias: pendencias(v).map(p=>({origem:p.origem,descricao:p.desc,classe:p.classe,providencia:p.prov,prazo_dias:p.prazo})),
+    relatos_em_audio:todosAudios(v).map(x=>({vinculo:x.rot, duracao_s:x.a.dur, transcricao:x.a.txt||"", fonte_transcricao:x.a.txt?(x.a.fonte||""):"", situacao:x.a.txt?"transcrito":"PENDENTE: transcrever o arquivo de áudio no Drive", arquivo_audio_drive:x.a.driveId?"https://drive.google.com/file/d/"+x.a.driveId+"/view":"(ainda não enviado ao Drive)"})),
     registros_de_campo:(v.notas||[]).map((nt,k)=>({registro:k+1,data_hora:dtBR(new Date(nt.t)),texto:nt.txt||"",fotos:fotosDe("nota:"+nt.id)})),
     total_fotos:fotos.length
   };
@@ -576,6 +601,7 @@ Regras obrigatórias:
 7. Formato de saída: texto puro. Títulos de seção em linhas iniciadas por "## " (ex.: "## 1. IDENTIFICAÇÃO"). Listas com "- ". Sem negrito, sem tabelas, sem markdown além disso. Não inclua bloco de assinatura; ele é acrescentado no documento.
 8. Seções, nesta ordem: 1. IDENTIFICAÇÃO; 2. OBJETIVO; 3. ESCOPO, EQUIPAMENTOS E LIMITAÇÕES; 4. METODOLOGIA; 5. CONSTATAÇÕES DA INSPEÇÃO VISUAL (por etapa, destacando não conformidades, e ao final os registros de campo); 6. MEDIÇÕES DE CORRENTE; 7. INSPEÇÃO TERMOGRÁFICA; 8. PENDÊNCIAS E PROVIDÊNCIAS (por classe: Grave, Moderada, Documental, com prazos quando informados); 9. CONCLUSÃO (se há impedimento ao recebimento/medição dos itens elétricos, e reiterar que os ensaios da seção 7 da NBR 5410 e o laudo com ART do RT da executora são exigíveis).
 9. Frases curtas e objetivas, tom de manifestação técnica.
+11. "relatos_em_audio" são falas do fiscal gravadas no local, vinculadas a uma foto, medição ou ponto termográfico. Use as transcrições nas constatações da respectiva seção, sem citar que vieram de áudio. Se algum relato estiver PENDENTE de transcrição, liste-o ao final, fora do relatório, para o fiscal providenciar.
 10. Na metodologia, informe que as fotos levam carimbo com data, hora, coordenadas, endereço e identificação, e que a origem de cada dado (metadados da câmera ou informado pelo fiscal) consta no próprio carimbo. Endereço da unidade: ${v.local.endereco||"não informado"}. Coordenadas: ${v.local.lat!=null?fmtCoord(v.local.lat,v.local.lon)+" ("+(v.local.fonte||"")+")":"não informadas"}.
 
 Texto de escopo:
@@ -613,6 +639,7 @@ function rascunhoAuto(v){
     its.filter(x=>x.s==="C"&&x.obs).forEach(x=>P("- "+x.id.toUpperCase()+": "+x.obs+fr("chk:"+x.id)));
   });
   if((v.notas||[]).length){ P("Registros de campo:"); v.notas.forEach((nt,k)=>P("- Registro "+(k+1)+" ("+dtBR(new Date(nt.t)).slice(0,16)+"): "+(nt.txt||"sem anotação")+fr("nota:"+nt.id))); }
+  { const au=todosAudios(v).filter(x=>x.a.txt); if(au.length){ P("Relatos registrados em campo:"); au.forEach(x=>P("- "+x.rot+": "+x.a.txt)); } }
   H("6. MEDIÇÕES DE CORRENTE");
   if(!v.correntes.length) P("Não foram registradas medições de corrente.");
   else { P(v.correntes.length+" circuito(s) medido(s); valores no Anexo A."); v.correntes.forEach(r=>{ const c=calcCorrente(r,v.cfg.deseq); if(c.flags.length) P("- "+(r.quadro||"")+" / "+(r.circuito||"")+": "+c.flags.map(f=>f.txt).join("; ")+"."); }); if(!v.correntes.some(r=>calcCorrente(r,v.cfg.deseq).flags.length)) P("Nenhuma corrente acima da nominal dos disjuntores e nenhum desequilíbrio acima do limite de atenção de "+v.cfg.deseq+"%."); }
@@ -672,7 +699,8 @@ async function gerarDocx(v){
     try{ const b=await fotoBlob(fo.f); const buf=await b.arrayBuffer(); const w=fo.f.w||1600, h=fo.f.h||1200; let W=430, H=Math.round(W*h/w); if(H>560){ W=Math.round(W*560/H); H=560; }
       kids.push(new Paragraph({children:[new ImageRun({data:buf,transformation:{width:W,height:H}})],alignment:AlignmentType.CENTER,spacing:{before:120}}));
     }catch(e){ falhas++; }
-    kids.push(new Paragraph({children:[new TextRun({text:"Foto "+fo.num+" – "+fo.cap,size:18,italics:true})],alignment:AlignmentType.CENTER,spacing:{after:200}}));
+    kids.push(new Paragraph({children:[new TextRun({text:"Foto "+fo.num+" – "+fo.cap,size:18,italics:true})],alignment:AlignmentType.CENTER,spacing:{after:fo.f.audio&&fo.f.audio.txt?60:200}}));
+    if(fo.f.audio&&fo.f.audio.txt) kids.push(new Paragraph({children:[new TextRun({text:"Relato: "+fo.f.audio.txt,size:18})],alignment:AlignmentType.CENTER,spacing:{after:200}}));
   }
   const doc=new Document({creator:v.ident.fiscal||"Fiscal",title:"Relatório de vistoria elétrica"+(v.ident.convenio?" – Convênio "+v.ident.convenio:""),
     styles:{default:{document:{run:{font:"Arial",size:22}}}},
@@ -731,7 +759,8 @@ const ICON = {
   termo:'<svg viewBox="0 0 24 24"><path d="M10 14V5a2 2 0 014 0v9a4 4 0 11-4 0z"/><path d="M12 9v7"/></svg>',
   rel:'<svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg>',
   cam:'<svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="4"/></svg>',
-  obs:'<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>'
+  obs:'<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
+  mic:'<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>'
 };
 const TABS = [["dados","Dados"],["visual","Inspeção"],["cor","Medições"],["termo","Termo"],["rel","Relatório"]];
 
@@ -771,7 +800,9 @@ function removerFoto(pref){
   else if(k==="n"){ const nt=v.notas.find(x=>x.id===a); if(nt) nt.fotos.splice(+b,1); }
   else if(k==="t"){ const r=v.termo[+a]; if(b==="ir") delete r.fotoIR; else delete r.fotoVis; }
 }
-function th(f,pref,lbl){ return `<button type="button" class="th" data-ver="${esc(pref)}" aria-label="Ampliar foto"><img data-fid="${esc(f.id)}" src="${esc(fotoURL(f))}" alt="">${lbl?`<span class="lbl">${esc(lbl)}</span>`:""}</button>`; }
+function audBadge(a){ return a&&a.id? `<span class="aud">● ${fmtDur(a.dur)}</span>` : ""; }
+function fmtDur(s){ s=Math.max(0,Math.round(s||0)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+function th(f,pref,lbl){ return `<button type="button" class="th" data-ver="${esc(pref)}" aria-label="Ampliar foto"><img data-fid="${esc(f.id)}" src="${esc(fotoURL(f))}" alt="">${lbl?`<span class="lbl">${esc(lbl)}</span>`:""}${audBadge(f.audio)}</button>`; }
 function strip(fotos,prefixo){ return `<div class="strip">${(fotos||[]).map((f,i)=>th(f,prefixo+":"+i)).join("")}</div>`; }
 function camBtn(tgt,txt,n){ return `<label class="mini ${n?"has":""}">${ICON.cam}${txt||"Foto"}${n?` (${n})`:""}<input type="file" accept="image/*" capture="environment" data-addph="${esc(tgt)}"></label>`; }
 
@@ -801,6 +832,7 @@ function render(keep){
   M.querySelectorAll("textarea").forEach(autoGrow);
   if(S.tab==="dados") atualizarGPSst();
   if(S.tab==="rel") mostrarUso();
+  ligarAudios(M);
   if(keep) window.scrollTo(0,y);
 }
 function autoGrow(t){ t.style.height="auto"; t.style.height=Math.min(t.scrollHeight+2,420)+"px"; }
@@ -855,6 +887,7 @@ function rDados(){
     ${field("instr.obsLimit","Outras limitações desta visita",{area:true,ph:"Cobertura sem acesso seguro, quadro trancado…"})}
     <p class="lead">Segurança: quadros abertos e manobrados só pelo eletricista ou RT da executora; alicate só em condutor isolado; termografia a distância segura.</p>
   </details>
+  ${rTranscricao()}
   <section class="card"><div class="card-h"><h3>Fotos gerais</h3>${camBtn("g","Adicionar",0)}</div>
     ${(S.v.fotosGerais||[]).length? strip(S.v.fotosGerais,"g") : `<p class="lead">Fachada, placa da obra, padrão de entrada visto de fora.</p>`}
   </section>`;
@@ -872,7 +905,7 @@ function rVisual(){
   ${notas.length?`<section class="card"><div class="card-h"><h3>Registros de campo</h3><button class="btn sm" type="button" data-act="novaNota">+ Registro</button></div>
     ${notas.slice().reverse().map(nt=>`<div class="nota" data-nota="${esc(nt.id)}"><div class="when"><span>${dtBR(new Date(nt.t)).slice(0,16)}</span><button class="btn sm ghost danger" type="button" data-act="delNota" data-id="${esc(nt.id)}">Excluir</button></div>
       <textarea data-notatxt="${esc(nt.id)}" placeholder="O que foi observado, onde" rows="2">${esc(nt.txt||"")}</textarea>
-      <div class="it-x">${camBtn("n:"+nt.id,"Foto",(nt.fotos||[]).length)}</div>${strip(nt.fotos,"n:"+nt.id)}</div>`).join("")}</section>`:""}
+      <div class="it-x">${camBtn("n:"+nt.id,"Foto",(nt.fotos||[]).length)}<button type="button" class="mini ${(nt.fotos||[]).some(f=>f.audio&&f.audio.id)?"has":""}" data-mic="n:${esc(nt.id)}">${ICON.mic}Áudio</button></div>${strip(nt.fotos,"n:"+nt.id)}</div>`).join("")}</section>`:""}
   ${ETAPAS.map(e=>{ const x=etapaInfo(e); const open=e.id===aberta;
     return `<section class="et ${x.on&&x.feitos===x.total?"done":""}" id="et_${e.id}" data-open="${open}">
       <button class="et-h" type="button" data-act="toggleEt" data-et="${e.id}" aria-expanded="${open}"><span class="n">${e.id}</span><span class="tt">${esc(e.t)}</span>
@@ -886,7 +919,7 @@ function itemHTML(id,m,t){ const st=S.v.check[id]||{}; const nf=(st.fotos||[]).l
   return `<div class="it" id="it_${id}" data-s="${st.s||""}">
     <div class="it-t"><span class="tag ${m}">${m==="T"?"Câmera":"Visual"}</span>${esc(t)}</div>
     <div class="seg4" role="group" aria-label="Situação">${["C","NC","NA","NV"].map(s=>`<button type="button" data-item="${id}" data-v="${s}" aria-pressed="${st.s===s}">${s}</button>`).join("")}</div>
-    <div class="it-x"><button type="button" class="mini ${st.obs?"has":""}" data-act="obs" data-id="${id}">${ICON.obs}Obs</button>${camBtn("c:"+id,"Foto",nf)}</div>
+    <div class="it-x"><button type="button" class="mini ${st.obs?"has":""}" data-act="obs" data-id="${id}">${ICON.obs}Obs</button>${camBtn("c:"+id,"Foto",nf)}<button type="button" class="mini ${(st.fotos||[]).some(f=>f.audio&&f.audio.id)?"has":""}" data-mic="c:${id}">${ICON.mic}Áudio</button></div>
     <textarea data-itemobs="${id}" placeholder="Observação: local, o que foi visto, valor de placa…" rows="2" ${showObs?"":"hidden"}>${esc(st.obs||"")}</textarea>
     ${strip(st.fotos,"c:"+id)}</div>`; }
 function marcar(id,val){
@@ -919,7 +952,8 @@ function rCor(){
         <div class="g4">${num("disjIn","In disj. (A)")}<label class="f num"><span>Cabo (mm²)</span><input type="text" inputmode="decimal" enterkeyhint="next" data-cor="${i}" data-k="cabo" value="${esc(r.cabo??"")}" autocomplete="off"></label>${num("iz","Iz cabo (A)")}<span></span></div>
         <div class="status" id="corFl_${i}">${c.flags.map(f=>esc(f.txt)).join(" · ")}</div>
         <input type="text" data-cor="${i}" data-k="obs" value="${esc(r.obs||"")}" placeholder="Cargas ligadas no momento, observação" aria-label="Observação" enterkeyhint="done">
-        <div class="row end"><button class="btn sm ghost danger" type="button" data-act="delCor" data-i="${i}">Excluir medição</button></div>
+        ${audBox("cor:"+i,r.audio)}
+        <div class="row" style="justify-content:space-between"><button type="button" class="mini ${r.audio&&r.audio.id?"has":""}" data-mic="cor:${i}">${ICON.mic}${r.audio&&r.audio.id?"Regravar áudio":"Gravar áudio"}</button><button class="btn sm ghost danger" type="button" data-act="delCor" data-i="${i}">Excluir medição</button></div>
       </div></div>`; }).join("");
   return `<section class="card"><div class="card-h"><h2>Medições de corrente</h2><span class="status">alicate amperímetro</span></div>
     <p class="lead">Fases e neutro de cada circuito. O app compara com a In do disjuntor e a Iz do cabo e calcula o desequilíbrio entre fases.</p></section>
@@ -931,7 +965,7 @@ function rCor(){
 }
 function pillCor(c){ const s=sevCor(c); return s==="crit"?`<span class="pill crit">Alerta</span>`: s==="warn"?`<span class="pill warn">Atenção</span>`: s==="ok"?`<span class="pill ok">OK</span>`:""; }
 function resumoCor(r,c){ const p=[]; ["ia","ib","ic"].forEach((k,j)=>{ if(r[k]) p.push("ABC"[j]+" "+r[k]); }); if(r.ineutro) p.push("N "+r.ineutro);
-  if(c.pctIn!=null) p.push(fmt(c.pctIn,0)+"% In"); if(c.deseq!=null) p.push("deseq. "+fmt(c.deseq,0)+"%"); return esc(p.join(" · ")||"toque para preencher"); }
+  if(c.pctIn!=null) p.push(fmt(c.pctIn,0)+"% In"); if(c.deseq!=null) p.push("deseq. "+fmt(c.deseq,0)+"%"); if(r.audio&&r.audio.id) p.push("áudio "+fmtDur(r.audio.dur)); return esc(p.join(" · ")||"toque para preencher"); }
 function atualizarCor(i){ const r=S.v.correntes[i]; if(!r) return; const c=calcCorrente(r,S.v.cfg.deseq);
   const set=(id,h)=>{ const el=document.getElementById(id); if(el) el.innerHTML=h; };
   set("corPill_"+i,pillCor(c)); set("corT_"+i,esc(r.quadro||"Quadro")+" · "+esc(r.circuito||"circuito "+(i+1))); set("corL2_"+i,resumoCor(r,c)); set("corFl_"+i,c.flags.map(f=>esc(f.txt)).join(" · "));
@@ -957,7 +991,8 @@ function rTermo(){
         <div class="g2">${inp("iMed","Corrente agora (A)","",1)}${inp("iNom","Corrente nominal (A)","",1)}</div>
         <div class="res" id="terRes_${i}">${resTer(c)}</div>
         <input type="text" data-ter="${i}" data-k="obs" value="${esc(r.obs||"")}" placeholder="Causa provável, condição da conexão" aria-label="Observação" enterkeyhint="done">
-        <div class="row end"><button class="btn sm ghost danger" type="button" data-act="delTer" data-i="${i}">Excluir ponto</button></div>
+        ${audBox("ter:"+i,r.audio)}
+        <div class="row" style="justify-content:space-between"><button type="button" class="mini ${r.audio&&r.audio.id?"has":""}" data-mic="ter:${i}">${ICON.mic}${r.audio&&r.audio.id?"Regravar áudio":"Gravar áudio"}</button><button class="btn sm ghost danger" type="button" data-act="delTer" data-i="${i}">Excluir ponto</button></div>
       </div></div>`; }).join("");
   return `<section class="card"><div class="card-h"><h2>Termografia</h2><span class="status">câmera termográfica</span></div>
     <p class="lead">Temperatura máxima e uma referência: a mesma peça em outra fase (preferível) ou o ar ambiente. Classificação pela ANSI/NETA MTS, Tabela 100.18.</p></section>
@@ -969,7 +1004,7 @@ function rTermo(){
     <p class="lead">Válido com carga a partir de 40% da nominal; meça a corrente com o alicate no mesmo ponto.</p></details>`;
 }
 function resumoTer(r,c){ const p=[]; if(r.tmax) p.push("Tmáx "+r.tmax+" °C"); if(c.dt!=null) p.push("ΔT "+fmt(c.dt,1)+" °C "+(r.refTipo==="ambiente"?"(amb.)":"(sim.)")); if(c.carga!=null) p.push("carga "+fmt(c.carga,0)+"%");
-  const nf=(r.fotoIR?1:0)+(r.fotoVis?1:0); if(nf) p.push(nf+" foto"+(nf>1?"s":"")); return esc(p.join(" · ")||"toque para preencher"); }
+  const nf=(r.fotoIR?1:0)+(r.fotoVis?1:0); if(nf) p.push(nf+" foto"+(nf>1?"s":"")); if(r.audio&&r.audio.id) p.push("áudio "+fmtDur(r.audio.dur)); return esc(p.join(" · ")||"toque para preencher"); }
 function resTer(c){ return (c.sev<0?`<span class="status">Informe T máx. e referência</span>`:pillTer(c)+(c.dt!=null?`<span class="mono">ΔT ${fmt(c.dt,1)} °C</span><span>${esc(c.acao)}</span>`:""))+(c.carga!=null?`<span class="mono">carga ${fmt(c.carga,0)}%</span>`:"")+(c.baixaCarga?`<span class="pill warn">carga &lt; 40%</span>`:""); }
 function atualizarTer(i){ const r=S.v.termo[i]; if(!r) return; const c=calcTermo(r);
   const set=(id,h)=>{ const el=document.getElementById(id); if(el) el.innerHTML=h; };
@@ -1017,6 +1052,7 @@ function mostrarFoto(){
   const m=o.f.meta; document.getElementById("vwMeta").textContent=m? [m.dt?dtBR(new Date(m.dt)):"", m.lat!=null?fmtCoord(m.lat,m.lon)+" ("+m.gpsFonte+")":"sem coordenadas"].filter(Boolean).join(" · ") : "";
   document.getElementById("vwLeg").value=o.f.leg||"";
   carregarAlta(o,++VW.tok);
+  renderAudViewer(o);
   document.getElementById("vwPrev").disabled=VW.i===0; document.getElementById("vwNext").disabled=VW.i===VW.list.length-1;
 }
 async function carregarAlta(o,tk){
@@ -1081,11 +1117,16 @@ function abrirLista(){
 
 /* ============================== Eventos ============================== */
 document.addEventListener("click", async ev=>{
+  const mic=ev.target.closest("[data-mic]"); if(mic){ const ref=alvoAudio(mic.dataset.mic); if(!ref){ toastSave("Tire a foto primeiro: o áudio fica vinculado a ela.",true); return; } iniciarGravacao(ref); return; }
   const ver=ev.target.closest("[data-ver]"); if(ver){ abrirVisualizador(ver.dataset.ver); return; }
   const b=ev.target.closest("button"); if(!b) return;
   const act=b.dataset.act;
   if(b.dataset.tab){ irPara(b.dataset.tab); return; }
   if(b.dataset.item){ marcar(b.dataset.item,b.dataset.v); return; }
+  if(act==="recStop"){ pararGravacao(false); return; }
+  if(act==="recCancel"){ pararGravacao(true); return; }
+  if(act==="sttUm"){ transcreverUm(b.dataset.ref); return; }
+  if(act==="delAud"){ if(!(await confirmar("Excluir este áudio? A transcrição também sai."))) return; const h=holderPorRef(b.dataset.ref); if(h&&h.audio){ idbDel("fotos",h.audio.id).catch(()=>{}); delete h.audio; agendarSalvar(); } if(!VW.el.hidden) mostrarFoto(); else render(true); return; }
   if(act==="toggleEt"){ const id=b.dataset.et; const cur=etapaAberta(); S.openEt = cur===id? "" : id; render(true); const el=document.getElementById("et_"+id); if(S.openEt===id && el) el.scrollIntoView({block:"start"}); return; }
   if(act==="obs"){ const id=b.dataset.id; const ta=document.querySelector(`textarea[data-itemobs="${id}"]`); ta.hidden=!ta.hidden; if(ta.hidden) S.obsOpen.delete(id); else { S.obsOpen.add(id); autoGrow(ta); ta.focus(); } return; }
   if(act==="toggleCor"){ S.openCor = S.openCor===b.dataset.id? "" : b.dataset.id; render(true); return; }
@@ -1140,6 +1181,8 @@ document.addEventListener("input", ev=>{
     agendarSalvar(); return; }
   if(el.dataset.path){ let val=el.value; if(el.dataset.mask==="conv"){ val=maskConv(val); el.value=val; } if(el.dataset.path==="cfg.deseq") val=n(val)??10; setPath(S.v,el.dataset.path,val); agendarSalvar(); return; }
   if(el.dataset.itemobs){ const id=el.dataset.itemobs; const st=S.v.check[id]||(S.v.check[id]={}); st.obs=el.value; const btn=document.querySelector(`button[data-act="obs"][data-id="${id}"]`); btn&&btn.classList.toggle("has",!!el.value); agendarSalvar(); return; }
+  if(el.dataset.audtxt){ const h=holderPorRef(el.dataset.audtxt); if(h&&h.audio){ h.audio.txt=el.value; h.audio.fonte=el.value?"editada":""; h.audio.st=el.value?"ok":"fila"; agendarSalvar(); } return; }
+  if(el.id==="sttKey"){ try{ localStorage.setItem(LS_STT,el.value.trim()); }catch(e){} if(el.value.trim()) agendarTranscricao(1500); return; }
   if(el.dataset.notatxt){ const nt=S.v.notas.find(x=>x.id===el.dataset.notatxt); if(nt){ nt.txt=el.value; agendarSalvar(); } return; }
   if(el.dataset.cor!=null){ S.v.correntes[+el.dataset.cor][el.dataset.k]=el.value; agendarSalvar(); atualizarCor(+el.dataset.cor); return; }
   if(el.dataset.ter!=null){ S.v.termo[+el.dataset.ter][el.dataset.k]=el.value; agendarSalvar(); atualizarTer(+el.dataset.ter); return; }
@@ -1227,7 +1270,7 @@ async function enviarArquivo(meta,blob,idExistente){
 const nomeArq=s=>String(s).replace(/[\\/:*?"<>|\n\r]+/g," ").replace(/\s+/g," ").trim().slice(0,110);
 function nomePastaVistoria(v){ const i=v.ident; return nomeArq([i.convenio?"Conv "+i.convenio:"", i.escola, i.municipio, i.data].filter(Boolean).join(" - ")||("Vistoria "+v.id)); }
 function pendentesDe(v){ const env=(v.drive&&v.drive.fotos)||{}; return listaFotos(v).filter(o=>!env[o.f.id]); }
-function totalPendentes(){ const vs=S.list.includes(S.v)? S.list : [S.v,...S.list]; return vs.reduce((a,v)=>a+pendentesDe(v).length,0); }
+function totalPendentes(){ const vs=S.list.includes(S.v)? S.list : [S.v,...S.list]; return vs.reduce((a,v)=>a+pendentesDe(v).length+audiosPendentesDrive(v).length,0); }
 let raizCache=null;
 async function garantirPastas(v){
   v.drive=v.drive||{}; v.drive.fotos=v.drive.fotos||{};
@@ -1292,7 +1335,7 @@ async function sincronizarDrive(manual){
   DRIVE.rodando=true; DRIVE.erro=""; atualizarChipDrive();
   let enviadas=0, falhas=0;
   try{
-    const vs=(S.list.includes(S.v)? S.list : [S.v,...S.list]).filter(v=>pendentesDe(v).length);
+    const vs=(S.list.includes(S.v)? S.list : [S.v,...S.list]).filter(v=>pendentesDe(v).length||audiosPendentesDrive(v).length);
     for(const v of vs){
       await garantirPastas(v); await gravarVistoria(v);
       for(const o of pendentesDe(v)){
@@ -1302,6 +1345,13 @@ async function sincronizarDrive(manual){
           v.drive.fotos[o.f.id]=j.id; v.drive.enviadoEm=Date.now(); enviadas++; await gravarVistoria(v);
           if(liberarLigado() && +j.size===bb.size) await liberarFoto(o.f.id,j.id,bb);
           atualizarChipDrive();
+        }catch(e){ if(e.auth||e.rede||e.ativar||e.grave) throw e; falhas++; }
+      }
+      for(const x of audiosPendentesDrive(v)){
+        try{ const r=await idbGet("fotos",x.a.id).catch(()=>null); const b=blobDe(r)||(S.memFotos&&S.memFotos[x.a.id]); if(!b) continue;
+          const nome=nomeArq((x.num?String(x.num).padStart(2,"0")+" - ":"")+"Audio - "+x.rot.replace(/^Foto \d+ – /,"")).slice(0,100)+".wav";
+          const j=await enviarArquivo({name:nome, parents:[v.drive.pasta], description:"Relato em áudio – "+x.rot+(x.a.txt?" – Transcrição: "+x.a.txt:"")}, b.type?b:new Blob([b],{type:"audio/wav"}));
+          x.a.driveId=j.id; enviadas++; await gravarVistoria(v); atualizarChipDrive();
         }catch(e){ if(e.auth||e.rede||e.ativar||e.grave) throw e; falhas++; }
       }
     }
@@ -1377,6 +1427,186 @@ window.addEventListener("online",()=>{ atualizarChipDrive(); agendarSync(500); }
 window.addEventListener("offline",atualizarChipDrive);
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") agendarSync(800); });
 setInterval(()=>{ if(totalPendentes()) sincronizarDrive(); else atualizarChipDrive(); },90000);
+
+/* ============================== Áudio e transcrição ============================== */
+/* Relato em áudio vinculado a uma foto (inspeção, registro de campo, termografia), a uma medição ("cor:i") ou a um ponto
+   termográfico ("ter:i"). Gravado em WAV 16 kHz mono, guardado no aparelho (funciona offline).
+   Transcrição: 1) na hora, pelo reconhecimento de voz do celular; 2) se falhar, fila no Google Speech-to-Text (chave
+   guardada só neste aparelho); 3) os .wav vão para o Drive e o Claude pode transcrever depois. */
+const AUD={stream:null, ctx:null, proc:null, chunks:[], rate:44100, t0:0, timer:null, sr:null, srOk:false, txtFinal:"", txtParcial:"", alvo:null, max:180};
+const LS_STT="vistoriaEletrica.sttKey";
+function sttKey(){ try{ return (localStorage.getItem(LS_STT)||"").trim(); }catch(e){ return ""; } }
+function holderPorRef(ref){ const v=S.v; const [k,a]=String(ref).split(":");
+  if(k==="cor") return v.correntes[+a]||null; if(k==="ter") return v.termo[+a]||null; return fotoPorRef(ref); }
+function alvoAudio(ctx){ const v=S.v; const [k,a]=ctx.split(":");
+  if(k==="cor"||k==="ter") return ctx;
+  if(k==="c"){ const fs=(v.check[a]||{}).fotos||[]; return fs.length? "c:"+a+":"+(fs.length-1) : null; }
+  if(k==="n"){ const nt=(v.notas||[]).find(x=>x.id===a); const fs=(nt&&nt.fotos)||[]; return fs.length? "n:"+a+":"+(fs.length-1) : null; }
+  return ctx; }
+function rotuloAudio(ref){ const v=S.v; const [k,a]=String(ref).split(":");
+  if(k==="cor"){ const r=v.correntes[+a]||{}; return "Medição – "+(r.quadro||"quadro")+" / "+(r.circuito||"circuito "+(+a+1)); }
+  if(k==="ter"){ const r=v.termo[+a]||{}; return "Termografia – "+(r.local||"ponto "+(+a+1))+(r.componente?" / "+r.componente:""); }
+  return rotulo(ref.split(":").slice(0,2).join(":")); }
+/* todos os áudios de uma vistoria, com rótulo e número da foto quando houver */
+function todosAudios(v){
+  const out=[]; const fotos=listaFotos(v);
+  fotos.forEach(o=>{ if(o.f.audio&&o.f.audio.id) out.push({ref:o.pref, a:o.f.audio, rot:"Foto "+o.num+" – "+o.cap.split(" – ").slice(0,2).join(" – "), num:o.num, alvo:o}); });
+  v.correntes.forEach((r,i)=>{ if(r.audio&&r.audio.id) out.push({ref:"cor:"+i, a:r.audio, rot:"Medição – "+(r.quadro||"quadro")+" / "+(r.circuito||"circuito "+(i+1)), holder:r, tipo:"cor"}); });
+  v.termo.forEach((r,i)=>{ if(r.audio&&r.audio.id) out.push({ref:"ter:"+i, a:r.audio, rot:"Termografia – "+(r.local||"ponto "+(i+1))+(r.componente?" / "+r.componente:""), holder:r, tipo:"ter"}); });
+  return out;
+}
+function audiosPendentesDrive(v){ return todosAudios(v).filter(x=>!x.a.driveId); }
+function audBox(ref,a){
+  if(!a||!a.id) return "";
+  const st = a.txt? `<span class="pill ok">transcrito${a.fonte?" ("+esc(a.fonte)+")":""}</span>` : a.st==="erro"? `<span class="pill crit">transcrição falhou</span>` : `<span class="pill warn">transcrição na fila</span>`;
+  return `<div class="audbox" data-audbox="${esc(ref)}"><div class="h"><span>Relato em áudio · ${fmtDur(a.dur)}</span>${st}</div>
+    <audio controls preload="none" data-aud="${esc(a.id)}"></audio>
+    <textarea data-audtxt="${esc(ref)}" rows="2" placeholder="${a.txt?"":"A transcrição aparece aqui; você pode digitar ou corrigir."}">${esc(a.txt||"")}</textarea>
+    <div class="row">${!a.txt?`<button type="button" class="btn sm" data-act="sttUm" data-ref="${esc(ref)}">Transcrever agora</button>`:""}<button type="button" class="btn sm ghost danger" data-act="delAud" data-ref="${esc(ref)}">Excluir áudio</button></div></div>`;
+}
+async function ligarAudios(raiz){ for(const el of (raiz||document).querySelectorAll("audio[data-aud]")){ if(el.src) continue; const id=el.dataset.aud;
+  try{ const r=await idbGet("fotos",id); const b=blobDe(r)||(S.memFotos&&S.memFotos[id]); if(b) el.src=URL.createObjectURL(b); }catch(e){} } }
+
+/* ---------- gravação ---------- */
+async function iniciarGravacao(ref){
+  if(AUD.stream) return;
+  if(!holderPorRef(ref)){ toastSave("Tire a foto primeiro: o áudio fica vinculado a ela.",true); return; }
+  if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)){ toastSave("Este navegador não permite gravar áudio.",true); return; }
+  try{ AUD.stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true,autoGainControl:true}}); }
+  catch(e){ AUD.stream=null; toastSave(e&&e.name==="NotAllowedError"?"Microfone bloqueado: libere o microfone para este app nos ajustes do celular.":"Não foi possível usar o microfone: "+msgErro(e),true); return; }
+  const AC=window.AudioContext||window.webkitAudioContext; AUD.ctx=new AC(); try{ await AUD.ctx.resume(); }catch(e){}
+  AUD.rate=AUD.ctx.sampleRate; AUD.chunks=[];
+  const src=AUD.ctx.createMediaStreamSource(AUD.stream);
+  AUD.proc=AUD.ctx.createScriptProcessor(4096,1,1);
+  AUD.proc.onaudioprocess=e=>{ AUD.chunks.push(new Float32Array(e.inputBuffer.getChannelData(0))); };
+  src.connect(AUD.proc); AUD.proc.connect(AUD.ctx.destination);
+  AUD.alvo=ref; AUD.t0=Date.now(); AUD.txtFinal=""; AUD.txtParcial=""; AUD.srOk=false;
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(SR && navigator.onLine){ try{ const sr=new SR(); sr.lang="pt-BR"; sr.continuous=true; sr.interimResults=true;
+      let base="";
+      sr.onresult=ev=>{ let fin="",par=""; for(let i=0;i<ev.results.length;i++){ const r=ev.results[i]; if(r.isFinal) fin+=r[0].transcript+" "; else par+=r[0].transcript; } AUD.txtFinal=(base+" "+fin).trim(); AUD.txtParcial=par; AUD.srOk=true; atualizarGravacao(); };
+      let reinicios=0, falhou=false;
+      sr.onerror=ev=>{ falhou=true; if(ev&&(ev.error==="not-allowed"||ev.error==="service-not-allowed"||ev.error==="audio-capture"||ev.error==="network")) { AUD.sr=null; atualizarGravacao(); } };
+      sr.onend=()=>{ if(AUD.stream && AUD.sr===sr && reinicios<30 && !(falhou&&!AUD.srOk)){ reinicios++; base=AUD.txtFinal; falhou=false; setTimeout(()=>{ try{ if(AUD.sr===sr) sr.start(); }catch(e){} },150); } else if(AUD.sr===sr){ AUD.sr=null; atualizarGravacao(); } };
+      AUD.sr=sr; sr.start(); }catch(e){ AUD.sr=null; } }
+  else AUD.sr=null;
+  document.getElementById("recAlvo").textContent=rotuloAudio(ref);
+  document.getElementById("recSheet").hidden=false; atualizarGravacao(); vib();
+  AUD.timer=setInterval(()=>{ atualizarGravacao(); if((Date.now()-AUD.t0)/1000>=AUD.max) pararGravacao(false); },250);
+}
+function atualizarGravacao(){
+  const s=(Date.now()-AUD.t0)/1000; document.getElementById("recTempo").textContent=fmtDur(s);
+  const el=document.getElementById("recTxt"); const t=(AUD.txtFinal+" "+AUD.txtParcial).trim();
+  if(t) el.textContent=t;
+  else el.textContent = AUD.sr? "Fale o problema identificado… a transcrição aparece aqui." : (navigator.onLine? "Transcrição na hora indisponível neste celular. O áudio é gravado e transcrito depois." : "Sem internet: o áudio é gravado agora e transcrito quando a conexão voltar.");
+}
+async function pararGravacao(cancelar){
+  if(!AUD.stream) return;
+  clearInterval(AUD.timer);
+  const sr=AUD.sr; AUD.sr=null;
+  if(sr){ try{ sr.stop(); }catch(e){} await new Promise(r=>setTimeout(r,800)); }
+  try{ AUD.proc.disconnect(); }catch(e){}
+  AUD.stream.getTracks().forEach(t=>t.stop()); try{ await AUD.ctx.close(); }catch(e){}
+  const dur=(Date.now()-AUD.t0)/1000, chunks=AUD.chunks, rate=AUD.rate, ref=AUD.alvo, txt=(AUD.txtFinal+" "+AUD.txtParcial).trim();
+  AUD.stream=null; AUD.chunks=[]; document.getElementById("recSheet").hidden=true;
+  if(cancelar || dur<0.8){ toastSave(cancelar?"Gravação descartada":"Gravação muito curta"); return; }
+  const wav=wavDe(chunks,rate,16000);
+  const id="a-"+Date.now().toString(36)+uid8();
+  try{ await idbPut("fotos",{id,buf:await wav.arrayBuffer(),type:"audio/wav",vid:S.v.id,criado:Date.now()}); }
+  catch(e){ S.memFotos=S.memFotos||{}; S.memFotos[id]=wav; toastSave("Áudio mantido só enquanto o app estiver aberto: o navegador não deixou gravar no aparelho",true); }
+  const h=holderPorRef(ref); if(!h) return;
+  if(h.audio&&h.audio.id) idbDel("fotos",h.audio.id).catch(()=>{});
+  h.audio={id, dur:Math.round(dur), txt:txt, fonte:txt?"celular, na hora":"", st:txt?"ok":"fila", em:Date.now()};
+  if(txt) aplicarTranscricao(ref,txt);
+  agendarSalvar(); agendarSync(2500); if(!txt) agendarTranscricao(1500);
+  toastSave(txt?"Áudio salvo e transcrito":"Áudio salvo; transcrição na fila");
+  if(!VW.el.hidden) mostrarFoto(); else render(true);
+}
+/* preenche a observação vazia com a transcrição (medição, ponto termográfico, item da inspeção, registro de campo) */
+function aplicarTranscricao(ref,txt,v){
+  v=v||S.v; const [k,a]=String(ref).split(":");
+  if(k==="cor"){ const r=v.correntes[+a]; if(r&&!r.obs) r.obs=txt; }
+  else if(k==="ter"){ const r=v.termo[+a]; if(r&&!r.obs) r.obs=txt; }
+  else if(k==="c"){ const st=v.check[a]||(v.check[a]={}); if(!st.obs) st.obs=txt; }
+  else if(k==="n"){ const nt=(v.notas||[]).find(x=>x.id===a); if(nt&&!nt.txt) nt.txt=txt; }
+}
+function wavDe(chunks,rate,alvo){
+  let n=0; chunks.forEach(c=>n+=c.length); const pcm=new Float32Array(n); let o=0; chunks.forEach(c=>{ pcm.set(c,o); o+=c.length; });
+  const fator=Math.max(1,rate/alvo), sr=rate<alvo?rate:alvo; const m=Math.floor(n/fator); const out=new Int16Array(m);
+  for(let i=0;i<m;i++){ const ini=Math.floor(i*fator), fim=Math.min(n,Math.max(ini+1,Math.floor((i+1)*fator))); let s=0; for(let j=ini;j<fim;j++) s+=pcm[j]; let x=s/(fim-ini); x=Math.max(-1,Math.min(1,x)); out[i]=x<0? x*0x8000 : x*0x7FFF; }
+  const buf=new ArrayBuffer(44+out.length*2); const dv=new DataView(buf); const w=(p,s)=>{ for(let i=0;i<s.length;i++) dv.setUint8(p+i,s.charCodeAt(i)); };
+  w(0,"RIFF"); dv.setUint32(4,36+out.length*2,true); w(8,"WAVE"); w(12,"fmt "); dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,1,true);
+  dv.setUint32(24,sr,true); dv.setUint32(28,sr*2,true); dv.setUint16(32,2,true); dv.setUint16(34,16,true); w(36,"data"); dv.setUint32(40,out.length*2,true);
+  new Int16Array(buf,44).set(out); return new Blob([buf],{type:"audio/wav"});
+}
+
+/* ---------- fila de transcrição pelo Google Speech-to-Text ---------- */
+let sttTimer=null, sttRodando=false;
+function agendarTranscricao(ms){ clearTimeout(sttTimer); sttTimer=setTimeout(()=>transcreverFila(),ms==null?1500:ms); }
+function transcricoesPendentes(){ const vs=S.list.includes(S.v)? S.list : [S.v,...S.list]; return vs.reduce((n,v)=>n+todosAudios(v).filter(x=>!x.a.txt).length,0); }
+async function transcreverGoogle(a){
+  const r=await idbGet("fotos",a.id).catch(()=>null); const b=blobDe(r)||(S.memFotos&&S.memFotos[a.id]); if(!b) throw new Error("áudio não encontrado no aparelho");
+  const conteudo=(await b64(b)).split(",")[1];
+  const cfg={encoding:"LINEAR16",sampleRateHertz:16000,languageCode:"pt-BR",enableAutomaticPunctuation:true};
+  const key=encodeURIComponent(sttKey()); const longo=(a.dur||0)>55;
+  let res=await fetch("https://speech.googleapis.com/v1/speech:"+(longo?"longrunningrecognize":"recognize")+"?key="+key,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({config:cfg,audio:{content:conteudo}})});
+  let j=await res.json().catch(()=>({})); if(!res.ok) throw erroSTT(res,j);
+  if(longo){ const nome=j.name; let ok=false;
+    for(let k=0;k<80;k++){ await new Promise(r=>setTimeout(r,3000)); const r2=await fetch("https://speech.googleapis.com/v1/operations/"+encodeURIComponent(nome)+"?key="+key); j=await r2.json().catch(()=>({})); if(!r2.ok) throw erroSTT(r2,j); if(j.done){ if(j.error) throw new Error(j.error.message||"falha na transcrição"); j=j.response||{}; ok=true; break; } }
+    if(!ok) throw new Error("a transcrição demorou demais; tenta de novo depois"); }
+  return (j.results||[]).map(x=>(x.alternatives&&x.alternatives[0]&&x.alternatives[0].transcript)||"").join(" ").replace(/\s+/g," ").trim();
+}
+function erroSTT(res,j){ const m=(j&&j.error&&j.error.message)||("erro "+res.status); const e=new Error(m);
+  if(/billing/i.test(m)){ e.message="o faturamento não está ativado no projeto do Google Cloud"; e.parar=true; }
+  else if(/has not been used|is disabled|SERVICE_DISABLED/i.test(m)){ e.message="a API Speech-to-Text não está ativada no projeto do Google Cloud"; e.parar=true; }
+  else if(/API key not valid|API_KEY_INVALID/i.test(m)){ e.message="a chave da API de transcrição é inválida"; e.parar=true; }
+  else if(/referer|referrer|blocked/i.test(m)){ e.message="a chave não permite este endereço (restrição de site da chave)"; e.parar=true; }
+  else if(res.status===429){ e.message="limite de uso atingido; nova tentativa depois"; e.parar=true; }
+  return e; }
+async function transcreverFila(){
+  if(sttRodando||!navigator.onLine||!sttKey()) return;
+  sttRodando=true; S.sttErro="";
+  try{ const vs=S.list.includes(S.v)? S.list : [S.v,...S.list];
+    for(const v of vs){ let mud=false;
+      for(const x of todosAudios(v)){ const a=x.a; if(a.txt) continue;
+        try{ const t=await transcreverGoogle(a); a.txt=t; a.fonte="Google"; a.st=t?"ok":"vazio"; a.erro=""; if(t) aplicarTranscricao(x.ref,t,v); mud=true; }
+        catch(e){ a.st="erro"; a.erro=msgErro(e); mud=true; if(e.parar){ S.sttErro=a.erro; if(v===S.v) agendarSalvar(); else await gravarVistoria(v); throw e; } } }
+      if(mud){ if(v===S.v){ v.updatedAt=Date.now(); agendarSalvar(); } else { v.updatedAt=Date.now(); await gravarVistoria(v); } } }
+  }catch(e){ S.sttErro=msgErro(e); }
+  finally{ sttRodando=false; renderSeguro(); }
+}
+function renderSeguro(){ const a=document.activeElement; if(a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && M.contains(a)) return; if(!VW.el.hidden){ mostrarFoto(); return; } if(document.getElementById("recSheet").hidden) render(true); }
+async function transcreverUm(ref){
+  const h=holderPorRef(ref); const a=h&&h.audio; if(!a) return;
+  if(!navigator.onLine){ toastSave("Sem internet: a transcrição fica na fila.",true); return; }
+  if(!sttKey()){ toastSave("Configure a chave de transcrição em Dados › Transcrição de áudio.",true); return; }
+  toastSave("Transcrevendo…");
+  try{ const t=await transcreverGoogle(a); a.txt=t; a.fonte="Google"; a.st=t?"ok":"vazio"; if(t) aplicarTranscricao(ref,t); agendarSalvar(); toastSave(t?"Transcrito":"Nenhuma fala reconhecida no áudio",!t); }
+  catch(e){ a.st="erro"; a.erro=msgErro(e); agendarSalvar(); toastSave("Falha na transcrição: "+msgErro(e),true); }
+  renderSeguro();
+}
+/* ---------- visualizador ---------- */
+function renderAudViewer(o){
+  const box=document.getElementById("vwAud"); const a=o.f.audio;
+  if(!a||!a.id){ box.innerHTML=`<div class="row"><button type="button" data-mic="${esc(o.pref)}">● Gravar relato em áudio</button></div>`; return; }
+  box.innerHTML=`<div class="st">Relato em áudio · ${fmtDur(a.dur)} · ${a.txt?"transcrito"+(a.fonte?" ("+esc(a.fonte)+")":""):(a.st==="erro"?"transcrição falhou: "+esc(a.erro||""):"transcrição na fila")}</div>
+    <audio controls preload="none" data-aud="${esc(a.id)}"></audio>
+    <textarea data-audtxt="${esc(o.pref)}" rows="2" placeholder="Transcrição (pode digitar ou corrigir)">${esc(a.txt||"")}</textarea>
+    <div class="row">${!a.txt?`<button type="button" data-act="sttUm" data-ref="${esc(o.pref)}">Transcrever agora</button>`:""}<button type="button" data-mic="${esc(o.pref)}">Regravar</button><button type="button" data-act="delAud" data-ref="${esc(o.pref)}">Excluir áudio</button></div>`;
+  ligarAudios(box);
+}
+/* ---------- configuração ---------- */
+function rTranscricao(){
+  const k=sttKey(); const pend=transcricoesPendentes();
+  return `<details class="card"><summary>Transcrição de áudio <small>${k?"chave configurada":"sem chave"}${pend?" · "+pend+" na fila":""}</small></summary>
+    <p class="lead">1) Na hora: o celular transcreve enquanto você fala, quando o reconhecimento de voz está disponível e há internet.<br>2) Depois: o que ficar sem texto é transcrito pelo Google Speech-to-Text quando houver internet. Precisa de uma chave de API do projeto do Google Cloud, guardada só neste aparelho.<br>3) Se ainda assim faltar, os áudios .wav vão para a pasta da vistoria no Drive e o Claude pode transcrever.</p>
+    <label class="f" for="sttKey"><span>Chave da API Speech-to-Text</span><input id="sttKey" type="text" value="${esc(k)}" placeholder="AIza…" autocomplete="off" spellcheck="false"></label>
+    <p class="lead">Para criar: no Google Cloud do projeto do fiscaliza-coipt, <a href="https://console.cloud.google.com/apis/library/speech.googleapis.com?project=419096828771" target="_blank" rel="noopener">ative a API Speech-to-Text</a> (pede faturamento ativado; há cota gratuita mensal) e <a href="https://console.cloud.google.com/apis/credentials?project=419096828771" target="_blank" rel="noopener">crie uma chave de API</a>, restrita à API Speech-to-Text e ao site marcelojoseparis.github.io/*.</p>
+    <span class="status" id="sttSt">${S.sttErro?"Último erro: "+esc(S.sttErro):""}</span>
+  </details>`;
+}
+window.addEventListener("online",()=>agendarTranscricao(1200));
+setInterval(()=>{ if(navigator.onLine && sttKey() && transcricoesPendentes()) transcreverFila(); },120000);
 
 /* ============================== Início ============================== */
 (async function(){
