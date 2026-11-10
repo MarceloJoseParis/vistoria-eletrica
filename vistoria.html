@@ -420,19 +420,29 @@ function resumo(v){
 }
 function fotoURL(f){ if(!S.urls[f.id]) carregarURL(f.id); return S.urls[f.id] || ""; }
 async function carregarURL(id){ if(S.urls[id]!==undefined) return; S.urls[id]=""; try{ const r=await idbGet("fotos",id); const b=blobDe(r); if(b){ S.urls[id]=URL.createObjectURL(b); document.querySelectorAll(`img[data-fid="${id}"]`).forEach(im=>im.src=S.urls[id]); } }catch(e){} }
-async function reduzirImagem(file, max, linhas){
+async function reduzirImagem(file, max, linhas, modo){
   const bmp = await abrirImagem(file); const bw=bmp.width||bmp.naturalWidth, bh=bmp.height||bmp.naturalHeight;
   const sc = Math.min(1, max/Math.max(bw,bh));
   const w=Math.round(bw*sc), h=Math.round(bh*sc);
+  const tem = linhas&&linhas.length; const faixa = tem && modo==="faixa";
   let fs=0, lh=0, pad=0, sh=0;
-  if(linhas&&linhas.length){ fs=Math.max(14,Math.round(w*0.026)); lh=Math.round(fs*1.35); pad=Math.round(fs*0.7); sh=pad*2+lh*linhas.length; }
+  if(faixa){ fs=Math.max(14,Math.round(w*0.026)); lh=Math.round(fs*1.35); pad=Math.round(fs*0.7); sh=pad*2+lh*linhas.length; }
   const cv=document.createElement("canvas"); cv.width=w; cv.height=h+sh; const g=cv.getContext("2d");
+  g.imageSmoothingEnabled=true; try{ g.imageSmoothingQuality="high"; }catch(e){}
   g.drawImage(bmp,0,0,w,h);
-  if(sh){ g.fillStyle="#12171C"; g.fillRect(0,h,w,sh); g.fillStyle="#C27A00"; g.fillRect(0,h,w,Math.max(3,Math.round(fs*0.2)));
-    g.textBaseline="top"; linhas.forEach((t,k)=>{ g.font=(k===0?"600 ":"400 ")+fs+"px Arial, Helvetica, sans-serif"; g.fillStyle=k===0?"#FFFFFF":"#DDE3E8";
-      let s=t; const maxW=w-pad*2; if(g.measureText(s).width>maxW){ while(s.length>4 && g.measureText(s+"…").width>maxW) s=s.slice(0,-1); s+="…"; }
-      g.fillText(s,pad,h+pad+k*lh); }); }
-  return await new Promise((res,rej)=>cv.toBlob(b=>b?res({blob:b,w,h:h+sh}):rej(new Error("o navegador não conseguiu gerar a imagem")),"image/jpeg",0.85));
+  const cortar=(s,maxW)=>{ if(g.measureText(s).width<=maxW) return s; while(s.length>4 && g.measureText(s+"…").width>maxW) s=s.slice(0,-1); return s+"…"; };
+  if(faixa){ g.fillStyle="#12171C"; g.fillRect(0,h,w,sh);
+    g.textBaseline="top"; g.textAlign="left"; linhas.forEach((t,k)=>{ g.font=(k===0?"600 ":"400 ")+fs+"px Roboto, Arial, Helvetica, sans-serif"; g.fillStyle="#FFFFFF";
+      g.fillText(cortar(t,w-pad*2),pad,h+pad+k*lh); }); }
+  else if(tem){ /* mesmo estilo do fiscaliza-coipt: texto branco com contorno escuro, no canto inferior direito */
+    fs=Math.max(14,Math.round(Math.min(w,h)*0.034)); pad=Math.round(fs*0.7);
+    g.font="600 "+fs+"px Roboto, Arial, Helvetica, sans-serif"; g.textAlign="right"; g.textBaseline="bottom"; g.lineJoin="round";
+    let y=h-pad;
+    for(let k=linhas.length-1;k>=0;k--){ const t=cortar(linhas[k],w*0.92);
+      g.lineWidth=Math.max(2,fs/7); g.strokeStyle="rgba(0,0,0,0.75)"; g.strokeText(t,w-pad,y);
+      g.fillStyle="#FFFFFF"; g.fillText(t,w-pad,y); y-=Math.round(fs*1.25); } }
+  if(bmp.close) try{ bmp.close(); }catch(e){}
+  return await new Promise((res,rej)=>cv.toBlob(b=>b&&b.size?res({blob:b,w,h:h+sh}):rej(new Error("o navegador não conseguiu gerar a imagem (memória do aparelho); feche outros apps e tente de novo")),"image/jpeg",0.88));
 }
 async function guardarFoto(file,tgt){
   const meta = await lerMeta(file);
@@ -440,7 +450,7 @@ async function guardarFoto(file,tgt){
   if(meta.lat==null && S.v.local.lat!=null){ meta.lat=S.v.local.lat; meta.lon=S.v.local.lon; meta.gpsFonte="informadas pelo fiscal"; }
   if(meta.lat!=null && meta.gpsFonte!=="informadas pelo fiscal" && S.v.local.lat==null){ S.v.local.lat=meta.lat; S.v.local.lon=meta.lon; S.v.local.coords=meta.lat.toFixed(6)+", "+meta.lon.toFixed(6); S.v.local.fonte=meta.gpsFonte+" (primeira foto)"; }
   const linhas = S.v.carimbo? linhasCarimbo(meta,tgt) : null;
-  const r = await reduzirImagem(file, 1600, linhas);
+  const r = await reduzirImagem(file, 2000, linhas, /:ir$/.test(tgt)?"faixa":"sobre");
   const m = {dt:meta.dt.getTime(), dtFonte:meta.dtFonte, lat:meta.lat, lon:meta.lon, gpsFonte:meta.gpsFonte, carimbo:!!linhas};
   const fin = await guardarBlob(r);
   return Object.assign(fin,{meta:m});
@@ -520,14 +530,16 @@ async function lerMeta(file){
   if(!out.dt){ const lm=file.lastModified? new Date(file.lastModified):null; if(lm && Date.now()-lm.getTime()<10*60*1000){ out.dt=lm; out.dtFonte="horário do arquivo"; } else { out.dt=new Date(); out.dtFonte="horário do registro no app"; } }
   return out;
 }
+const MES_ABREV=["jan.","fev.","mar.","abr.","mai.","jun.","jul.","ago.","set.","out.","nov.","dez."];
+function textoDataHora(d){ const z=n=>String(n).padStart(2,"0"); return d.getDate()+" de "+MES_ABREV[d.getMonth()]+" de "+d.getFullYear()+", "+z(d.getHours())+":"+z(d.getMinutes())+":"+z(d.getSeconds()); }
+function textoCoord(lat,lon){ return lat==null? "" : lat.toFixed(6)+", "+lon.toFixed(6); }
 function linhasCarimbo(meta,tgt){
   const v=S.v,i=v.ident; const L=[];
-  L.push(dtBR(meta.dt)+"  ("+meta.dtFonte+")");
-  L.push(meta.lat!=null? "Lat/Long: "+fmtCoord(meta.lat,meta.lon)+"  ("+meta.gpsFonte+")" : "Coordenadas não disponíveis");
-  L.push(v.local.endereco||"Endereço não informado");
-  L.push([i.convenio?"Convênio "+i.convenio:"", i.escola, i.municipio?i.municipio+"-MT":""].filter(Boolean).join(" · ")||"Identificação do convênio não preenchida");
-  L.push(rotulo(tgt));
-  if(i.fiscal) L.push("Fiscal: "+i.fiscal+" – SEDUC-MT");
+  L.push(textoDataHora(meta.dt));
+  L.push(meta.lat!=null? textoCoord(meta.lat,meta.lon) : "sem coordenadas");
+  if(v.local.endereco) L.push(v.local.endereco);
+  const id=[i.convenio?"Conv. "+i.convenio:"", i.escola].filter(Boolean).join(" · "); if(id) L.push(id);
+  const rt=rotulo(tgt); L.push(rt.length>52? rt.slice(0,50).replace(/\s+\S*$/,"")+"…" : rt);
   return L;
 }
 function dadosParaClaude(v){
@@ -808,7 +820,7 @@ function rDados(){
     <span class="status" id="gpsSt"></span>
     <label class="f" for="f_local_coords"><span>Coordenadas da escola (lat, long)</span><input id="f_local_coords" type="text" data-path="local.coords" value="${esc(L.coords||"")}" placeholder="-11.86412, -55.50321" inputmode="decimal"><span class="status" id="coordSt">${ok?"Lidas: "+fmtCoord(L.lat,L.lon)+(L.fonte?" ("+esc(L.fonte)+")":""):"Ou cole as coordenadas do Google Maps."}</span></label>
     <span class="status" id="endSt"></span>
-    <p class="lead">Cada foto recebe uma faixa com data, hora, GPS, endereço e identificação. Ordem do GPS: o da foto, o do aparelho no momento, ou as coordenadas acima.</p>
+    <p class="lead">Carimbo no mesmo padrão do fiscaliza-coipt, no canto inferior direito da foto: data e hora, coordenadas, endereço, convênio e escola, e o item. No termograma o carimbo vai numa faixa abaixo da imagem, para não cobrir a escala. GPS usado: o da foto, o do aparelho no momento, ou as coordenadas acima.</p>
   </section>
   <details class="card"><summary>Visita e executora <small>${esc([S.v.ident.executora,S.v.ident.etapaObra].filter(Boolean).join(" · "))}</small></summary>
     ${field("ident.processo","Processo SEDUC",{ph:"SEDUC-PRO-2026/00000"})}

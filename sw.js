@@ -1,7 +1,7 @@
 /* Vistoria Elétrica Básica – service worker
    Guarda os arquivos do app (como ArrayBuffer, aceito também pelo Safari) num banco próprio (IndexedDB "vistoriaEletrica-shell"), e não no Cache Storage,
    porque outros apps do mesmo endereço (marcelojoseparis.github.io) podem apagar caches que não são deles. */
-const VERSAO = 've-1.1.1';
+const VERSAO = 've-1.1.2';
 const ARQUIVOS = ['vistoria.html', 'manifest.webmanifest', 'lib/docx.umd.js', 'lib/exifr.lite.umd.js', 'icons/icon-192.png', 'icons/icon-512.png'];
 const BASE = new URL('./', self.location).href;
 
