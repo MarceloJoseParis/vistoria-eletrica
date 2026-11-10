@@ -1470,9 +1470,25 @@ const DRIVE={clientId:"419096828771-os28t8sam1uak8b1oknur322ojq5b19p.apps.google
   token:null, exp:0, gis:null, rodando:false, denovo:false, precisaAuth:false, erro:"", ultimo:0};
 const LS_TOK="vistoriaEletrica.driveToken", LS_AUTO="vistoriaEletrica.autoDrive", LS_RAIZ="vistoriaEletrica.driveRaiz";
 try{ const t=JSON.parse(localStorage.getItem(LS_TOK)||"null"); if(t&&t.exp>Date.now()){ DRIVE.token=t.token; DRIVE.exp=t.exp; } }catch(e){}
-function autoLigado(){ try{ return localStorage.getItem(LS_AUTO)==="1"; }catch(e){ return false; } }
+/* Servidor de arquivos da equipe (Apps Script, pasta central no Drive). Com ele não é preciso autorizar o Drive:
+   o envio usa o login da equipe (Firebase). Sem a URL, o app volta ao envio direto para o Drive de cada um. */
+const SRV_URL=window.__srvUrl||"";
+function srvModo(){ return !!SRV_URL; }
+function srvPronto(){ return srvModo() && !!(NV.b && NV.user) && NV.estado!=="semAcesso"; }
+function blobB64(b){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(",")[1]||""); r.onerror=()=>rej(r.error||new Error("não foi possível ler o arquivo")); r.readAsDataURL(b); }); }
+async function srv(acao,dados){
+  if(!navigator.onLine){ const e=new Error("sem internet"); e.rede=true; throw e; }
+  const tok=(NV.b&&NV.b.token)? await NV.b.token().catch(()=>null) : null;
+  if(!tok){ const e=new Error("entre na equipe (botão Equipe) para enviar ao Drive"); e.auth=true; throw e; }
+  let r; try{ r=await fetch(SRV_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({acao,idToken:tok},dados||{}))}); }
+  catch(e){ const x=new Error("sem conexão com o servidor da equipe"); x.rede=true; throw x; }
+  let j=null; try{ j=await r.json(); }catch(e){ const x=new Error("o servidor da equipe não respondeu direito (Google ocupado?)"); x.rede=true; throw x; }
+  if(!j||!j.ok){ const x=new Error((j&&j.erro)||"erro no servidor da equipe"); if(j&&j.codigo==="auth") x.auth=true; if(j&&j.codigo==="acesso") x.grave=true; throw x; }
+  return j;
+}
+function autoLigado(){ try{ const a=localStorage.getItem(LS_AUTO); return srvModo()? a!=="0" : a==="1"; }catch(e){ return srvModo(); } }
 function setAuto(on){ try{ localStorage.setItem(LS_AUTO,on?"1":"0"); }catch(e){} atualizarChipDrive(); }
-function tokenOk(){ return !!DRIVE.token && Date.now()<DRIVE.exp; }
+function tokenOk(){ if(srvModo()) return srvPronto(); return !!DRIVE.token && Date.now()<DRIVE.exp; }
 function carregarGIS(){
   if(DRIVE.gis) return DRIVE.gis;
   DRIVE.gis=new Promise((res,rej)=>{ if(window.google&&google.accounts&&google.accounts.oauth2) return res();
@@ -1482,6 +1498,7 @@ function carregarGIS(){
 function drvSt(t,err){ const el=document.getElementById("drvSt"); if(el){ el.innerHTML=t; el.style.color=err?"var(--crit)":""; } }
 /* chamar SÓ a partir de um toque: o navegador bloqueia a janela do Google sem gesto */
 function pedirToken(){
+  if(srvModo()) return srvPronto()? Promise.resolve("srv") : Promise.reject(new Error("entre na equipe (botão Equipe no topo) para enviar ao Drive"));
   return new Promise((res,rej)=>{
     if(tokenOk()) return res(DRIVE.token);
     if(!(window.google&&google.accounts&&google.accounts.oauth2)){ carregarGIS().catch(()=>{}); return rej(new Error("login do Google carregando; toque de novo em alguns segundos")); }
@@ -1517,6 +1534,8 @@ async function pastaDrive(nome,pai){
 }
 async function existeDrive(id){ try{ const j=await driveFetch("https://www.googleapis.com/drive/v3/files/"+id+"?fields=id,trashed"); return !j.trashed; }catch(e){ if(e.nf) return false; throw e; } }
 async function enviarArquivo(meta,blob,idExistente){
+  if(srvModo()){ const v=nvAtual().find(x=>x.id===meta.vid)||S.v;
+    return await srv("enviar",{vid:meta.vid||v.id, nomePasta:nomePastaVistoria(v), nome:meta.name, mime:blob.type||"application/octet-stream", descricao:meta.description||"", chave:meta.chave||"", base64:await blobB64(blob)}); }
   if(idExistente){ try{ return await driveFetch("https://www.googleapis.com/upload/drive/v3/files/"+idExistente+"?uploadType=media&fields=id,size",{method:"PATCH",headers:{"Content-Type":blob.type||"application/octet-stream"},body:blob}); }catch(e){ if(!e.nf) throw e; } }
   const bd="vistoria"+uid8()+uid8();
   const corpo=new Blob(["--"+bd+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n",JSON.stringify(meta),"\r\n--"+bd+"\r\nContent-Type: "+(blob.type||"application/octet-stream")+"\r\n\r\n",blob,"\r\n--"+bd+"--"]);
@@ -1530,6 +1549,10 @@ function totalPendentes(){ const vs=S.list.includes(S.v)? S.list : [S.v,...S.lis
 let raizCache=null;
 async function garantirPastas(v){
   v.drive=v.drive||{}; v.drive.fotos=v.drive.fotos||{};
+  if(srvModo()){ if(v.drive.srv!==1){ v.drive={srv:1,fotos:{}}; } /* envios antigos foram para o Drive pessoal: vão de novo para a pasta central */
+    const nome=nomePastaVistoria(v); S.pastaSrv=S.pastaSrv||{};
+    if(!v.drive.pasta || S.pastaSrv[v.id]!==nome){ const r=await srv("pasta",{vid:v.id,nome}); v.drive.pasta=r.id; S.pastaSrv[v.id]=nome; }
+    return; }
   if(!raizCache){ let r=null; try{ r=localStorage.getItem(LS_RAIZ); }catch(e){} if(r && !(await existeDrive(r))) r=null;
     if(!r){ r=await pastaDrive("Vistorias Elétricas",null); try{ localStorage.setItem(LS_RAIZ,r); }catch(e){} } raizCache=r; }
   if(v.drive.pasta && !v.drive.pastaOk){ if(!(await existeDrive(v.drive.pasta))){ v.drive.pasta=null; v.drive.fotos={}; v.drive.docx=null; } else v.drive.pastaOk=true; }
@@ -1557,7 +1580,7 @@ async function liberarJaEnviadas(){
   for(const v of vs){ const env=(v.drive&&v.drive.fotos)||{};
     for(const o of listaFotos(v)){ const did=env[o.f.id]; if(!did) continue;
       let r=null; try{ r=await idbGet("fotos",o.f.id); }catch(e){} if(!r||!(r.buf||r.blob)) continue;
-      const b=blobDe(r); try{ const j=await driveFetch("https://www.googleapis.com/drive/v3/files/"+did+"?fields=size,trashed"); if(!j.trashed && +j.size===b.size) await liberarFoto(o.f.id,did,b); }catch(e){ if(e.auth||e.rede) throw e; } } }
+      const b=blobDe(r); try{ const j=srvModo()? await srv("info",{id:did}) : await driveFetch("https://www.googleapis.com/drive/v3/files/"+did+"?fields=size,trashed"); if(!j.trashed && +j.size===b.size) await liberarFoto(o.f.id,did,b); }catch(e){ if(e.auth||e.rede) throw e; } } }
 }
 async function fotoAlta(f){
   let r=null; try{ r=await idbGet("fotos",f.id); }catch(e){}
@@ -1565,6 +1588,7 @@ async function fotoAlta(f){
   if(S.memFotos&&S.memFotos[f.id]) return S.memFotos[f.id];
   const did=r&&r.driveId; if(!did||!navigator.onLine||!tokenOk()) return null;
   S.altaCache=S.altaCache||{}; if(S.altaCache[f.id]) return S.altaCache[f.id];
+  if(srvModo()){ try{ const j=await srv("baixar",{id:did}); const bin=atob(j.base64); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); const b=new Blob([u],{type:j.mime||"image/jpeg"}); S.altaCache[f.id]=b; return b; }catch(e){ return null; } }
   const resp=await fetch("https://www.googleapis.com/drive/v3/files/"+did+"?alt=media",{headers:{Authorization:"Bearer "+DRIVE.token}});
   if(!resp.ok) return null; const b=await resp.blob(); const ks=Object.keys(S.altaCache); if(ks.length>8) delete S.altaCache[ks[0]]; S.altaCache[f.id]=b; return b;
 }
@@ -1577,7 +1601,7 @@ async function enviarDadosJSON(forcar){
     if(!forcar && v.drive.jsonEm && (v.updatedAt||0)<=v.drive.jsonEm) continue;
     const corpo={app:"vistoria-eletrica", gerado_em:new Date().toISOString(), escola:v.ident.escola, municipio:v.ident.municipio,
       pasta_drive:"https://drive.google.com/drive/folders/"+v.drive.pasta, pedido_para_o_claude:promptClaude(v), dados:dadosParaClaude(v)};
-    const j=await enviarArquivo({name:nomeJSON(v), parents:[v.drive.pasta], description:"Dados da vistoria para o Claude redigir o relatório"}, new Blob([JSON.stringify(corpo,null,1)],{type:"application/json"}), v.drive.json);
+    const j=await enviarArquivo({vid:v.id, chave:"json", name:nomeJSON(v), parents:[v.drive.pasta], description:"Dados da vistoria para o Claude redigir o relatório"}, new Blob([JSON.stringify(corpo,null,1)],{type:"application/json"}), v.drive.json);
     v.drive.json=j.id; v.drive.jsonEm=Date.now(); await gravarVistoria(v);
   }
 }
@@ -1597,7 +1621,7 @@ async function sincronizarDrive(manual){
       for(const o of pendentesDe(v)){
         try{ const b=await fotoBlob(o.f);
           const bb=b.type?b:new Blob([b],{type:"image/jpeg"});
-          const j=await enviarArquivo({name:nomeArq(String(o.num).padStart(2,"0")+" - "+o.cap)+".jpg", parents:[v.drive.pasta], description:o.cap}, bb);
+          const j=await enviarArquivo({vid:v.id, name:nomeArq(String(o.num).padStart(2,"0")+" - "+o.cap)+".jpg", parents:[v.drive.pasta], description:o.cap}, bb);
           v.drive.fotos[o.f.id]=j.id; v.drive.enviadoEm=Date.now(); enviadas++; await gravarVistoria(v);
           if(liberarLigado() && +j.size===bb.size) await liberarFoto(o.f.id,j.id,bb);
           atualizarChipDrive();
@@ -1606,7 +1630,7 @@ async function sincronizarDrive(manual){
       for(const x of audiosPendentesDrive(v)){
         try{ const r=await idbGet("fotos",x.a.id).catch(()=>null); const b=blobDe(r)||(S.memFotos&&S.memFotos[x.a.id]); if(!b) continue;
           const nome=nomeArq((x.num?String(x.num).padStart(2,"0")+" - ":"")+"Audio - "+x.rot.replace(/^Foto \d+ – /,"")).slice(0,100)+".wav";
-          const j=await enviarArquivo({name:nome, parents:[v.drive.pasta], description:"Relato em áudio – "+x.rot+(x.a.txt?" – Transcrição: "+x.a.txt:"")}, b.type?b:new Blob([b],{type:"audio/wav"}));
+          const j=await enviarArquivo({vid:v.id, name:nome, parents:[v.drive.pasta], description:"Relato em áudio – "+x.rot+(x.a.txt?" – Transcrição: "+x.a.txt:"")}, b.type?b:new Blob([b],{type:"audio/wav"}));
           x.a.driveId=j.id; enviadas++; await gravarVistoria(v); atualizarChipDrive();
         }catch(e){ if(e.auth||e.rede||e.ativar||e.grave) throw e; falhas++; }
       }
@@ -1630,14 +1654,15 @@ function atualizarChipDrive(){
   else if(DRIVE.ativar||DRIVE.erro){ cls="crit"; txt="Drive: erro"; }
   else if(!pend){ cls="ok"; txt="Drive ✓"; }
   else if(!navigator.onLine){ cls="warn"; txt=pend+" na fila"; }
-  else if(!tokenOk()){ cls="crit"; txt="Autorizar ("+pend+")"; }
+  else if(!tokenOk()){ cls="crit"; txt=(srvModo()?"Entrar na equipe (":"Autorizar (")+pend+")"; }
   else { cls="warn"; txt=pend+" na fila"; }
   c.className="drv "+cls; c.innerHTML=cloud+`<span class="t">${esc(txt)}</span>`; c.setAttribute("aria-label",txt);
-  c.title = !pend? "Todas as fotos estão no Google Drive" : !navigator.onLine? "Sem internet: as fotos estão guardadas no aparelho e sobem quando houver sinal" : !tokenOk()? "Toque para autorizar o Google Drive e enviar as fotos" : "Fotos na fila de envio";
+  c.title = !pend? "Todas as fotos estão no Google Drive" : !navigator.onLine? "Sem internet: as fotos estão guardadas no aparelho e sobem quando houver sinal" : !tokenOk()? (srvModo()?"Entre na equipe para enviar as fotos à pasta central":"Toque para autorizar o Google Drive e enviar as fotos") : "Fotos na fila de envio";
 }
 function atualizarCardDrive(){ if(S.tab!=="rel") return; const el=document.getElementById("cardDrive"); if(el){ el.outerHTML=rDrive(); } mostrarUso(); }
 async function mostrarUso(){ const u=await usoAparelho(); const el=document.getElementById("usoSt"); if(el&&u!=null) el.textContent="Espaço usado pelo app neste aparelho: "+fmt(u/1048576,1)+" MB"; }
 async function tocarChipDrive(){
+  if(srvModo() && !NV.user){ nvEntrar(); return; }
   if(DRIVE.erro||DRIVE.ativar||!navigator.onLine||tokenOk()){ irPara("rel"); const el=document.getElementById("cardDrive"); el&&el.scrollIntoView({block:"start"}); if(tokenOk()&&navigator.onLine) sincronizarDrive(); return; }
   try{ await pedirToken(); setAuto(true); sincronizarDrive(); }catch(e){ irPara("rel"); drvSt(esc(msgErro(e)),true); }
 }
@@ -1655,7 +1680,7 @@ async function enviarDrive(){
     const v=S.v; await garantirPastas(v);
     drvSt("Gerando e enviando o relatório .docx…");
     const {blob}=await gerarDocx(v);
-    v.drive.docx=(await enviarArquivo({name:nomeDocx(), parents:[v.drive.pasta]}, new Blob([blob],{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"}), v.drive.docx)).id;
+    v.drive.docx=(await enviarArquivo({vid:v.id, chave:"docx", name:nomeDocx(), parents:[v.drive.pasta]}, new Blob([blob],{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"}), v.drive.docx)).id;
     v.drive.enviadoEm=Date.now(); agendarSalvar(); await salvarAgora();
     await enviarDadosJSON(true);
     atualizarCardDrive();
@@ -1667,15 +1692,15 @@ async function enviarDrive(){
 }
 function rDrive(){
   const d=S.v.drive||{}; const pend=pendentesDe(S.v).length; const tot=listaFotos(S.v).length; const fila=totalPendentes();
-  if(navigator.onLine) carregarGIS().catch(()=>{});
+  if(navigator.onLine && !srvModo()) carregarGIS().catch(()=>{});
   const auto=autoLigado();
   return `<section class="card" id="cardDrive"><div class="card-h"><h2>Google Drive</h2><span class="status">${d.enviadoEm?"último envio "+new Date(d.enviadoEm).toLocaleString("pt-BR"):"nada enviado ainda"}</span></div>
-    <p class="lead">Pasta <b>Vistorias Elétricas › ${esc(nomePastaVistoria(S.v))}</b> no seu Drive: fotos, relatório .docx e o arquivo <b>${esc(nomeJSON(S.v))}</b>, com os dados para o Claude redigir o relatório.</p>
+    <p class="lead">${srvModo()?"Pasta central da equipe <b>Vistorias Elétricas (equipe) › "+esc(nomePastaVistoria(S.v))+"</b>":"Pasta <b>Vistorias Elétricas › "+esc(nomePastaVistoria(S.v))+"</b> no seu Drive"}: fotos, relatório .docx e o arquivo <b>${esc(nomeJSON(S.v))}</b>, com os dados para o Claude redigir o relatório.</p>
     <div class="row"><span class="pill ${pend?"warn":"ok"}">${pend? pend+" de "+tot+" foto(s) desta vistoria na fila" : (tot? "todas as "+tot+" fotos desta vistoria no Drive" : "sem fotos nesta vistoria")}</span>${fila>pend?`<span class="pill warn">${fila-pend} de outras vistorias</span>`:""}</div>
     <label class="sw"><input type="checkbox" id="autoDrive" ${auto?"checked":""}>Enviar fotos automaticamente quando houver internet</label>
     <label class="sw"><input type="checkbox" id="liberar" ${liberarLigado()?"checked":""}>Liberar espaço: depois de confirmar no Drive, manter no celular só uma prévia</label>
     <span class="status" id="usoSt"></span>
-    <p class="lead">${auto? (tokenOk()? "Autorização válida até "+new Date(DRIVE.exp).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})+". Cada foto nova sobe sozinha; sem sinal, fica na fila e sobe quando a internet voltar, com o app aberto." : "A autorização do Google dura cerca de 1 hora. Quando vencer, o botão no topo mostra <b>Autorizar</b>: um toque e a fila volta a subir.") : "Desligado: as fotos só vão quando você tocar em Enviar."}</p>
+    ${srvModo()? `<p class="lead">${NV.user? "Envio pelo servidor da equipe, com o seu login ("+esc(NV.user.email)+"): não precisa autorizar o Drive. Sem sinal, as fotos ficam na fila e sobem quando a internet voltar, com o app aberto." : "Entre na equipe (botão Equipe no topo) para enviar à pasta central."}</p>` : `<p class="lead">${auto? (tokenOk()? "Autorização válida até "+new Date(DRIVE.exp).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})+". Cada foto nova sobe sozinha; sem sinal, fica na fila e sobe quando a internet voltar, com o app aberto." : "A autorização do Google dura cerca de 1 hora. Quando vencer, o botão no topo mostra <b>Autorizar</b>: um toque e a fila volta a subir.") : "Desligado: as fotos só vão quando você tocar em Enviar."}</p>`}
     <div class="g2"><button class="btn pri" type="button" id="btnDrive" data-act="enviarDrive">Enviar agora (fotos e .docx)</button>${d.pasta?`<a class="btn" href="https://drive.google.com/drive/folders/${esc(d.pasta)}" target="_blank" rel="noopener">Abrir pasta no Drive</a>`:`<span></span>`}</div>
     <span class="status" id="drvSt">${DRIVE.ativar?`A API do Google Drive não está ativada no projeto. <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com?project=419096828771" target="_blank" rel="noopener">Ativar</a>`:(DRIVE.erro? "Último erro: "+esc(DRIVE.erro) : "")}</span></section>`;
 }
@@ -1910,6 +1935,7 @@ function backendFirebase(cfg){
     async entrar(){ const p=new FB.GoogleAuthProvider(); p.setCustomParameters({prompt:"select_account"});
       try{ await FB.signInWithPopup(auth,p); }catch(e){ if(/popup-blocked|operation-not-supported|web-storage-unsupported/.test(e&&e.code||"")) await FB.signInWithRedirect(auth,p); else throw e; } },
     sair(){ return FB.signOut(auth); },
+    async token(){ const u=auth.currentUser; return u? await u.getIdToken() : null; },
     ouvir(onCh,onErr){ return FB.onSnapshot(FB.collection(db,"vistorias"),{includeMetadataChanges:true},
       snap=>onCh(snap.docChanges().map(d=>({id:d.doc.id,tipo:d.type,w:d.type==="removed"?null:d.doc.data()})),{doServidor:!snap.metadata.fromCache}), onErr); },
     criar(id,w){ return FB.setDoc(FB.doc(db,"vistorias",id),w); },
@@ -1952,7 +1978,7 @@ function nvRecebido(ch,meta){
     if(loc===S.v){ mudouAtual=true; if(w._por && w._por.dev!==DEV) quem=w._por; } else nvGravarLocal(loc);
   }
   if(meta && meta.doServidor && !NV.servidor){ NV.servidor=true; nvReconciliar(); }
-  if(!NV.pronta){ NV.pronta=true; nvReconciliar(true); nvFotosPendentes(); }
+  if(!NV.pronta){ NV.pronta=true; nvReconciliar(true); nvFotosPendentes(); if(srvModo()){ atualizarChipDrive(); agendarSync(1500); } }
   enviar.forEach(nvEnviar);
   NV.estado = navigator.onLine && (meta? meta.doServidor : true) ? "aoVivo" : "offline";
   S.list.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
