@@ -160,6 +160,10 @@ details.card > summary small{font-family:var(--f-body);font-weight:400;font-size
 .qd-nome{display:flex;gap:10px;align-items:flex-end;padding:12px 14px;border-bottom:1px solid var(--line)}
 .qd-nome label{flex:1}
 .qd-add{padding:12px 14px}
+.izl{font-size:13px}
+.izl b{color:var(--ink)}
+details.izc{display:grid;gap:6px}
+details.izc .lead{margin:6px 0 2px;font-size:13px}
 .qd-med{padding:12px 14px;display:grid;gap:10px;border-bottom:1px solid var(--line);background:var(--bg)}
 .qd-med .lead{margin:0}
 #secCor .mc{margin-bottom:8px}
@@ -445,16 +449,17 @@ function titulo(v){ const i=v.ident; const p=[]; if(i.convenio) p.push("Conv. "+
 function calcCorrente(r, limDeseq){
   const fases=[n(r.ia),n(r.ib),n(r.ic)].filter(x=>x!=null);
   const imax = fases.length? Math.max(...fases) : null;
-  const inD = n(r.disjIn), iz=n(r.iz), ineu=n(r.ineutro);
+  const inD = n(r.disjIn), IZ=izCabo(r), iz=IZ.iz, ineu=n(r.ineutro);
   const pctIn = (imax!=null && inD)? imax/inD*100 : null;
   let deseq=null;
   if(fases.length===3){ const m=(fases[0]+fases[1]+fases[2])/3; if(m>0) deseq=(imax-m)/m*100; }
   const flags=[];
   if(pctIn!=null && pctIn>100) flags.push({k:"in",sev:"crit",txt:"Corrente acima da nominal do disjuntor ("+fmt(pctIn,0)+"% de In)"});
-  if(iz && imax!=null && imax>iz) flags.push({k:"iz",sev:"crit",txt:"Corrente acima da capacidade de condução do cabo informada (Iz = "+fmt(iz,0)+" A)"});
+  if(iz && imax!=null && imax>iz) flags.push({k:"iz",sev:"crit",txt:"Corrente acima da capacidade de condução do cabo "+(IZ.est?"estimada":"informada")+" (Iz = "+fmt(iz,0)+" A)"});
+  if(inD && iz && inD>iz) flags.push({k:"inIz",sev:IZ.est?"warn":"crit",txt:"Disjuntor de "+fmt(inD,0)+" A maior que a capacidade do cabo (Iz "+(IZ.est?"estimada":"informada")+" = "+fmt(iz,0)+" A): o cabo não fica protegido contra sobrecarga (NBR 5410: In ≤ Iz)"+(IZ.est?"; confirmar isolação, forma de instalação e agrupamento":"")});
   if(deseq!=null && deseq>limDeseq) flags.push({k:"deseq",sev:"warn",txt:"Desequilíbrio entre fases de "+fmt(deseq,1)+"% (limite de atenção adotado: "+limDeseq+"%)"});
   if(ineu!=null && imax!=null && fases.length>=2 && ineu>imax) flags.push({k:"neu",sev:"warn",txt:"Corrente no neutro maior que nas fases: investigar desequilíbrio ou harmônicos"});
-  return {imax,pctIn,deseq,flags};
+  return {imax,pctIn,deseq,flags,iz,izEst:IZ.est,izDesc:IZ.desc};
 }
 function calcTermo(r){
   const tm=n(r.tmax), tr=n(r.tref);
@@ -618,7 +623,7 @@ function dadosParaClaude(v){
     outras_limitacoes:v.instr.obsLimit,
     inspecao_visual: ETAPAS.map(e=>({etapa:e.id+" – "+e.t, aplica:(!e.opc||!!v.aplica[e.id]),
       itens:(!e.opc||v.aplica[e.id])? itensDaEtapa(v,e).map(({id,m,t,qn})=>{ const s=v.check[id]||{}; return {item:codItem(id,v), quadro:qn||undefined, metodo:METODO[m], descricao:t, situacao:s.s||"sem registro", obs:s.obs||"", fotos:fotosDe("chk:"+id)}; }):[] })),
-    medicoes_corrente: v.correntes.map(r=>{ const c=calcCorrente(r,v.cfg.deseq); return {quadro:r.quadro,circuito:r.circuito,disjuntor_In_A:r.disjIn,cabo:r.cabo,Iz_A:r.iz,fase_A:r.ia,fase_B:r.ib,fase_C:r.ic,neutro:r.ineutro,pct_In:c.pctIn!=null?+c.pctIn.toFixed(0):null,desequilibrio_pct:c.deseq!=null?+c.deseq.toFixed(1):null,alertas:c.flags.map(f=>f.txt),obs:r.obs}; }),
+    medicoes_corrente: v.correntes.map(r=>{ const c=calcCorrente(r,v.cfg.deseq); return {quadro:r.quadro,circuito:r.circuito,disjuntor_In_A:r.disjIn,cabo_mm2:r.cabo,Iz_A:c.iz!=null?+c.iz.toFixed(1):null,Iz_origem:c.iz==null?"":(c.izEst?c.izDesc:"informada pelo fiscal"),fase_A:r.ia,fase_B:r.ib,fase_C:r.ic,neutro:r.ineutro,pct_In:c.pctIn!=null?+c.pctIn.toFixed(0):null,desequilibrio_pct:c.deseq!=null?+c.deseq.toFixed(1):null,alertas:c.flags.map(f=>f.txt),obs:r.obs}; }),
     limite_desequilibrio_adotado_pct:v.cfg.deseq,
     termografia: v.termo.map(r=>{ const c=calcTermo(r); return {local:r.local,componente:r.componente,Tmax_C:r.tmax,Tref_C:r.tref,referencia:r.refTipo==="ambiente"?"ar ambiente":"componente similar",deltaT_C:c.dt!=null?+c.dt.toFixed(1):null,classificacao_NETA:c.txt,acao:c.acao,carga_pct:c.carga!=null?+c.carga.toFixed(0):null,carga_abaixo_40:!!c.baixaCarga,obs:r.obs,fotos:fotosDe("ter:"+r.id)}; }),
     pendencias: pendencias(v).map(p=>({origem:p.origem,descricao:p.desc,classe:p.classe,providencia:p.prov,prazo_dias:p.prazo})),
@@ -643,6 +648,7 @@ Regras obrigatórias:
 11. "relatos_em_audio" são falas do fiscal gravadas no local, vinculadas a uma foto, medição ou ponto termográfico. Use as transcrições nas constatações da respectiva seção, sem citar que vieram de áudio. Se algum relato estiver PENDENTE de transcrição, liste-o ao final, fora do relatório, para o fiscal providenciar.
 10. Na metodologia, informe que as fotos levam carimbo com data, hora, coordenadas, endereço e identificação, e que a origem de cada dado (metadados da câmera ou informado pelo fiscal) consta no próprio carimbo. Endereço da unidade: ${v.local.endereco||"não informado"}. Coordenadas: ${v.local.lat!=null?fmtCoord(v.local.lat,v.local.lon)+" ("+(v.local.fonte||"")+")":"não informadas"}.
 12. Na etapa 3 cada quadro ("quadros_inspecionados") tem seus próprios itens, identificados pelo nome do quadro entre parênteses. Na seção 5, agrupe as constatações da etapa 3 por quadro.
+13. Quando "Iz_origem" indicar estimativa, diga que a capacidade de condução do cabo foi estimada pelas Tabelas 36/37 da NBR 5410 nas condições indicadas (não verificada em projeto) e recomende a confirmação pelo RT da executora. O alerta de disjuntor maior que a Iz (In > Iz) indica cabo sem proteção contra sobrecarga.
 
 Texto de escopo:
 """${ESCOPO_TXT}"""
@@ -720,9 +726,9 @@ async function gerarDocx(v){
   const anexo=t=>{ kids.push(new Paragraph({children:[new PageBreak()]})); kids.push(new Paragraph({text:t,heading:HeadingLevel.HEADING_2,spacing:{after:160}})); };
   anexo("ANEXO A – MEDIÇÕES DE CORRENTE (alicate amperímetro)");
   if(v.correntes.length) kids.push(tabela(["Quadro","Circuito","In disj. (A)","Cabo","Iz (A)","A (A)","B (A)","C (A)","N (A)","% In","Deseq. (%)","Alertas"],
-    v.correntes.map(r=>{ const c=calcCorrente(r,v.cfg.deseq); return [r.quadro,r.circuito,r.disjIn,r.cabo,r.iz,r.ia,r.ib,r.ic,r.ineutro,c.pctIn!=null?fmt(c.pctIn,0):"–",c.deseq!=null?fmt(c.deseq,1):"–",c.flags.map(f=>f.txt).join("; ")||"–"]; })));
+    v.correntes.map(r=>{ const c=calcCorrente(r,v.cfg.deseq); return [r.quadro,r.circuito,r.disjIn,r.cabo,c.iz!=null?fmt(c.iz,0)+(c.izEst?"*":""):"–",r.ia,r.ib,r.ic,r.ineutro,c.pctIn!=null?fmt(c.pctIn,0):"–",c.deseq!=null?fmt(c.deseq,1):"–",c.flags.map(f=>f.txt).join("; ")||"–"]; })));
   else kids.push(p("Sem medições registradas."));
-  kids.push(p("Leituras pontuais, nas condições de carga do momento da vistoria. Limite de atenção para desequilíbrio adotado pela fiscalização: "+v.cfg.deseq+"%.",{it:true,size:18}));
+  kids.push(p("Leituras pontuais, nas condições de carga do momento da vistoria. Limite de atenção para desequilíbrio adotado pela fiscalização: "+v.cfg.deseq+"%."+(v.correntes.some(r=>calcCorrente(r,v.cfg.deseq).izEst)?" (*) Iz estimada pelas Tabelas 36/37 da NBR 5410 a partir da seção do cabo, isolação, método de instalação, temperatura ambiente e agrupamento adotados; a confirmar com o projeto.":""),{it:true,size:18}));
   anexo("ANEXO B – INSPEÇÃO TERMOGRÁFICA");
   if(v.termo.length) kids.push(tabela(["Local","Componente","T máx. (°C)","T ref. (°C)","Referência","ΔT (°C)","Carga (%)","Classificação (NETA 100.18)","Ação"],
     v.termo.map(r=>{ const c=calcTermo(r); return [r.local,r.componente,r.tmax,r.tref,r.refTipo==="ambiente"?"Ambiente":"Similar",c.dt!=null?fmt(c.dt,1):"–",c.carga!=null?fmt(c.carga,0):"n.i.",c.txt,c.acao]; })));
@@ -1018,6 +1024,34 @@ function marcar(id,val){
 }
 
 /* ============================== Medições de corrente ============================== */
+/* Iz estimada pela NBR 5410 (cobre): Tab. 36 (PVC 70 °C) e Tab. 37 (EPR/XLPE 90 °C), [2 carregados, 3 carregados];
+   fator de temperatura Tab. 40 (ar, ref. 30 °C) e de agrupamento Tab. 42 (feixe / conduto fechado, o mais conservador). */
+const IZ_SEC=[1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240];
+const IZ_TAB={PVC:{B1:[[17.5,24,32,41,57,76,101,125,151,192,232,269,309,353,415],[15.5,21,28,36,50,68,89,110,134,171,207,239,275,314,370]],
+  B2:[[16.5,23,30,38,52,69,90,111,133,168,201,232,265,300,351],[15,20,27,34,46,62,80,99,118,149,179,206,236,268,313]],
+  C:[[19.5,27,36,46,63,85,112,138,168,213,258,299,344,392,461],[17.5,24,32,41,57,76,96,119,144,184,223,259,299,341,403]],
+  D:[[22,29,38,47,63,81,104,125,148,183,216,246,278,312,361],[18,24,31,39,52,67,86,103,122,151,179,203,230,258,297]]},
+ EPR:{B1:[[23,31,42,54,75,100,133,164,198,253,306,354,407,464,546],[20,28,37,48,66,88,117,144,175,222,269,312,358,408,481]],
+  B2:[[22,30,40,51,69,91,119,146,175,221,265,305,349,395,462],[19.5,26,35,44,60,80,105,128,154,194,233,268,307,348,407]],
+  C:[[24,33,45,58,80,107,138,171,209,269,328,382,441,506,599],[22,30,40,52,71,96,119,147,179,229,278,322,371,424,500]],
+  D:[[26,34,44,56,73,95,121,146,173,213,252,287,324,363,419],[22,29,37,46,61,79,101,122,144,178,211,240,271,304,351]]}};
+const IZ_FT={PVC:{10:1.22,15:1.17,20:1.12,25:1.06,30:1,35:0.94,40:0.87,45:0.79,50:0.71,55:0.61,60:0.5},EPR:{10:1.15,15:1.12,20:1.08,25:1.04,30:1,35:0.96,40:0.91,45:0.87,50:0.82,55:0.76,60:0.71}};
+const IZ_FA={1:1,2:0.8,3:0.7,4:0.65,5:0.6,6:0.57};
+const IZ_MET={B1:"Condutores em eletroduto embutido (B1)",B2:"Cabo multipolar em eletroduto (B2)",C:"Fixado na parede ou bandeja (C)",D:"Enterrado em eletroduto (D)"};
+const IZ_ISOL={PVC:"PVC 70 °C",EPR:"HEPR/EPR/XLPE 90 °C"};
+function izCond(r){ return {isol:IZ_ISOL[r.isol]?r.isol:"PVC", met:IZ_MET[r.metodo]?r.metodo:"B1", ag:Math.min(6,Math.max(1,parseInt(r.agrup)||1))}; }
+function izCabo(r){
+  if(n(r.iz)!=null) return {iz:n(r.iz),est:false,desc:"Iz informada"};
+  const k=IZ_SEC.indexOf(n(r.cabo)); if(k<0) return {iz:null,est:false,desc:""};
+  const c=izCond(r); const nf=[r.ia,r.ib,r.ic].filter(x=>n(x)!=null).length; const cc=nf===1?2:3;
+  const t=n(S&&S.v&&S.v.ident?S.v.ident.tAmb:null); const tk=Math.min(60,Math.max(10,Math.ceil((t==null?30:t)/5)*5));
+  const ft=c.met==="D"?1:IZ_FT[c.isol][tk]; const fa=IZ_FA[c.ag];
+  const base=IZ_TAB[c.isol][c.met][cc-2][k]; const iz=Math.round(base*ft*fa*10)/10;
+  return {iz,est:true,base,cc,ft,fa,tk,
+    desc:"Iz estimada pela NBR 5410 (Tab. "+(c.isol==="EPR"?"37":"36")+"): cobre "+IZ_ISOL[c.isol]+", "+(IZ_MET[c.met].charAt(0).toLowerCase()+IZ_MET[c.met].slice(1))+", "+cc+" condutores carregados, "+(c.met==="D"?"solo 20 °C":"ar "+tk+" °C"+(ft!==1?" (fator "+String(ft).replace(".",",")+")":""))+", "+(c.ag===1?"sem agrupamento":c.ag+(c.ag>=6?" ou mais":"")+" circuitos no mesmo eletroduto (fator "+String(fa).replace(".",",")+")")}; }
+function izLinha(r,c){ if(n(r.iz)!=null) return "Iz informada: "+esc(r.iz)+" A";
+  if(c.iz==null) return n(r.cabo)!=null? "Seção não padronizada: informe a Iz ou use 1,5 / 2,5 / 4 / 6 / 10 / 16 / 25 mm²…" : "Informe a seção do cabo para o app estimar a Iz.";
+  return "<b>Iz ≈ "+fmt(c.iz,0)+" A</b> (estimada) – "+esc(c.izDesc.replace(/^Iz estimada pela /,"")); }
 function sevCor(c){ return c.flags.some(f=>f.sev==="crit")?"crit": c.flags.length?"warn": c.imax!=null?"ok":""; }
 /* etapas (fora dos quadros) que também têm bloco de correntes */
 const COR_ET={"1":{local:"Padrão de entrada", circ:"Disjuntor geral", titulo:"Correntes na entrada", lead:"Meça fases e neutro na saída do disjuntor geral. O app compara com a In do disjuntor e a Iz do cabo e calcula o desequilíbrio."}};
@@ -1034,12 +1068,20 @@ function cardCor(r,i){ const v=S.v; const c=calcCorrente(r,v.cfg.deseq); const s
       <div class="mc-b">
         ${noQd? circ : `<div class="g2"><label class="f"><span>Local / quadro</span><input type="text" enterkeyhint="next" data-cor="${i}" data-k="quadro" value="${esc(r.quadro??"")}" placeholder="Padrão de entrada" autocomplete="off" list="dlQd"></label>${circ}</div>`}
         <div class="g4">${num("ia","Fase A (A)")}${num("ib","Fase B (A)")}${num("ic","Fase C (A)")}${num("ineutro","Neutro (A)")}</div>
-        <div class="g4">${num("disjIn","In disj. (A)")}<label class="f num"><span>Cabo (mm²)</span><input type="text" inputmode="decimal" enterkeyhint="next" data-cor="${i}" data-k="cabo" value="${esc(r.cabo??"")}" autocomplete="off"></label>${num("iz","Iz cabo (A)")}<span></span></div>
+        <div class="g4">${num("disjIn","In disj. (A)")}<label class="f num"><span>Cabo (mm²)</span><input type="text" inputmode="decimal" enterkeyhint="next" data-cor="${i}" data-k="cabo" value="${esc(r.cabo??"")}" autocomplete="off"></label><label class="f num"><span>Iz cabo (A)</span><input type="text" inputmode="decimal" enterkeyhint="next" data-cor="${i}" data-k="iz" value="${esc(r.iz??"")}" placeholder="${c.izEst?"≈"+fmt(c.iz,0):"auto"}" autocomplete="off"></label><span></span></div>
+        <div class="izl status" id="corIz_${i}">${izLinha(r,c)}</div>
+        ${condCabo(r,i)}
         <div class="status" id="corFl_${i}">${c.flags.map(f=>esc(f.txt)).join(" · ")}</div>
         <input type="text" data-cor="${i}" data-k="obs" value="${esc(r.obs||"")}" placeholder="Cargas ligadas no momento, observação" aria-label="Observação" enterkeyhint="done">
         ${audBox("cor:"+i,r.audio)}
         <div class="row" style="justify-content:space-between"><button type="button" class="mini ${r.audio&&r.audio.id?"has":""}" data-mic="cor:${i}">${ICON.mic}${r.audio&&r.audio.id?"Regravar áudio":"Gravar áudio"}</button><button class="btn sm ghost danger" type="button" data-act="delCor" data-i="${i}">Excluir medição</button></div>
       </div></div>`; }
+function condCabo(r,i){ const c=izCond(r); const ch=(k,lista,cur)=>`<div class="chips">${lista.map(([v,l])=>`<button type="button" class="chip-s ${String(cur)===String(v)?"on":""}" data-act="corOpt" data-i="${i}" data-k="${k}" data-v="${v}">${l}</button>`).join("")}</div>`;
+  return `<details class="como izc"><summary>Condições do cabo <small>${c.isol==="EPR"?"HEPR/EPR/XLPE":"PVC"} · ${c.met} · ${c.ag}${c.ag>=6?"+":""} circ.</small></summary>
+    <div class="lead">Isolação impressa no cabo (a tensão 0,6/1 kV sozinha não define: há cabo 0,6/1 kV de PVC)</div>${ch("isol",[["PVC","PVC 70 °C"],["EPR","HEPR / EPR / XLPE 90 °C"]],c.isol)}
+    <div class="lead">Como o cabo está instalado</div>${ch("metodo",Object.entries(IZ_MET),c.met)}
+    <div class="lead">Circuitos passando no mesmo eletroduto</div>${ch("agrup",[[1,"1"],[2,"2"],[3,"3"],[4,"4"],[5,"5"],[6,"6+"]],c.ag)}
+    <p class="lead">Se houver Iz no projeto, digite no campo acima: ela substitui a estimativa.</p></details>`; }
 function tituloCor(r,i){ return (qdDe(r)||etDe(r))? esc(r.circuito||"Circuito "+(i+1)) : esc(r.quadro||"Medição")+" · "+esc(r.circuito||"circuito "+(i+1)); }
 /* bloco de correntes dentro do quadro (etapa 3) */
 function rCorQd(q){ const v=S.v; const L=v.correntes.map((r,i)=>[r,i]).filter(([r])=>r.qd===q.id);
@@ -1061,7 +1103,7 @@ function rCorOutros(){ const v=S.v; const L=v.correntes.map((r,i)=>[r,i]).filter
     <button class="btn" type="button" data-act="addCor">+ Outra medição</button>
     <details class="como"><summary>Critérios <small>desequilíbrio: ${v.cfg.deseq}%</small></summary>
     ${field("cfg.deseq","Limite de atenção para desequilíbrio (%)",{mode:"decimal"})}
-    <p class="lead">O limite é critério da fiscalização, não da norma. Uma leitura pontual não representa a demanda máxima. Iz vem do projeto; deixe em branco se não souber.</p></details></section>`; }
+    <p class="lead">O limite é critério da fiscalização, não da norma. Uma leitura pontual não representa a demanda máxima. Sem Iz digitada, o app estima pela NBR 5410 (Tabelas 36/37) a partir da seção do cabo e das condições de instalação; o disjuntor maior que a Iz (In > Iz) gera alerta mesmo com pouca carga.</p></details></section>`; }
 function pillCor(c){ const s=sevCor(c); return s==="crit"?`<span class="pill crit">Alerta</span>`: s==="warn"?`<span class="pill warn">Atenção</span>`: s==="ok"?`<span class="pill ok">OK</span>`:""; }
 function resumoCor(r,c){ const p=[]; ["ia","ib","ic"].forEach((k,j)=>{ if(r[k]) p.push("ABC"[j]+" "+r[k]); }); if(r.ineutro) p.push("N "+r.ineutro);
   if(c.pctIn!=null) p.push(fmt(c.pctIn,0)+"% In"); if(c.deseq!=null) p.push("deseq. "+fmt(c.deseq,0)+"%"); if(r.audio&&r.audio.id) p.push("áudio "+fmtDur(r.audio.dur)); return esc(p.join(" · ")||"toque para preencher"); }
@@ -1069,6 +1111,7 @@ function atualizarCor(i){ const r=S.v.correntes[i]; if(!r) return; const c=calcC
   const set=(id,h)=>{ const el=document.getElementById(id); if(el) el.innerHTML=h; };
   set("corPill_"+i,pillCor(c)); set("corT_"+i,tituloCor(r,i)); set("corL2_"+i,resumoCor(r,c)); set("corFl_"+i,c.flags.map(f=>esc(f.txt)).join(" · "));
   const card=document.getElementById("mc_"+r.id); if(card) card.dataset.sev=sevCor(c);
+  const zl=document.getElementById("corIz_"+i); if(zl) zl.innerHTML=izLinha(r,c); const zi=document.querySelector(`input[data-cor="${i}"][data-k="iz"]`); if(zi) zi.placeholder=c.izEst?"≈"+fmt(c.iz,0):"auto";
   const q=qdDe(r); if(q){ const el=document.getElementById("qdc_"+q.id); if(el) el.innerHTML=cntQd(infoQd(q)); }
   atualizarChrome(); }
 
@@ -1289,6 +1332,7 @@ document.addEventListener("click", async ev=>{
     const el=document.getElementById("tc_"+r.id); el && el.scrollIntoView({block:"center"}); return; }
   if(act==="delTer"){ if(await confirmar("Excluir este ponto e suas fotos?")){ const r=S.v.termo[+b.dataset.i]; [r.fotoIR,r.fotoVis].forEach(f=>{ if(f&&f.id) idbDel("fotos",f.id).catch(()=>{}); }); S.v.termo.splice(+b.dataset.i,1); agendarSalvar(); render(true); } return; }
   if(act==="refTipo"){ const i=+b.dataset.i, r=S.v.termo[i]; if(r.refTipo!==b.dataset.v){ r.refTipo=b.dataset.v; if(b.dataset.v==="ambiente" && S.v.ident.tAmb && !r.tref) r.tref=S.v.ident.tAmb; } agendarSalvar(); render(true); return; }
+  if(act==="corOpt"){ const r=S.v.correntes[+b.dataset.i]; if(!r) return; r[b.dataset.k]=b.dataset.k==="agrup"?+b.dataset.v:b.dataset.v; agendarSalvar(); render(true); const d=document.querySelector(`#mc_${r.id} details.izc`); if(d) d.open=true; return; }
   if(act==="terChip"){ const i=+b.dataset.i, r=S.v.termo[i]; r[b.dataset.k]=b.dataset.v; agendarSalvar(); render(true); return; }
   if(act==="terMed"){ const i=+b.dataset.i, r=S.v.termo[i]; const m=S.v.correntes.find(x=>x.quadro && r.local && x.quadro.trim().toLowerCase()===r.local.trim().toLowerCase() && (x.ia||x.ib||x.ic));
     if(m){ const f=[m.ia,m.ib,m.ic].map(n).filter(x=>x!=null); r.iMed=String(Math.max(...f)).replace(".",","); if(m.disjIn) r.iNom=m.disjIn; agendarSalvar(); render(true); } return; }
