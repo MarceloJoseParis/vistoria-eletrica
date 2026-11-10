@@ -294,6 +294,7 @@ dialog::backdrop{background:rgba(8,12,16,.55)}
     <span class="hd-title" id="hdTitle">Nova vistoria</span>
     <span class="hd-sub"><span id="saveState">Carregando…</span><span class="net" id="netSt">…</span></span>
   </button>
+  <button class="drv" id="nvChip" type="button" hidden></button>
   <button class="drv" id="drvChip" type="button" hidden></button>
   <button class="icon-btn" id="btnNew" type="button" aria-label="Nova vistoria" title="Nova vistoria">+</button>
   <div class="prog" aria-hidden="true"><i id="progBar"></i></div>
@@ -352,6 +353,7 @@ dialog::backdrop{background:rgba(8,12,16,.55)}
 </dialog>
 <script src="lib/docx.umd.js"></script>
 <script src="lib/exifr.lite.umd.js"></script>
+<script src="lib/firebase.js"></script>
 <script>
 "use strict";
 const ETAPAS = [
@@ -495,7 +497,7 @@ function resumo(v){
   return {total:it.length,feitos,nc,cor,ter};
 }
 function fotoURL(f){ if(!S.urls[f.id]) carregarURL(f.id); return S.urls[f.id] || ""; }
-async function carregarURL(id){ if(S.urls[id]!==undefined) return; S.urls[id]=""; try{ const r=await idbGet("fotos",id); const b=blobDe(r); if(b){ S.urls[id]=URL.createObjectURL(b); document.querySelectorAll(`img[data-fid="${id}"]`).forEach(im=>im.src=S.urls[id]); } }catch(e){} }
+async function carregarURL(id){ if(S.urls[id]!==undefined) return; S.urls[id]=""; try{ const r=await idbGet("fotos",id); let b=blobDe(r); if(!b) b=await nvBaixarFoto(id); if(b){ S.urls[id]=URL.createObjectURL(b); document.querySelectorAll(`img[data-fid="${id}"]`).forEach(im=>im.src=S.urls[id]); } }catch(e){} }
 async function reduzirImagem(file, max, linhas, modo){
   const bmp = await abrirImagem(file); const bw=bmp.width||bmp.naturalWidth, bh=bmp.height||bmp.naturalHeight;
   const sc = Math.min(1, max/Math.max(bw,bh));
@@ -534,9 +536,9 @@ async function guardarFoto(file,tgt){
 async function guardarBlob(r){
   const id="f-"+Date.now().toString(36)+uid8();
   S.memFotos=S.memFotos||{}; S.memFotos[id]=r.blob; S.urls[id]=URL.createObjectURL(r.blob);
-  try{ const buf=await r.blob.arrayBuffer(); await idbPut("fotos",{id,buf,type:r.blob.type||"image/jpeg",vid:S.v.id,criado:Date.now()}); }
+  try{ const buf=await r.blob.arrayBuffer(); await idbPut("fotos",{id,buf,type:r.blob.type||"image/jpeg",vid:S.v.id,criado:Date.now()}); nvEnviarFoto(id).catch(()=>{}); }
   catch(e){ S.fotoSoSessao=true; toastSave("Foto mantida só enquanto o app estiver aberto: o navegador não deixou gravar no aparelho",true); }
-  return {id,w:r.w,h:r.h,leg:""};
+  return {id,w:r.w,h:r.h,leg:"",dev:DEV};
 }
 function blobDe(r){ if(!r) return null; if(r.blob instanceof Blob) return r.blob; if(r.buf) return new Blob([r.buf],{type:r.type||"image/jpeg"}); if(r.prev) return new Blob([r.prev],{type:"image/jpeg"}); return null; }
 function msgErro(e){ return (e&&e.message)||(e&&e.name)||(e?String(e):"erro desconhecido"); }
@@ -544,7 +546,7 @@ async function abrirImagem(file){
   if(window.createImageBitmap){ try{ return await createImageBitmap(file,{imageOrientation:"from-image"}); }catch(e){ try{ return await createImageBitmap(file); }catch(e2){} } }
   return await new Promise((res,rej)=>{ const u=URL.createObjectURL(file); const im=new Image(); im.onload=()=>{ res(im); setTimeout(()=>URL.revokeObjectURL(u),1000); }; im.onerror=()=>rej(new Error("formato de imagem não suportado pelo navegador")); im.src=u; });
 }
-async function fotoBlob(f){ if(S.memFotos&&S.memFotos[f.id]) return S.memFotos[f.id]; const r=await idbGet("fotos",f.id); const b=blobDe(r); if(!b) throw new Error("foto não encontrada no aparelho"); return b; }
+async function fotoBlob(f){ if(S.memFotos&&S.memFotos[f.id]) return S.memFotos[f.id]; const r=await idbGet("fotos",f.id); let b=blobDe(r); if(!b) b=await nvBaixarFoto(f.id); if(!b) throw new Error("foto não encontrada no aparelho"); return b; }
 function metaTxt(f){ const m=f.meta; if(!m) return ""; const p=[]; if(m.dt) p.push(dtBR(new Date(m.dt))); if(m.lat!=null) p.push(fmtCoord(m.lat,m.lon)+" ("+m.gpsFonte+")"); return p.length?" – "+p.join(" – "):""; }
 function withTimeout(p,ms){ return Promise.race([p,new Promise(r=>setTimeout(()=>r(null),ms))]); }
 function idbOpen(){ return new Promise((res,rej)=>{ const rq=indexedDB.open("vistoriaEletrica-dados",1);
@@ -571,7 +573,7 @@ async function salvar(){
   S.saving=true;
   const v=S.v; const i=S.list.findIndex(x=>x.id===v.id); if(i<0) S.list.unshift(v); else S.list[i]=v;
   try{ localStorage.setItem("vistoriaEletrica.cur",v.id); }catch(e){}
-  try{ if(S.store==="idb"){ await idbPut("vistorias",JSON.parse(JSON.stringify(v))); toastSave("Salvo no aparelho "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})); } }
+  try{ if(S.store==="idb"){ await idbPut("vistorias",JSON.parse(JSON.stringify(v))); nvEnviar(v); toastSave("Salvo no aparelho "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})); } }
   catch(e){ toastSave("Erro ao salvar: "+(e&&e.message||e), true); }
   S.saving=false; if(S.pendingSave){ S.pendingSave=false; salvar(); }
 }
@@ -758,6 +760,7 @@ function confirmar(msg){ return new Promise(res=>{ const d=document.getElementBy
   const y=document.getElementById("cfYes"), no=document.getElementById("cfNo");
   const done=v=>{ y.onclick=no.onclick=null; d.close(); res(v); }; y.onclick=()=>done(true); no.onclick=()=>done(false); d.showModal(); }); }
 async function excluirVistoria(id){
+  nvApagar(id);
   S.list=S.list.filter(v=>v.id!==id);
   try{ await idbDel("vistorias",id); const fs=await idbAll("fotos"); for(const f of fs) if(f.vid===id) await idbDel("fotos",f.id); }catch(e){ toastSave("Erro ao excluir: "+(e&&e.message||e),true); }
   if(S.v.id===id){ S.v=S.list[0]||novaVistoria(); normalizar(S.v); render(); }
@@ -790,7 +793,7 @@ async function importarBackup(file){
   try{ const j=JSON.parse(await file.text()); if(j.app!=="vistoria-eletrica") throw new Error("arquivo não é um backup deste app");
     let nf=0; for(const f of (j.fotos||[])){ if(await idbGet("fotos",f.id)) continue; const bl=await (await fetch(f.data)).blob(); await idbPut("fotos",{id:f.id,vid:f.vid,buf:await bl.arrayBuffer(),type:bl.type||"image/jpeg",criado:Date.now()}); nf++; }
     let nv=0; for(const v of (j.vistorias||[])){ const ex=await idbGet("vistorias",v.id); if(!ex || (v.updatedAt||0)>(ex.updatedAt||0)){ await idbPut("vistorias",v); nv++; } }
-    await carregar(); st.textContent="Importado: "+nv+" vistoria(s) e "+nf+" foto(s)."; render(); abrirLista();
+    await carregar(); if(NV.pronta) nvReconciliar(true); st.textContent="Importado: "+nv+" vistoria(s) e "+nf+" foto(s)."; render(); abrirLista();
   }catch(e){ st.textContent="Não foi possível importar: "+(e&&e.message||e); }
 }
 function atualizarRede(){ const el=document.getElementById("netSt"); if(!el) return; const on=navigator.onLine; el.textContent=on?"Online":"Offline"; el.className="net "+(on?"ok":"warn"); }
@@ -871,6 +874,7 @@ function fotoPorRef(pref){ const v=S.v; const [k,a,b]=pref.split(":");
 function removerFoto(pref){
   const v=S.v; const [k,a,b]=pref.split(":"); const f=fotoPorRef(pref);
   if(f&&f.id&&S.idb) idbDel("fotos",f.id).catch(()=>{});
+  if(f&&f.id&&NV.b&&NV.user&&NV.pronta) Promise.resolve(NV.b.apagarFoto(f.id)).catch(()=>{});
   if(k==="g") v.fotosGerais.splice(+a,1);
   else if(k==="c") v.check[a].fotos.splice(+b,1);
   else if(k==="n"){ const nt=v.notas.find(x=>x.id===a); if(nt) nt.fotos.splice(+b,1); }
@@ -1209,6 +1213,7 @@ function rRel(){
     ${share?`<button class="btn ghost" type="button" data-act="cpTxt">Copiar texto</button>`:""}
     <span class="status" id="dlSt"></span>
   </section>
+  ${rNuvem()}
   ${rDrive()}`;
 }
 
@@ -1284,10 +1289,10 @@ document.addEventListener("keydown",e=>{ if(VW.el.hidden) return; if(e.key==="Es
 /* ============================== Lista de vistorias ============================== */
 function abrirLista(){
   const body=document.getElementById("dlgBody");
-  body.innerHTML = (S.list.length? S.list.map(v=>`<div class="vrow ${v.id===S.v.id?"cur":""}"><div><b>${esc(titulo(v))}</b><div class="meta">${esc(dataBR(v.ident&&v.ident.data))} · atualizada ${new Date(v.updatedAt||0).toLocaleString("pt-BR")}</div></div>
+  body.innerHTML = (S.list.length? S.list.map(v=>`<div class="vrow ${v.id===S.v.id?"cur":""}"><div><b>${esc(titulo(v))}</b><div class="meta">${esc(dataBR(v.ident&&v.ident.data))} · atualizada ${new Date(v.updatedAt||0).toLocaleString("pt-BR")}${v._por&&v._por.nome?" por "+esc(v._por.nome):""}</div></div>
     <div class="row"><button class="btn sm pri" type="button" data-open="${esc(v.id)}">Abrir</button><button class="btn sm" type="button" data-dup="${esc(v.id)}">Nova com estes dados</button><button class="btn sm ghost danger" type="button" data-delv="${esc(v.id)}">Excluir</button></div></div>`).join("")
     : `<div class="empty">Nenhuma vistoria salva ainda.</div>`)
-  + `<div class="card"><h3>Backup</h3><p class="lead">Vistorias e fotos ficam só neste aparelho. Exporte um backup ao terminar cada vistoria; o arquivo também passa as vistorias para outro aparelho ou para o computador.</p>
+  + `<div class="card"><h3>Backup</h3><p class="lead">${NV.user&&NV.pronta?"As vistorias estão na nuvem da equipe; o backup é uma cópia extra deste aparelho.":"Vistorias e fotos ficam só neste aparelho."} Exporte um backup ao terminar cada vistoria; o arquivo também passa as vistorias para outro aparelho ou para o computador.</p>
     <div class="row"><button class="btn" type="button" id="bkExp">Exportar backup</button><label class="btn">Importar backup<input type="file" id="bkImp" accept="application/json,.json" hidden></label></div><span class="status" id="bkSt"></span></div>`;
   const d=document.getElementById("dlgList"); if(!d.open) d.showModal();
 }
@@ -1349,12 +1354,15 @@ document.addEventListener("click", async ev=>{
   if(act==="genDraft"){ if(S.v.rel.texto && !(await confirmar("Substituir o texto atual pelo rascunho automático?"))) return; S.v.rel.texto=rascunhoAuto(S.v); S.v.rel.geradoEm=Date.now(); S.v.rel.fonte="rascunho automático"; agendarSalvar(); render(true); return; }
   if(act==="cpPrompt"){ const st=document.getElementById("genSt"); try{ await navigator.clipboard.writeText(promptClaude(S.v)); st.textContent="Pedido copiado. Cole numa conversa com o Claude e traga a resposta para o campo abaixo."; }catch(e){ st.textContent="Não foi possível copiar automaticamente."; } return; }
   if(act==="enviarDrive"){ enviarDrive(); return; }
+  if(act==="nvEntrar"){ nvEntrar(); return; }
+  if(act==="nvSair"){ nvSair(); return; }
   if(act==="dlDocx"){ baixarDocx(false); return; }
   if(act==="shDocx"){ baixarDocx(true); return; }
   if(act==="cpTxt"){ try{ await navigator.clipboard.writeText(S.v.rel.texto||rascunhoAuto(S.v)); document.getElementById("dlSt").textContent="Texto copiado."; }catch(e){ document.getElementById("dlSt").textContent="Não foi possível copiar."; } return; }
   if(b.id==="btnNew"){ if(!(await confirmar("Começar uma nova vistoria? A atual fica salva na lista."))) return; await salvarAgora(); S.v=novaVistoria({fiscal:S.v.ident.fiscal,cargo:S.v.ident.cargo}); S.list.unshift(S.v); S.openEt=null; S.openQd=null; S.openCor=null; S.openTer=null; S.tab="dados"; agendarSalvar(); render(); return; }
   if(b.id==="btnList"){ abrirLista(); return; }
   if(b.id==="drvChip"){ tocarChipDrive(); return; }
+  if(b.id==="nvChip"){ tocarChipNuvem(); return; }
   if(b.id==="dlgClose"){ document.getElementById("dlgList").close(); return; }
   if(b.id==="bkExp"){ exportarBackup(); return; }
   if(b.dataset.open){ await salvarAgora(); const x=S.list.find(v=>v.id===b.dataset.open); if(x){ S.v=x; normalizar(x); try{localStorage.setItem("vistoriaEletrica.cur",x.id);}catch(e){} } document.getElementById("dlgList").close(); S.openEt=null; S.openQd=null; S.openCor=null; S.openTer=null; render(); return; }
@@ -1468,7 +1476,8 @@ async function enviarArquivo(meta,blob,idExistente){
 }
 const nomeArq=s=>String(s).replace(/[\\/:*?"<>|\n\r]+/g," ").replace(/\s+/g," ").trim().slice(0,110);
 function nomePastaVistoria(v){ const i=v.ident; return nomeArq([i.convenio?"Conv "+i.convenio:"", i.escola, i.municipio, i.data].filter(Boolean).join(" - ")||("Vistoria "+v.id)); }
-function pendentesDe(v){ const env=(v.drive&&v.drive.fotos)||{}; return listaFotos(v).filter(o=>!env[o.f.id]); }
+/* cada um envia ao seu Drive só as fotos que tirou neste aparelho (as dos colegas chegam pela nuvem da equipe) */
+function pendentesDe(v){ const env=(v.drive&&v.drive.fotos)||{}; return listaFotos(v).filter(o=>!env[o.f.id] && (!o.f.dev||o.f.dev===DEV)); }
 function totalPendentes(){ const vs=S.list.includes(S.v)? S.list : [S.v,...S.list]; return vs.reduce((a,v)=>a+pendentesDe(v).length+audiosPendentesDrive(v).length,0); }
 let raizCache=null;
 async function garantirPastas(v){
@@ -1489,7 +1498,7 @@ async function previa(blob){ const im=await abrirImagem(blob); const bw=im.width
 async function liberarFoto(id,driveId,blob){
   try{ const r=await idbGet("fotos",id); if(!r||!(r.buf||r.blob)) return;
     const pv=await previa(blob);
-    await idbPut("fotos",{id,prev:await pv.arrayBuffer(),type:"image/jpeg",vid:r.vid,criado:r.criado,driveId,liberadaEm:Date.now(),tamOriginal:blob.size});
+    await idbPut("fotos",{id,prev:await pv.arrayBuffer(),type:"image/jpeg",vid:r.vid,criado:r.criado,driveId,liberadaEm:Date.now(),tamOriginal:blob.size,nuvem:r.nuvem});
     if(S.memFotos) delete S.memFotos[id];
     if(S.urls[id]) try{ URL.revokeObjectURL(S.urls[id]); }catch(e){}
     S.urls[id]=URL.createObjectURL(pv); document.querySelectorAll(`img[data-fid="${id}"]`).forEach(im=>im.src=S.urls[id]);
@@ -1658,7 +1667,7 @@ function todosAudios(v){
   v.termo.forEach((r,i)=>{ if(r.audio&&r.audio.id) out.push({ref:"ter:"+i, a:r.audio, rot:"Termografia – "+(r.local||"ponto "+(i+1))+(r.componente?" / "+r.componente:""), holder:r, tipo:"ter"}); });
   return out;
 }
-function audiosPendentesDrive(v){ return todosAudios(v).filter(x=>!x.a.driveId); }
+function audiosPendentesDrive(v){ return todosAudios(v).filter(x=>!x.a.driveId && (!x.a.dev||x.a.dev===DEV)); }
 function audBox(ref,a){
   if(!a||!a.id) return "";
   const st = a.txt? `<span class="pill ok">transcrito${a.fonte?" ("+esc(a.fonte)+")":""}</span>` : a.st==="erro"? `<span class="pill crit">transcrição falhou</span>` : `<span class="pill warn">transcrição na fila</span>`;
@@ -1719,7 +1728,7 @@ async function pararGravacao(cancelar){
   catch(e){ S.memFotos=S.memFotos||{}; S.memFotos[id]=wav; toastSave("Áudio mantido só enquanto o app estiver aberto: o navegador não deixou gravar no aparelho",true); }
   const h=holderPorRef(ref); if(!h) return;
   if(h.audio&&h.audio.id) idbDel("fotos",h.audio.id).catch(()=>{});
-  h.audio={id, dur:Math.round(dur), txt:txt, fonte:txt?"celular, na hora":"", st:txt?"ok":"fila", em:Date.now()};
+  h.audio={id, dev:DEV, dur:Math.round(dur), txt:txt, fonte:txt?"celular, na hora":"", st:txt?"ok":"fila", em:Date.now()};
   if(txt) aplicarTranscricao(ref,txt);
   agendarSalvar(); agendarSync(2500); if(!txt) agendarTranscricao(1500);
   toastSave(txt?"Áudio salvo e transcrito":"Áudio salvo; transcrição na fila");
@@ -1811,6 +1820,173 @@ function rTranscricao(){
 window.addEventListener("online",()=>agendarTranscricao(1200));
 setInterval(()=>{ if(navigator.onLine && sttKey() && transcricoesPendentes()) transcreverFila(); },120000);
 
+/* ============================== Nuvem: equipe em tempo real (Firebase) ==============================
+   Cada vistoria é um documento no Firestore (coleção "vistorias"). Cada aparelho envia só os campos que mudou
+   (diferença em relação à última versão vista da nuvem) e aplica por cima do que está editando as mudanças dos outros,
+   então duas pessoas podem mexer na mesma vistoria ao mesmo tempo sem uma apagar a outra.
+   Listas com id (medições, pontos quentes, quadros, fotos…) viram mapas por id na nuvem, para não sobrescreverem umas às outras.
+   "drive" (pastas e envios ao Drive) é de cada usuário e não sobe. Fotos: uma prévia (1024 px) vai para a coleção "fotos";
+   a foto original continua no aparelho de quem tirou e no Drive dele. O Firestore guarda tudo no aparelho e envia quando houver sinal. */
+const FB_CFG=null; /* firebaseConfig do projeto (Configurações do projeto › Seus apps) */
+const DEV=(()=>{ try{ let d=localStorage.getItem("vistoriaEletrica.dev"); if(!d){ d="d"+uid8(); localStorage.setItem("vistoriaEletrica.dev",d); } return d; }catch(e){ return "d"+uid8(); } })();
+const NV={b:null, estado:"off", user:null, base:{}, pronta:false, servidor:false, erro:"", fotosRodando:false, parar:null};
+const SO_LOCAL=["drive"];
+const LS_NVIDS="vistoriaEletrica.nuvemIds";
+function nvConhecidas(){ try{ return new Set(JSON.parse(localStorage.getItem(LS_NVIDS)||"[]")); }catch(e){ return new Set(); } }
+function nvMarcar(id,sim){ const s=nvConhecidas(); if(sim) s.add(id); else s.delete(id); try{ localStorage.setItem(LS_NVIDS,JSON.stringify([...s])); }catch(e){} }
+function ehObj(x){ return x!==null && typeof x==="object" && !Array.isArray(x); }
+function paraWire(v){ const o=JSON.parse(JSON.stringify(v)); SO_LOCAL.forEach(k=>delete o[k]);
+  const conv=x=>{ if(Array.isArray(x)){ if(x.length && x.every(e=>ehObj(e)&&typeof e.id==="string"&&e.id&&!/[./]/.test(e.id)) && new Set(x.map(e=>e.id)).size===x.length){ const m={_arr:1}; x.forEach((e,i)=>{ const c=conv(e); c._ord=i; m[e.id]=c; }); return m; } return x.map(conv); }
+    if(ehObj(x)){ const m={}; for(const k of Object.keys(x)) if(k!=="") m[k]=conv(x[k]); return m; } return x; };
+  return conv(o); }
+function deWire(w){ const conv=x=>{ if(ehObj(x)){ if(x._arr){ return Object.keys(x).filter(k=>k!=="_arr"&&ehObj(x[k])).map(k=>x[k]).sort((a,b)=>(a._ord||0)-(b._ord||0)).map(e=>{ const c=conv(e); delete c._ord; return c; }); }
+    const m={}; for(const k of Object.keys(x)) m[k]=conv(x[k]); return m; } if(Array.isArray(x)) return x.map(conv); return x; };
+  return conv(JSON.parse(JSON.stringify(w))); }
+function igual(a,b){ return JSON.stringify(a)===JSON.stringify(b); }
+/* operações que transformam a em b: {p:[campos], v} ou {p, del:true} */
+function diffWire(a,b){ const ops=[];
+  const rec=(x,y,p)=>{ for(const k of Object.keys(y)){ const vx=x?x[k]:undefined, vy=y[k], pp=p.concat(k);
+      if(ehObj(vx)&&ehObj(vy)&&Object.keys(vy).length) rec(vx,vy,pp); else if(!igual(vx,vy)) ops.push({p:pp,v:vy}); }
+    if(x) for(const k of Object.keys(x)) if(!(k in y)) ops.push({p:p.concat(k),del:true}); };
+  rec(a||{},b,[]); return ops; }
+function aplicarOps(o,ops){ for(const op of ops){ let a=o; for(let i=0;i<op.p.length-1;i++){ const k=op.p[i]; if(!ehObj(a[k])){ if(op.del){ a=null; break; } a[k]={}; } a=a[k]; }
+    if(!a) continue; const k=op.p[op.p.length-1]; if(op.del) delete a[k]; else a[k]=JSON.parse(JSON.stringify(op.v)); } return o; }
+
+function backendFirebase(cfg){
+  const app=FB.initializeApp(cfg); const auth=FB.getAuth(app);
+  let db; try{ db=FB.initializeFirestore(app,{localCache:FB.persistentLocalCache({tabManager:FB.persistentMultipleTabManager()})}); }catch(e){ db=FB.initializeFirestore(app,{localCache:FB.memoryLocalCache()}); }
+  return {
+    iniciar(cb){ FB.getRedirectResult(auth).catch(()=>{}); FB.onAuthStateChanged(auth,u=>cb(u?{uid:u.uid,nome:u.displayName||u.email||"",email:String(u.email||"").toLowerCase()}:null)); },
+    async entrar(){ const p=new FB.GoogleAuthProvider(); p.setCustomParameters({prompt:"select_account"});
+      try{ await FB.signInWithPopup(auth,p); }catch(e){ if(/popup-blocked|operation-not-supported|web-storage-unsupported/.test(e&&e.code||"")) await FB.signInWithRedirect(auth,p); else throw e; } },
+    sair(){ return FB.signOut(auth); },
+    ouvir(onCh,onErr){ return FB.onSnapshot(FB.collection(db,"vistorias"),{includeMetadataChanges:true},
+      snap=>onCh(snap.docChanges().map(d=>({id:d.doc.id,tipo:d.type,w:d.type==="removed"?null:d.doc.data()})),{doServidor:!snap.metadata.fromCache}), onErr); },
+    criar(id,w){ return FB.setDoc(FB.doc(db,"vistorias",id),w); },
+    atualizar(id,ops){ const a=[]; ops.forEach(o=>a.push(new FB.FieldPath(...o.p), o.del?FB.deleteField():o.v)); return FB.updateDoc(FB.doc(db,"vistorias",id),...a); },
+    apagar(id){ return FB.deleteDoc(FB.doc(db,"vistorias",id)); },
+    salvarFoto(id,o){ return FB.setDoc(FB.doc(db,"fotos",id),{vid:o.vid,type:o.type,dados:FB.Bytes.fromUint8Array(o.bytes),t:Date.now()}); },
+    apagarFoto(id){ return FB.deleteDoc(FB.doc(db,"fotos",id)); },
+    async lerFoto(id){ const s=await FB.getDoc(FB.doc(db,"fotos",id)); if(!s.exists()) return null; const d=s.data(); return {vid:d.vid,type:d.type||"image/jpeg",bytes:d.dados.toUint8Array()}; }
+  };
+}
+function nvConfigurada(){ return !!(window.__nuvemBackend || (FB_CFG && window.FB)); }
+function nvIniciar(){
+  if(!nvConfigurada()){ NV.estado="off"; return; }
+  try{ NV.b = window.__nuvemBackend? window.__nuvemBackend() : backendFirebase(FB_CFG); }catch(e){ NV.estado="erro"; NV.erro=msgErro(e); atualizarChipNuvem(); return; }
+  NV.estado="saiu"; atualizarChipNuvem();
+  NV.b.iniciar(u=>{ NV.user=u; if(NV.parar){ try{ NV.parar(); }catch(e){} NV.parar=null; } NV.pronta=false; NV.servidor=false; NV.base={};
+    if(!u){ NV.estado="saiu"; atualizarChipNuvem(); atualizarCardNuvem(); return; }
+    NV.estado="conectando"; NV.erro=""; atualizarChipNuvem(); atualizarCardNuvem();
+    NV.parar=NV.b.ouvir(nvRecebido, e=>{ NV.estado=/permission/i.test(e&&(e.code||e.message)||"")?"semAcesso":"erro"; NV.erro=msgErro(e); NV.pronta=false; atualizarChipNuvem(); atualizarCardNuvem(); }); });
+}
+async function nvEntrar(){ if(!NV.b){ toastSave("Nuvem da equipe ainda não configurada neste app.",true); return; }
+  try{ await NV.b.entrar(); }catch(e){ if(!/cancel|closed-by-user/.test(e&&e.code||"")) toastSave("Não foi possível entrar: "+msgErro(e),true); } }
+async function nvSair(){ if(NV.b && await confirmar("Sair da equipe neste aparelho? As vistorias continuam salvas aqui; as edições deixam de ir para a nuvem até você entrar de novo.")) await NV.b.sair(); }
+function nvAtual(){ return S.list.includes(S.v)? S.list : [S.v,...S.list]; }
+/* chegou mudança da nuvem (inclui o eco das nossas próprias gravações, que não gera diferença) */
+function nvRecebido(ch,meta){
+  let mudouAtual=false, quem=null, removidaAtual=false; const enviar=[];
+  for(const c of ch){
+    if(c.tipo==="removed"){ delete NV.base[c.id]; const loc=S.list.find(v=>v.id===c.id);
+      if(loc){ S.list=S.list.filter(v=>v!==loc); idbDel("vistorias",c.id).catch(()=>{}); if(loc===S.v) removidaAtual=true; } nvMarcar(c.id,false); continue; }
+    const w=c.w; const base=NV.base[c.id]; NV.base[c.id]=w; nvMarcar(c.id,true);
+    const loc=nvAtual().find(v=>v.id===c.id);
+    if(!loc){ const v=deWire(w); normalizar(v); S.list.push(v); nvGravarLocal(v); continue; }
+    let ops;
+    if(!base){ if((loc.updatedAt||0)>(w.updatedAt||0)){ enviar.push(loc); continue; } ops=diffWire(paraWire(loc),w); }
+    else ops=diffWire(base,w);
+    if(!ops.length) continue;
+    const lw=paraWire(loc); aplicarOps(lw,ops); const novo=deWire(lw); SO_LOCAL.forEach(k=>{ if(loc[k]!==undefined) novo[k]=loc[k]; }); normalizar(novo);
+    for(const k of Object.keys(loc)) if(!(k in novo)) delete loc[k]; Object.assign(loc,novo);
+    if(loc===S.v){ mudouAtual=true; if(w._por && w._por.dev!==DEV) quem=w._por; } else nvGravarLocal(loc);
+  }
+  if(meta && meta.doServidor && !NV.servidor){ NV.servidor=true; nvReconciliar(); }
+  if(!NV.pronta){ NV.pronta=true; nvReconciliar(true); nvFotosPendentes(); }
+  enviar.forEach(nvEnviar);
+  NV.estado = navigator.onLine && (meta? meta.doServidor : true) ? "aoVivo" : "offline";
+  S.list.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  if(removidaAtual){ S.v=S.list[0]||novaVistoria(); normalizar(S.v); toastSave("A vistoria aberta foi excluída por outra pessoa da equipe",true); render(); }
+  else if(!S.list.includes(S.v) && S.v.updatedAt===S.v.createdAt && S.list.length){ S.v=S.list[0]; normalizar(S.v); render(); }
+  else if(mudouAtual){ nvGravarLocal(S.v); renderRemoto(); if(quem) toastSave("Atualizado por "+(quem.nome||"outra pessoa")+" às "+new Date(quem.t||Date.now()).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})); }
+  if(document.getElementById("dlgList").open) abrirLista();
+  atualizarChipNuvem(); atualizarCardNuvem(); atualizarChrome();
+}
+/* envia vistorias deste aparelho que a nuvem ainda não tem; apaga daqui as que foram excluídas por outra pessoa */
+function nvReconciliar(soEnviar){ const conh=nvConhecidas();
+  for(const v of S.list.slice()){ if(NV.base[v.id]) continue;
+    if(conh.has(v.id)){ if(!soEnviar && NV.servidor){ S.list=S.list.filter(x=>x!==v); idbDel("vistorias",v.id).catch(()=>{}); nvMarcar(v.id,false); if(v===S.v){ S.v=S.list[0]||novaVistoria(); normalizar(S.v); render(); } } }
+    else nvEnviar(v); } }
+function nvGravarLocal(v){ if(S.store==="idb") idbPut("vistorias",JSON.parse(JSON.stringify(v))).catch(()=>{}); }
+function nvEnviar(v){
+  if(!NV.b || !NV.user || !NV.pronta || NV.estado==="semAcesso") return;
+  const base=NV.base[v.id]; let w=paraWire(v); const ops=diffWire(base,w).filter(o=>o.p[0]!=="_por");
+  if(base && !ops.length) return;
+  v._por={nome:NV.user.nome, email:NV.user.email, dev:DEV, t:Date.now()}; w._por=JSON.parse(JSON.stringify(v._por)); ops.push({p:["_por"],v:w._por});
+  NV.base[v.id]=w; nvMarcar(v.id,true);
+  const p = base? NV.b.atualizar(v.id,ops) : NV.b.criar(v.id,w);
+  Promise.resolve(p).catch(e=>{ if(/permission/i.test(e&&(e.code||e.message)||"")){ NV.estado="semAcesso"; } NV.erro=msgErro(e); delete NV.base[v.id]; atualizarChipNuvem(); atualizarCardNuvem(); });
+}
+function nvApagar(id){ nvMarcar(id,false); delete NV.base[id]; if(NV.b && NV.user && NV.pronta) Promise.resolve(NV.b.apagar(id)).catch(()=>{}); }
+/* fotos: prévia de 1024 px vai para a nuvem para os colegas verem */
+async function nvEnviarFoto(id){
+  if(!NV.b||!NV.user||!NV.pronta||NV.estado==="semAcesso") return;
+  let r=null; try{ r=await idbGet("fotos",id); }catch(e){} if(!r||r.nuvem||r.soPrevia||/^audio/.test(r.type||"")) return;
+  const b=blobDe(r)||(S.memFotos&&S.memFotos[id]); if(!b) return;
+  const pv=await previa(b); const bytes=new Uint8Array(await pv.arrayBuffer());
+  await NV.b.salvarFoto(id,{vid:r.vid,type:"image/jpeg",bytes});
+  try{ const r2=await idbGet("fotos",id); if(r2){ r2.nuvem=true; await idbPut("fotos",r2); } }catch(e){}
+}
+async function nvFotosPendentes(){
+  if(NV.fotosRodando||!NV.pronta||!NV.user) return; NV.fotosRodando=true;
+  try{ const ids=new Set(S.list.map(v=>v.id)); const fs=(await idbAll("fotos"))||[];
+    for(const r of fs){ if(!ids.has(r.vid)||r.nuvem||r.soPrevia||/^audio/.test(r.type||"")) continue; try{ await nvEnviarFoto(r.id); }catch(e){} } }
+  catch(e){} finally{ NV.fotosRodando=false; }
+}
+async function nvBaixarFoto(id){
+  if(!NV.b||!NV.user) return null;
+  try{ const r=await NV.b.lerFoto(id); if(!r) return null; const blob=new Blob([r.bytes],{type:r.type});
+    try{ await idbPut("fotos",{id,prev:await blob.arrayBuffer(),type:r.type,vid:r.vid,criado:Date.now(),soPrevia:true,nuvem:true}); }catch(e){}
+    return blob; }catch(e){ return null; }
+}
+/* redesenha preservando o campo em que a pessoa está digitando */
+function renderRemoto(){
+  const a=document.activeElement; let sel=null, ss=null, se=null;
+  if(a && a!==document.body && M.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)){
+    const at=[...a.attributes].filter(x=>/^data-|^id$/.test(x.name)).map(x=>`[${x.name}="${CSS.escape(x.value)}"]`).join("");
+    sel=a.tagName.toLowerCase()+at; try{ ss=a.selectionStart; se=a.selectionEnd; }catch(e){} }
+  const abertos=[...M.querySelectorAll("details[open]")].map(d=>{ const c=d.closest("[id]"); return c? c.id+"|"+[...c.querySelectorAll("details")].indexOf(d) : null; }).filter(Boolean);
+  render(true);
+  abertos.forEach(k=>{ const [id,i]=k.split("|"); const c=document.getElementById(id); const d=c&&c.querySelectorAll("details")[+i]; if(d) d.open=true; });
+  if(sel){ const el=M.querySelector(sel); if(el){ el.focus({preventScroll:true}); try{ if(ss!=null) el.setSelectionRange(ss,se); }catch(e){} } }
+}
+function atualizarChipNuvem(){
+  const c=document.getElementById("nvChip"); if(!c) return;
+  if(!nvConfigurada()||NV.estado==="off"){ c.hidden=true; return; }
+  const ic='<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c.6-3.2 3-5 6-5s5.4 1.8 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.2c2.6-.3 4.8 1.2 5.5 4.3"/></svg>';
+  const m={saiu:["","Equipe: entrar"],conectando:["warn","Conectando…"],aoVivo:["ok","Ao vivo"],offline:["warn","Offline"],semAcesso:["crit","Sem acesso"],erro:["crit","Equipe: erro"]}[NV.estado]||["",""];
+  c.hidden=false; c.className="drv "+m[0]; c.innerHTML=ic+esc(m[1]);
+  c.title={saiu:"Entre com sua conta Google para editar com a equipe em tempo real",aoVivo:"Conectado: as edições aparecem na hora nos outros aparelhos",offline:"Sem internet: as edições ficam guardadas e sobem quando o sinal voltar",semAcesso:"Seu e-mail não está na lista da equipe",conectando:"Conectando à nuvem da equipe"}[NV.estado]||NV.erro;
+}
+function tocarChipNuvem(){ if(NV.estado==="saiu"){ nvEntrar(); return; } irPara("rel"); const el=document.getElementById("cardNuvem"); el&&el.scrollIntoView({block:"start"}); }
+function atualizarCardNuvem(){ if(S.tab!=="rel") return; const el=document.getElementById("cardNuvem"); if(el) el.outerHTML=rNuvem(); }
+function rNuvem(){
+  if(!nvConfigurada()) return "";
+  const u=NV.user; const por=S.v._por;
+  const txt={saiu:"Entre com sua conta Google para ver e editar as vistorias da equipe em tempo real, no celular e no computador.",
+    conectando:"Conectando…", aoVivo:"Conectado. O que você edita aparece na hora para quem estiver com o app aberto, e vice-versa.",
+    offline:"Sem internet agora. As edições ficam guardadas neste aparelho e sobem sozinhas quando o sinal voltar.",
+    semAcesso:"O e-mail <b>"+esc(u&&u.email||"")+"</b> não está na lista da equipe. Peça ao administrador para incluí-lo (Firebase › Firestore › acesso › equipe › emails).",
+    erro:"Erro na conexão com a nuvem: "+esc(NV.erro)}[NV.estado]||"";
+  return `<section class="card" id="cardNuvem"><div class="card-h"><h2>Equipe em tempo real</h2><span class="status">${u?esc(u.email):"não conectado"}</span></div>
+    <p class="lead">${txt}</p>
+    ${por&&por.t?`<p class="status">Última edição desta vistoria: ${esc(por.nome||por.email||"")}${por.dev===DEV?" (este aparelho)":""}, ${new Date(por.t).toLocaleString("pt-BR")}</p>`:""}
+    <p class="lead">As fotos aparecem para a equipe em versão reduzida; a original fica no aparelho de quem fotografou e no Drive dele. Os áudios ficam no aparelho de quem gravou; a transcrição aparece para todos.</p>
+    <div class="row">${u?`<button class="btn" type="button" data-act="nvSair">Sair da equipe neste aparelho</button>`:`<button class="btn pri" type="button" data-act="nvEntrar">Entrar com Google</button>`}</div></section>`;
+}
+window.addEventListener("online",()=>{ if(NV.pronta){ NV.estado="aoVivo"; atualizarChipNuvem(); nvFotosPendentes(); } });
+window.addEventListener("offline",()=>{ if(NV.pronta){ NV.estado="offline"; atualizarChipNuvem(); } });
+
 /* ============================== Início ============================== */
 (async function(){
   S.v=novaVistoria(); render();
@@ -1821,6 +1997,7 @@ setInterval(()=>{ if(navigator.onLine && sttKey() && transcricoesPendentes()) tr
   toastSave(S.store==="idb"?"Salvo no aparelho":"Sem armazenamento");
   try{ if(navigator.permissions){ const p=await navigator.permissions.query({name:"geolocation"}); if(p.state==="granted") iniciarGPS(); } }catch(e){}
   atualizarChipDrive(); if(autoLigado() && navigator.onLine){ carregarGIS().catch(()=>{}); agendarSync(2000); }
+  nvIniciar();
 })();
 
 
