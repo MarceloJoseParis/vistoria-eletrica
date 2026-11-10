@@ -1472,7 +1472,7 @@ const LS_TOK="vistoriaEletrica.driveToken", LS_AUTO="vistoriaEletrica.autoDrive"
 try{ const t=JSON.parse(localStorage.getItem(LS_TOK)||"null"); if(t&&t.exp>Date.now()){ DRIVE.token=t.token; DRIVE.exp=t.exp; } }catch(e){}
 /* Servidor de arquivos da equipe (Apps Script, pasta central no Drive). Com ele não é preciso autorizar o Drive:
    o envio usa o login da equipe (Firebase). Sem a URL, o app volta ao envio direto para o Drive de cada um. */
-const SRV_URL=window.__srvUrl||"";
+const SRV_URL=window.__srvUrl||"https://script.google.com/macros/s/AKfycbxOWQ1uBhMYDFjAF7hwY99z7Jfn5ZbPZCc-1JN907zV1fWGv1ltu6W3-_1WSYx4LBcCPw/exec";
 function srvModo(){ return !!SRV_URL; }
 function srvPronto(){ return srvModo() && !!(NV.b && NV.user) && NV.estado!=="semAcesso"; }
 function blobB64(b){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(",")[1]||""); r.onerror=()=>rej(r.error||new Error("não foi possível ler o arquivo")); r.readAsDataURL(b); }); }
