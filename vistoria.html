@@ -161,6 +161,9 @@ details.card > summary small{font-family:var(--f-body);font-weight:400;font-size
 .qd-nome{display:flex;gap:10px;align-items:flex-end;padding:12px 14px;border-bottom:1px solid var(--line)}
 .qd-nome label{flex:1}
 .qd-add{padding:12px 14px}
+.ocs{display:grid;gap:8px}
+.oc{display:grid;grid-template-columns:76px 1fr;gap:10px;align-items:center}
+.oc textarea{min-width:0;min-height:0;font-size:14.5px}
 details.pd summary{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-weight:400}
 details.pd summary small{color:var(--muted)}
 details.pd .gp{margin-top:8px}
@@ -318,7 +321,7 @@ dialog::backdrop{background:rgba(8,12,16,.55)}
     <div class="grab"></div>
     <button type="button" data-act="fabNota">Registro de campo com foto<small>Abre a câmera; depois escreva a anotação</small></button>
     <button type="button" data-act="fabNotaTxt">Registro de campo só texto<small>Anotação livre, fora do checklist</small></button>
-    <button type="button" data-act="fabGeral">Foto da vista geral<small>Fachada, placa da obra, padrão de entrada</small></button>
+    <button type="button" data-act="fabGeral">Foto da vista geral<small>Fachada, placa da escola, padrão de entrada</small></button>
     <button type="button" data-act="fecharSheet" style="text-align:center">Cancelar</button>
   </div>
 </div>
@@ -502,7 +505,7 @@ function itensAtivos(v){ const out=[]; ETAPAS.forEach(e=>{ if(e.opc && !v.aplica
 /* achados que geram recomendação à SEDUC; prioridade sugerida automaticamente, ajustável pelo vistoriador */
 function pendencias(v){
   const L=[];
-  itensAtivos(v).forEach(x=>{ if(x.st.s==="NC") L.push({key:"chk:"+x.id, origem:"Inspeção – etapa "+x.e.id+(x.qn?" – "+x.qn:""), desc:(x.qn?codBase(x.base)+" ("+x.qn+"): ":"")+x.t+(x.st.obs? " — "+x.st.obs:""), sug:"Alta"}); });
+  itensAtivos(v).forEach(x=>{ if(x.st.s==="NC") L.push({key:"chk:"+x.id, origem:"Inspeção – etapa "+x.e.id+(x.qn?" – "+x.qn:""), desc:(x.qn?codBase(x.base)+" ("+x.qn+"): ":"")+x.t+(x.st.obs? " — "+x.st.obs:"")+(()=>{ const l=(x.st.fotos||[]).map(f=>(f.leg||"").trim()).filter(Boolean); return l.length? " — Ocorrências: "+l.join("; ") : ""; })(), sug:"Alta"}); });
   v.correntes.forEach(r=>{ const c=calcCorrente(r,v.cfg.deseq); c.flags.forEach(f=>L.push({key:"cor:"+r.id+":"+f.k, origem:"Correntes – "+(r.quadro||"quadro")+" / "+(r.circuito||"circuito"), desc:f.txt, sug:f.sev==="crit"?"Urgente":f.sev==="doc"?"A verificar":"Alta"})); });
   v.termo.forEach(r=>{ const c=calcTermo(r); if(c.sev>=2) L.push({key:"ter:"+r.id, origem:"Termografia – "+(r.local||"ponto"), desc:(r.componente||"Componente")+": ΔT = "+fmt(c.dt,1)+" °C ("+(r.refTipo==="ambiente"?"vs. ambiente":"vs. similar")+") – "+c.txt, sug:c.sev>=3?"Urgente":"Alta"}); });
   return L.map(p=>{ const s=v.pend[p.key]||{}; return Object.assign(p,{classe:prio(s.classe)||p.sug, prov:s.prov||"", prazo:s.prazo||""}); });
@@ -644,7 +647,7 @@ function dadosParaClaude(v){
     instrumentos:{alicate:v.instr.alicate, camera_termografica:v.instr.termo},
     outras_limitacoes:v.instr.obsLimit,
     inspecao_visual: ETAPAS.map(e=>({etapa:e.id+" – "+e.t, aplica:(!e.opc||!!v.aplica[e.id]),
-      itens:(!e.opc||v.aplica[e.id])? itensDaEtapa(v,e).map(({id,m,t,qn})=>{ const s=v.check[id]||{}; return {item:codItem(id,v), quadro:qn||undefined, metodo:METODO[m], descricao:t, situacao:s.s||"sem registro", obs:s.obs||"", fotos:fotosDe("chk:"+id)}; }):[] })),
+      itens:(!e.opc||v.aplica[e.id])? itensDaEtapa(v,e).map(({id,m,t,qn})=>{ const s=v.check[id]||{}; return {item:codItem(id,v), quadro:qn||undefined, metodo:METODO[m], descricao:t, situacao:s.s||"sem registro", obs:s.obs||"", fotos_e_ocorrencias:fotos.filter(f=>f.ref==="chk:"+id).map(f=>({foto:"Foto "+f.num, legenda:(f.f.leg||"").trim(), relato_audio:(f.f.audio&&f.f.audio.txt)||""}))}; }):[] })),
     medicoes_corrente: v.correntes.map(r=>{ const c=calcCorrente(r,v.cfg.deseq); return {quadro:r.quadro,circuito:r.circuito,disjuntor_In_A:r.disjIn,cabo_mm2:r.cabo,Iz_A:c.iz!=null?+c.iz.toFixed(1):null,Iz_min_A_se_agrupado:c.izMin!=null?+c.izMin.toFixed(1):null,Iz_origem:c.iz==null?"":(c.izEst?c.izDesc:"informada pelo vistoriador"),fase_A:r.ia,fase_B:r.ib,fase_C:r.ic,neutro:r.ineutro,pct_In:c.pctIn!=null?+c.pctIn.toFixed(0):null,desequilibrio_pct:c.deseq!=null?+c.deseq.toFixed(1):null,alertas:c.flags.map(f=>f.txt),obs:r.obs}; }),
     limite_desequilibrio_adotado_pct:v.cfg.deseq,
     termografia: v.termo.map(r=>{ const c=calcTermo(r); return {local:r.local,componente:r.componente,Tmax_C:r.tmax,Tref_C:r.tref,referencia:r.refTipo==="ambiente"?"ar ambiente":"componente similar",deltaT_C:c.dt!=null?+c.dt.toFixed(1):null,classificacao_NETA:c.txt,acao:c.acao,carga_pct:c.carga!=null?+c.carga.toFixed(0):null,carga_abaixo_40:!!c.baixaCarga,obs:r.obs,fotos:fotosDe("ter:"+r.id)}; }),
@@ -673,6 +676,7 @@ Regras obrigatórias:
 12. Na etapa 3 cada quadro ("quadros_inspecionados") tem seus próprios itens, identificados pelo nome do quadro entre parênteses. Na seção 5, agrupe as constatações da etapa 3 por quadro.
 13. Quando "Iz_origem" indicar estimativa, diga que a capacidade de condução do cabo foi estimada pelas Tabelas 36/37 da NBR 5410 nas condições indicadas, sem projeto para confirmar. Quando houver "Iz_min_A_se_agrupado", o agrupamento não foi verificado: a Iz real fica entre esse valor e "Iz_A". O alerta de disjuntor maior que a Iz (In > Iz) indica cabo sem proteção contra sobrecarga, com risco de aquecimento e incêndio.
 14. Recomendações ("achados_e_recomendacoes"): quando "recomendacao" ou "prazo" estiverem vazios, proponha você uma recomendação objetiva à SEDUC (o serviço a contratar ou executar, por exemplo substituição, adequação, instalação, levantamento ou ensaio, por profissional habilitado, com a norma aplicável) e um prazo coerente com a prioridade (Urgente: imediato, com desligamento ou isolamento do circuito se houver risco a pessoas; Alta: até 90 dias; Programada: no próximo plano de manutenção ou reforma; A verificar: levantamento ou ensaio em até 60 dias). Quando "prioridade_definida_pelo_vistoriador" for falso, a prioridade é só uma sugestão automática: mantenha-a ou ajuste com base na descrição, sem comentar o ajuste. O que o vistoriador preencheu prevalece. Quando várias constatações tiverem a mesma solução (por exemplo, substituição de um quadro), agrupe-as numa recomendação só.
+15. Na inspeção visual, cada foto de um item pode ter legenda com o local e a descrição da ocorrência ("fotos_e_ocorrencias"). Para itens NC, liste as ocorrências com o local e o número da foto; ocorrências do mesmo problema em vários locais ficam no mesmo item. Nas recomendações, cite os locais afetados.
 
 Texto de escopo:
 """${ESCOPO_TXT}"""
@@ -706,7 +710,9 @@ function rascunhoAuto(v){
     const its=itensDaEtapa(v,e).map(({id,t:tx})=>({id,tx,s:(v.check[id]||{}).s,obs:(v.check[id]||{}).obs}));
     const c=its.filter(x=>x.s==="C").length, nc=its.filter(x=>x.s==="NC"), nv=its.filter(x=>!x.s||x.s==="NV").length;
     P("Etapa "+e.id+" – "+e.t+(e.id==="3"?" ("+(v.quadros||[]).map((q,i)=>nomeQd(q,i)).join("; ")+")":"")+": "+c+" conforme(s), "+nc.length+" não conforme(s), "+nv+" não verificado(s).");
-    nc.forEach(x=>P("- "+codItem(x.id,v)+" não conforme: "+x.tx+(x.obs?". "+x.obs:"")+fr("chk:"+x.id)));
+    nc.forEach(x=>{ const fs=fotos.filter(f=>f.ref==="chk:"+x.id); const leg=fs.filter(f=>(f.f.leg||"").trim()), sem=fs.filter(f=>!(f.f.leg||"").trim());
+      P("- "+codItem(x.id,v)+" não conforme: "+x.tx+(x.obs?". "+x.obs:"")+(sem.length?" ("+sem.map(f=>"Foto "+f.num).join(", ")+")":"")+(leg.length?". Ocorrências:":""));
+      leg.forEach(f=>P("  - "+f.f.leg.trim()+" (Foto "+f.num+")")); });
     its.filter(x=>x.s==="C"&&x.obs).forEach(x=>P("- "+codItem(x.id,v)+": "+x.obs+fr("chk:"+x.id)));
   });
   if((v.notas||[]).length){ P("Registros de campo:"); v.notas.forEach((nt,k)=>P("- Registro "+(k+1)+" ("+dtBR(new Date(nt.t)).slice(0,16)+"): "+(nt.txt||"sem anotação")+fr("nota:"+nt.id))); }
@@ -910,6 +916,8 @@ function removerFoto(pref){
 function audBadge(a){ return a&&a.id? `<span class="aud">● ${fmtDur(a.dur)}</span>` : ""; }
 function fmtDur(s){ s=Math.max(0,Math.round(s||0)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
 function th(f,pref,lbl){ return `<button type="button" class="th" data-ver="${esc(pref)}" aria-label="Ampliar foto"><img data-fid="${esc(f.id)}" src="${esc(fotoURL(f))}" alt="">${lbl?`<span class="lbl">${esc(lbl)}</span>`:""}${audBadge(f.audio)}</button>`; }
+/* fotos de um item do checklist: cada uma é uma ocorrência, com legenda (local e o que foi visto) */
+function ocorrencias(fotos,prefixo,nc){ return (fotos||[]).length? `<div class="ocs">${fotos.map((f,i)=>`<div class="oc">${th(f,prefixo+":"+i,String(i+1))}<textarea data-leg="${esc(prefixo+":"+i)}" rows="2" placeholder="${nc?"Onde e o quê (ex.: Bloco B, sala 4 – fio solto no forro)":"Legenda: local e o que mostra"}" aria-label="Legenda da foto ${i+1}">${esc(f.leg||"")}</textarea></div>`).join("")}</div>` : ""; }
 function strip(fotos,prefixo){ return `<div class="strip">${(fotos||[]).map((f,i)=>th(f,prefixo+":"+i)).join("")}</div>`; }
 function camBtn(tgt,txt,n){ return `<label class="mini ${n?"has":""}">${ICON.cam}${txt||"Foto"}${n?` (${n})`:""}<input type="file" accept="image/*" capture="environment" data-addph="${esc(tgt)}"></label>`; }
 
@@ -1028,14 +1036,16 @@ function itemHTML(id,m,t){ const st=S.v.check[id]||{}; const nf=(st.fotos||[]).l
   return `<div class="it" id="it_${id}" data-s="${st.s||""}">
     <div class="it-t"><span class="tag ${m}">${m==="T"?"Câmera":"Visual"}</span>${esc(t)}</div>
     <div class="seg4" role="group" aria-label="Situação">${["C","NC","NA","NV"].map(s=>`<button type="button" data-item="${id}" data-v="${s}" aria-pressed="${st.s===s}">${s}</button>`).join("")}</div>
-    <div class="it-x"><button type="button" class="mini ${st.obs?"has":""}" data-act="obs" data-id="${id}">${ICON.obs}Obs</button>${camBtn("c:"+id,"Foto",nf)}<button type="button" class="mini ${(st.fotos||[]).some(f=>f.audio&&f.audio.id)?"has":""}" data-mic="c:${id}">${ICON.mic}Áudio</button></div>
-    <textarea data-itemobs="${id}" placeholder="Observação: local, o que foi visto, valor de placa…" rows="2" ${showObs?"":"hidden"}>${esc(st.obs||"")}</textarea>
-    ${strip(st.fotos,"c:"+id)}
+    <div class="it-x"><button type="button" class="mini ${st.obs?"has":""}" data-act="obs" data-id="${id}">${ICON.obs}Obs</button>${camBtn("c:"+id,st.s==="NC"?"+ Ocorrência":"Foto",nf)}<button type="button" class="mini ${(st.fotos||[]).some(f=>f.audio&&f.audio.id)?"has":""}" data-mic="c:${id}">${ICON.mic}Áudio</button></div>
+    <textarea data-itemobs="${id}" placeholder="Observação geral do item (o local de cada problema vai na legenda da foto)" rows="2" ${showObs?"":"hidden"}>${esc(st.obs||"")}</textarea>
+    ${ocorrencias(st.fotos,"c:"+id,st.s==="NC")}
     ${m==="T"? S.v.termo.map((r,i)=>r.item===id?cardTer(r,i):"").join("")+`<button type="button" class="mini" data-act="addTer" data-ponto="${id}">${ICON.termo}+ Ponto quente</button>` : ""}</div>`; }
 function marcar(id,val){
   const st=S.v.check[id]||(S.v.check[id]={}); st.s = st.s===val? "" : val; vib();
   const it=document.getElementById("it_"+id); it.dataset.s=st.s;
   it.querySelectorAll(".seg4 button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===st.s)));
+  { const lab=it.querySelector("label.mini"), inp=lab&&lab.querySelector("input[data-addph]"); if(lab&&inp){ const nf=(st.fotos||[]).length; lab.innerHTML=ICON.cam+(st.s==="NC"?"+ Ocorrência":"Foto")+(nf?` (${nf})`:""); lab.appendChild(inp); }
+    it.querySelectorAll("textarea[data-leg]").forEach(x=>x.placeholder=st.s==="NC"?"Onde e o quê (ex.: Bloco B, sala 4 – fio solto no forro)":"Legenda: local e o que mostra"); }
   if(st.s==="NC"){ const ta=it.querySelector("textarea[data-itemobs]"); ta.hidden=false; S.obsOpen.add(id); if(!ta.value) ta.focus({preventScroll:false}); }
   agendarSalvar();
   const inf=infoItem(id); const e=inf.e; const x=etapaInfo(e);
@@ -1420,6 +1430,7 @@ document.addEventListener("input", ev=>{
     agendarSalvar(); return; }
   if(el.dataset.path){ let val=el.value; if(el.dataset.mask==="conv"){ val=maskConv(val); el.value=val; } if(el.dataset.path==="cfg.deseq") val=n(val)??10; setPath(S.v,el.dataset.path,val); agendarSalvar(); return; }
   if(el.dataset.qdnome){ const q=S.v.quadros.find(q=>q.id===el.dataset.qdnome); if(!q) return; q.nome=el.value; const i=S.v.quadros.indexOf(q); const h=document.getElementById("qdn_"+q.id); if(h) h.textContent=nomeQd(q,i); S.v.correntes.forEach(r=>{ if(r.qd===q.id) r.quadro=nomeQd(q,i); }); agendarSalvar(); return; }
+  if(el.dataset.leg){ const f=fotoPorRef(el.dataset.leg); if(f){ f.leg=el.value; agendarSalvar(); } return; }
   if(el.dataset.itemobs){ const id=el.dataset.itemobs; const st=S.v.check[id]||(S.v.check[id]={}); st.obs=el.value; const btn=document.querySelector(`button[data-act="obs"][data-id="${id}"]`); btn&&btn.classList.toggle("has",!!el.value); agendarSalvar(); return; }
   if(el.dataset.audtxt){ const h=holderPorRef(el.dataset.audtxt); if(h&&h.audio){ h.audio.txt=el.value; h.audio.fonte=el.value?"editada":""; h.audio.st=el.value?"ok":"fila"; agendarSalvar(); } return; }
   if(el.id==="sttKey"){ try{ localStorage.setItem(LS_STT,el.value.trim()); }catch(e){} if(el.value.trim()) agendarTranscricao(1500); return; }
@@ -1438,7 +1449,9 @@ document.addEventListener("change", async ev=>{
   if(el.dataset.addph && el.files && el.files[0]){
     const tgt=el.dataset.addph, file=el.files[0]; const lab=el.closest("label"); if(lab) lab.style.opacity=".5"; toastSave("Processando foto…");
     try{ const f=await guardarFoto(file,tgt); colocarFoto(tgt,f); agendarSalvar(); agendarSync(2500); }catch(e){ toastSave("Não foi possível ler a imagem: "+msgErro(e), true); }
-    render(true); return; }
+    render(true);
+    if(/^c:/.test(tgt)){ const fs=(S.v.check[tgt.slice(2)]||{}).fotos||[]; const inp=document.querySelector(`textarea[data-leg="${tgt}:${fs.length-1}"]`); if(inp){ inp.scrollIntoView({block:"center"}); inp.focus({preventScroll:true}); } }
+    return; }
 });
 document.addEventListener("keydown", ev=>{
   const el=ev.target; if(ev.key!=="Enter" || el.tagName!=="INPUT") return;
