@@ -1827,7 +1827,9 @@ setInterval(()=>{ if(navigator.onLine && sttKey() && transcricoesPendentes()) tr
    Listas com id (medições, pontos quentes, quadros, fotos…) viram mapas por id na nuvem, para não sobrescreverem umas às outras.
    "drive" (pastas e envios ao Drive) é de cada usuário e não sobe. Fotos: uma prévia (1024 px) vai para a coleção "fotos";
    a foto original continua no aparelho de quem tirou e no Drive dele. O Firestore guarda tudo no aparelho e envia quando houver sinal. */
-const FB_CFG=null; /* firebaseConfig do projeto (Configurações do projeto › Seus apps) */
+/* firebaseConfig do projeto (Configurações do projeto › Seus apps). Não é senha: o acesso é controlado pelas regras do Firestore. */
+const FB_CFG={apiKey:"AIzaSyB4AjqG2dFOD0NeF3q77Qlmkv5f0oR53MQ",authDomain:"vistoria-eletrica.firebaseapp.com",projectId:"vistoria-eletrica",
+  storageBucket:"vistoria-eletrica.firebasestorage.app",messagingSenderId:"343193147784",appId:"1:343193147784:web:af39c09cc91f2c105f023d"};
 const DEV=(()=>{ try{ let d=localStorage.getItem("vistoriaEletrica.dev"); if(!d){ d="d"+uid8(); localStorage.setItem("vistoriaEletrica.dev",d); } return d; }catch(e){ return "d"+uid8(); } })();
 const NV={b:null, estado:"off", user:null, base:{}, pronta:false, servidor:false, erro:"", fotosRodando:false, parar:null};
 const SO_LOCAL=["drive"];
