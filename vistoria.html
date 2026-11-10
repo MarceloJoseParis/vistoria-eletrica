@@ -161,6 +161,9 @@ details.card > summary small{font-family:var(--f-body);font-weight:400;font-size
 .qd-nome{display:flex;gap:10px;align-items:flex-end;padding:12px 14px;border-bottom:1px solid var(--line)}
 .qd-nome label{flex:1}
 .qd-add{padding:12px 14px}
+details.pd summary{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-weight:400}
+details.pd summary small{color:var(--muted)}
+details.pd .gp{margin-top:8px}
 .izl{font-size:13px}
 .izl b{color:var(--ink)}
 details.izc{display:grid;gap:6px}
@@ -629,7 +632,7 @@ function dadosParaClaude(v){
     medicoes_corrente: v.correntes.map(r=>{ const c=calcCorrente(r,v.cfg.deseq); return {quadro:r.quadro,circuito:r.circuito,disjuntor_In_A:r.disjIn,cabo_mm2:r.cabo,Iz_A:c.iz!=null?+c.iz.toFixed(1):null,Iz_origem:c.iz==null?"":(c.izEst?c.izDesc:"informada pelo fiscal"),fase_A:r.ia,fase_B:r.ib,fase_C:r.ic,neutro:r.ineutro,pct_In:c.pctIn!=null?+c.pctIn.toFixed(0):null,desequilibrio_pct:c.deseq!=null?+c.deseq.toFixed(1):null,alertas:c.flags.map(f=>f.txt),obs:r.obs}; }),
     limite_desequilibrio_adotado_pct:v.cfg.deseq,
     termografia: v.termo.map(r=>{ const c=calcTermo(r); return {local:r.local,componente:r.componente,Tmax_C:r.tmax,Tref_C:r.tref,referencia:r.refTipo==="ambiente"?"ar ambiente":"componente similar",deltaT_C:c.dt!=null?+c.dt.toFixed(1):null,classificacao_NETA:c.txt,acao:c.acao,carga_pct:c.carga!=null?+c.carga.toFixed(0):null,carga_abaixo_40:!!c.baixaCarga,obs:r.obs,fotos:fotosDe("ter:"+r.id)}; }),
-    pendencias: pendencias(v).map(p=>({origem:p.origem,descricao:p.desc,classe:p.classe,providencia:p.prov,prazo_dias:p.prazo})),
+    pendencias: pendencias(v).map(p=>{ const d=v.pend[p.key]||{}; return {origem:p.origem,descricao:p.desc,classe:p.classe,classe_definida_pelo_fiscal:!!d.classe,providencia:p.prov,prazo_dias:p.prazo}; }),
     relatos_em_audio:todosAudios(v).map(x=>({vinculo:x.rot, duracao_s:x.a.dur, transcricao:x.a.txt||"", fonte_transcricao:x.a.txt?(x.a.fonte||""):"", situacao:x.a.txt?"transcrito":"PENDENTE: transcrever o arquivo de áudio no Drive", arquivo_audio_drive:x.a.driveId?"https://drive.google.com/file/d/"+x.a.driveId+"/view":"(ainda não enviado ao Drive)"})),
     registros_de_campo:(v.notas||[]).map((nt,k)=>({registro:k+1,data_hora:dtBR(new Date(nt.t)),texto:nt.txt||"",fotos:fotosDe("nota:"+nt.id)})),
     total_fotos:fotos.length
@@ -652,6 +655,7 @@ Regras obrigatórias:
 10. Na metodologia, informe que as fotos levam carimbo com data, hora, coordenadas, endereço e identificação, e que a origem de cada dado (metadados da câmera ou informado pelo fiscal) consta no próprio carimbo. Endereço da unidade: ${v.local.endereco||"não informado"}. Coordenadas: ${v.local.lat!=null?fmtCoord(v.local.lat,v.local.lon)+" ("+(v.local.fonte||"")+")":"não informadas"}.
 12. Na etapa 3 cada quadro ("quadros_inspecionados") tem seus próprios itens, identificados pelo nome do quadro entre parênteses. Na seção 5, agrupe as constatações da etapa 3 por quadro.
 13. Quando "Iz_origem" indicar estimativa, diga que a capacidade de condução do cabo foi estimada pelas Tabelas 36/37 da NBR 5410 nas condições indicadas (não verificada em projeto) e recomende a confirmação pelo RT da executora. O alerta de disjuntor maior que a Iz (In > Iz) indica cabo sem proteção contra sobrecarga.
+14. Pendências: quando "providencia" ou "prazo_dias" estiverem vazios, proponha você uma providência objetiva a exigir da executora (o que corrigir e que comprovação apresentar, com a norma aplicável: NBR 5410, NBR 5419, NDU da Energisa, projeto aprovado) e um prazo em dias coerente com a classe (Grave: corrigir antes do recebimento ou de imediato; Moderada: 15 a 30 dias; Documental: 15 dias). Quando "classe_definida_pelo_fiscal" for falso, a classe é só uma sugestão automática: mantenha-a ou ajuste com base na descrição, sem comentar o ajuste. O que o fiscal preencheu prevalece. Escreva as providências e prazos no relatório como exigências da fiscalização.
 
 Texto de escopo:
 """${ESCOPO_TXT}"""
@@ -1198,10 +1202,13 @@ function rRel(){
   const r=S.v.rel, R=resumo(S.v), L=pendencias(S.v); const share=!!(navigator.canShare && window.File);
   return `<div class="tiles"><div class="tile"><b>${R.feitos}/${R.total}</b><span>itens avaliados</span></div><div class="tile ${R.nc?"crit":""}"><b>${R.nc}</b><span>não conformes</span></div><div class="tile ${R.cor?"warn":""}"><b>${R.cor}</b><span>alertas de corrente</span></div><div class="tile ${R.ter?"crit":""}"><b>${R.ter}</b><span>anomalias térmicas</span></div></div>
   <section class="card"><div class="card-h"><h2>Pendências</h2><span class="status">${L.length} item(ns)</span></div>
-    ${L.length? L.map(p=>`<div class="pend" data-c="${esc(p.classe)}"><div class="src">${esc(p.origem)}</div><div>${esc(p.desc)}</div>
+    <p class="lead">Registro automático de itens NC, alertas de corrente e pontos quentes. <b>Classe, providência e prazo são opcionais</b>: o Claude propõe ao redigir o relatório. Preencha só o que quiser definir você mesmo.</p>
+    ${L.length? L.map(p=>{ const def=S.v.pend[p.key]||{}; const meu=!!(def.classe||def.prov||def.prazo);
+      return `<div class="pend" data-c="${esc(p.classe)}"><div class="src">${esc(p.origem)}</div><div>${esc(p.desc)}</div>
+      <details class="como pd" ${meu?"open":""}><summary><span class="pill ${p.classe==="Grave"?"crit":p.classe==="Moderada"?"warn":"na"}">${esc(p.classe)}${def.classe?"":" (sugerida)"}</span> <small>${meu?"definido por você":"providência e prazo: o Claude propõe"}</small></summary>
       <div class="gp"><select data-pend="${esc(p.key)}" data-k="classe" aria-label="Classe">${["Grave","Moderada","Documental"].map(c=>`<option ${c===p.classe?"selected":""}>${c}</option>`).join("")}</select>
-      <input type="text" data-pend="${esc(p.key)}" data-k="prov" value="${esc(p.prov)}" placeholder="Providência a exigir" aria-label="Providência">
-      <input type="text" data-pend="${esc(p.key)}" data-k="prazo" value="${esc(p.prazo)}" placeholder="Prazo (dias)" inputmode="numeric" aria-label="Prazo"></div></div>`).join("")
+      <input type="text" data-pend="${esc(p.key)}" data-k="prov" value="${esc(p.prov)}" placeholder="Providência a exigir (opcional)" aria-label="Providência">
+      <input type="text" data-pend="${esc(p.key)}" data-k="prazo" value="${esc(p.prazo)}" placeholder="Prazo (dias)" inputmode="numeric" aria-label="Prazo"></div></details></div>`; }).join("")
     : `<div class="empty">Sem pendências. Itens NC, alertas de corrente e anomalias térmicas aparecem aqui sozinhos.</div>`}
     <p class="lead"><b>Grave</b>: risco imediato, impede o recebimento · <b>Moderada</b>: diferente do projeto, corrigir com prazo · <b>Documental</b>: falta de comprovação.</p>
   </section>
