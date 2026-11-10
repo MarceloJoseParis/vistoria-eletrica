@@ -792,7 +792,7 @@ function confirmar(msg){ return new Promise(res=>{ const d=document.getElementBy
   const y=document.getElementById("cfYes"), no=document.getElementById("cfNo");
   const done=v=>{ y.onclick=no.onclick=null; d.close(); res(v); }; y.onclick=()=>done(true); no.onclick=()=>done(false); d.showModal(); }); }
 async function excluirVistoria(id){
-  nvApagar(id);
+  nvApagar(id); agendarExclusaoDrive(id);
   S.list=S.list.filter(v=>v.id!==id);
   try{ await idbDel("vistorias",id); const fs=await idbAll("fotos"); for(const f of fs) if(f.vid===id) await idbDel("fotos",f.id); }catch(e){ toastSave("Erro ao excluir: "+(e&&e.message||e),true); }
   if(S.v.id===id){ S.v=S.list[0]||novaVistoria(); normalizar(S.v); render(); }
@@ -1412,7 +1412,7 @@ document.addEventListener("click", async ev=>{
   if(b.id==="bkExp"){ exportarBackup(); return; }
   if(b.dataset.open){ await salvarAgora(); const x=S.list.find(v=>v.id===b.dataset.open); if(x){ S.v=x; normalizar(x); try{localStorage.setItem("vistoriaEletrica.cur",x.id);}catch(e){} } document.getElementById("dlgList").close(); S.openEt=null; S.openQd=null; S.openCor=null; S.openTer=null; render(); return; }
   if(b.dataset.dup){ const x=S.list.find(v=>v.id===b.dataset.dup); if(x){ const c=JSON.parse(JSON.stringify(x)); c.id="v-"+Date.now().toString(36)+uid8().slice(0,4); c.createdAt=Date.now(); c.ident.data=hojeISO(); c.check={}; c.correntes=[]; c.termo=[]; c.fotosGerais=[]; c.notas=[]; c.pend={}; c.drive={}; c.rel={texto:"",geradoEm:0,fonte:""}; S.v=c; S.list.unshift(c); agendarSalvar(); document.getElementById("dlgList").close(); S.tab="dados"; render(); } return; }
-  if(b.dataset.delv){ if(!(await confirmar("Excluir esta vistoria e as fotos dela? Não dá para desfazer."))) return; await excluirVistoria(b.dataset.delv); abrirLista(); return; }
+  if(b.dataset.delv){ if(!(await confirmar(srvModo()? "Excluir esta vistoria do app, para toda a equipe? A pasta dela no Drive vai para \"Excluídas\", dentro da pasta da equipe, e pode ser recuperada de lá." : "Excluir esta vistoria e as fotos dela deste aparelho? Não dá para desfazer."))) return; await excluirVistoria(b.dataset.delv); abrirLista(); return; }
 });
 document.getElementById("sheet").addEventListener("click",e=>{ if(e.target.id==="sheet") fecharSheet(); });
 function fecharSheet(){ document.getElementById("sheet").hidden=true; }
@@ -1485,6 +1485,17 @@ async function srv(acao,dados){
   let j=null; try{ j=await r.json(); }catch(e){ const x=new Error("o servidor da equipe não respondeu direito (Google ocupado?)"); x.rede=true; throw x; }
   if(!j||!j.ok){ const x=new Error((j&&j.erro)||"erro no servidor da equipe"); if(j&&j.codigo==="auth") x.auth=true; if(j&&j.codigo==="acesso") x.grave=true; throw x; }
   return j;
+}
+/* vistoria excluída no app: o servidor move a pasta dela para "Excluídas" no Drive da equipe (fila, se estiver sem sinal) */
+const LS_EXC="vistoriaEletrica.excluirDrive";
+function filaExc(){ try{ return JSON.parse(localStorage.getItem(LS_EXC)||"[]"); }catch(e){ return []; } }
+function gravarFilaExc(f){ try{ localStorage.setItem(LS_EXC,JSON.stringify(f)); }catch(e){} }
+function agendarExclusaoDrive(vid){ if(!srvModo()||!vid) return; const f=filaExc(); if(!f.includes(vid)){ f.push(vid); gravarFilaExc(f); } processarExclusoes(); }
+async function processarExclusoes(){
+  if(!srvPronto()||!navigator.onLine||S.excRodando) return; S.excRodando=true;
+  try{ for(const vid of filaExc()){ try{ await srv("excluir",{vid}); gravarFilaExc(filaExc().filter(x=>x!==vid)); }
+      catch(e){ if(e.auth||e.rede||/ação desconhecida/.test(e.message||"")) break; gravarFilaExc(filaExc().filter(x=>x!==vid)); } } }
+  finally{ S.excRodando=false; }
 }
 function autoLigado(){ try{ const a=localStorage.getItem(LS_AUTO); return srvModo()? a!=="0" : a==="1"; }catch(e){ return srvModo(); } }
 function setAuto(on){ try{ localStorage.setItem(LS_AUTO,on?"1":"0"); }catch(e){} atualizarChipDrive(); }
@@ -1613,6 +1624,7 @@ async function sincronizarDrive(manual){
   if(!navigator.onLine){ DRIVE.erro=""; atualizarChipDrive(); return; }
   if(!tokenOk()){ DRIVE.precisaAuth = totalPendentes()>0 || manual; atualizarChipDrive(); return; }
   DRIVE.rodando=true; DRIVE.erro=""; atualizarChipDrive();
+  if(srvModo()) await processarExclusoes();
   let enviadas=0, falhas=0;
   try{
     const vs=(S.list.includes(S.v)? S.list : [S.v,...S.list]).filter(v=>pendentesDe(v).length||audiosPendentesDrive(v).length);

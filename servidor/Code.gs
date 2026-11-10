@@ -10,7 +10,7 @@
  */
 const PROJETO = 'vistoria-eletrica';           // ID do projeto Firebase
 const RAIZ_NOME = 'Vistorias Elétricas (equipe)';
-const VERSAO = 1;
+const VERSAO = 2;
 
 function doGet() { return saida({ ok: true, app: 'vistoria-eletrica', versao: VERSAO }); }
 
@@ -76,6 +76,20 @@ const ACOES = {
   info: function (d) {
     try { const f = DriveApp.getFileById(d.id); return { size: f.getSize(), trashed: f.isTrashed() }; }
     catch (e) { return { size: 0, trashed: true }; }
+  },
+  /* vistoria excluída no app: a pasta dela vai para "Excluídas", dentro da pasta da equipe (dá para recuperar de lá) */
+  excluir: function (d, u) {
+    if (!d.vid) throw erro('vistoria sem identificação');
+    const props = PropertiesService.getScriptProperties();
+    const id = props.getProperty('p_' + d.vid);
+    if (!id) return { movida: false };
+    let f = null; try { f = DriveApp.getFolderById(id); } catch (e) { f = null; }
+    if (!f || f.isTrashed()) return { movida: false };
+    const r = raiz(); const it = r.getFoldersByName('Excluídas');
+    const destino = it.hasNext() ? it.next() : r.createFolder('Excluídas');
+    f.moveTo(destino);
+    f.setDescription(String('Excluída no app por ' + u.email + ' em ' + new Date().toLocaleString('pt-BR')).slice(0, 1000));
+    return { movida: true };
   },
   baixar: function (d) {
     const f = DriveApp.getFileById(d.id);
