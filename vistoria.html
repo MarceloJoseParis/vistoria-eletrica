@@ -534,12 +534,8 @@ const MES_ABREV=["jan.","fev.","mar.","abr.","mai.","jun.","jul.","ago.","set.",
 function textoDataHora(d){ const z=n=>String(n).padStart(2,"0"); return d.getDate()+" de "+MES_ABREV[d.getMonth()]+" de "+d.getFullYear()+", "+z(d.getHours())+":"+z(d.getMinutes())+":"+z(d.getSeconds()); }
 function textoCoord(lat,lon){ return lat==null? "" : lat.toFixed(6)+", "+lon.toFixed(6); }
 function linhasCarimbo(meta,tgt){
-  const v=S.v,i=v.ident; const L=[];
-  L.push(textoDataHora(meta.dt));
-  L.push(meta.lat!=null? textoCoord(meta.lat,meta.lon) : "sem coordenadas");
-  if(v.local.endereco) L.push(v.local.endereco);
-  const id=[i.convenio?"Conv. "+i.convenio:"", i.escola].filter(Boolean).join(" · "); if(id) L.push(id);
-  const rt=rotulo(tgt); L.push(rt.length>52? rt.slice(0,50).replace(/\s+\S*$/,"")+"…" : rt);
+  const L=[textoDataHora(meta.dt), meta.lat!=null? textoCoord(meta.lat,meta.lon) : "sem coordenadas"];
+  if(S.v.ident.escola) L.push(S.v.ident.escola);
   return L;
 }
 function dadosParaClaude(v){
@@ -790,7 +786,7 @@ function render(keep){
   if(S.tab==="dados" && /iP(hone|ad|od)/.test(navigator.userAgent) && !navigator.standalone && !(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)) ban.push(`<div class="banner info">No iPhone, use o app instalado: abra este endereço no Safari normal (não em aba privada), toque em Compartilhar e em <b>Adicionar à Tela de Início</b>. Em aba privada o Safari apaga tudo ao fechar.</div>`);
   if(S.fotoSoSessao) ban.push(`<div class="banner">O navegador não está deixando gravar fotos no aparelho (aba privada?). As fotos desta sessão somem ao fechar: gere o .docx antes, ou abra o app instalado.</div>`);
   if(S.store==="none") ban.push(`<div class="banner">O armazenamento do aparelho não está disponível neste navegador. Nada será guardado.</div>`);
-  if(S.v.carimbo && (S.tab==="visual"||S.tab==="termo") && (!S.v.ident.convenio||!S.v.ident.escola||!S.v.local.endereco)) ban.push(`<div class="banner info">Preencha convênio, escola e endereço em <b>Dados</b> antes das fotos: o carimbo é gravado na hora da foto.</div>`);
+  if(S.v.carimbo && (S.tab==="visual"||S.tab==="termo") && !S.v.ident.escola) ban.push(`<div class="banner info">Preencha o nome da escola em <b>Dados</b> antes das fotos: o carimbo é gravado na hora da foto.</div>`);
   M.innerHTML=ban.join("")+fn();
   M.querySelectorAll("textarea").forEach(autoGrow);
   if(S.tab==="dados") atualizarGPSst();
@@ -820,7 +816,7 @@ function rDados(){
     <span class="status" id="gpsSt"></span>
     <label class="f" for="f_local_coords"><span>Coordenadas da escola (lat, long)</span><input id="f_local_coords" type="text" data-path="local.coords" value="${esc(L.coords||"")}" placeholder="-11.86412, -55.50321" inputmode="decimal"><span class="status" id="coordSt">${ok?"Lidas: "+fmtCoord(L.lat,L.lon)+(L.fonte?" ("+esc(L.fonte)+")":""):"Ou cole as coordenadas do Google Maps."}</span></label>
     <span class="status" id="endSt"></span>
-    <p class="lead">Carimbo no mesmo padrão do fiscaliza-coipt, no canto inferior direito da foto: data e hora, coordenadas, endereço, convênio e escola, e o item. No termograma o carimbo vai numa faixa abaixo da imagem, para não cobrir a escala. GPS usado: o da foto, o do aparelho no momento, ou as coordenadas acima.</p>
+    <p class="lead">Carimbo no padrão do fiscaliza-coipt, no canto inferior direito da foto: data e hora, coordenadas e nome da escola. No termograma vai numa faixa abaixo da imagem, para não cobrir a escala. GPS usado: o da foto, o do aparelho no momento, ou as coordenadas acima.</p>
   </section>
   <details class="card"><summary>Visita e executora <small>${esc([S.v.ident.executora,S.v.ident.etapaObra].filter(Boolean).join(" · "))}</small></summary>
     ${field("ident.processo","Processo SEDUC",{ph:"SEDUC-PRO-2026/00000"})}
