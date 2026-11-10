@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vistoria Elétrica Básica</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#12171C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Vistoria">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+/* Plano: ferramenta de campo, cinza-azulado de quadro elétrico com âmbar de placa de advertência.
+   Layout: barra fixa com etapas numeradas; cada etapa é um formulário de uma coluna que vira duas no desktop. */
+:root{
+  --bg:#EDF0F2; --panel:#FFFFFF; --ink:#1A222A; --muted:#566370; --line:#D2D8DD;
+  --accent:#C27A00; --accent-ink:#7A4A00; --accent-soft:#FBEFD9;
+  --ok:#2E7D4F; --ok-soft:#E3F2E8; --warn:#A76A00; --warn-soft:#FBF0D6; --crit:#B83226; --crit-soft:#FBE5E2; --na:#7B8691; --na-soft:#ECEFF1;
+  --f-display:"Roboto Condensed","Arial Narrow",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  --f-body:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --f-mono:ui-monospace,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+  --r:8px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11161B; --panel:#192027; --ink:#E5EAEE; --muted:#9AA6B1; --line:#2C3640;
+    --accent:#F0A640; --accent-ink:#F6C27A; --accent-soft:#33291A;
+    --ok:#5BC98A; --ok-soft:#173025; --warn:#E9B44C; --warn-soft:#332A15; --crit:#F07A6B; --crit-soft:#3A1F1C; --na:#8C98A3; --na-soft:#222B33;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11161B; --panel:#192027; --ink:#E5EAEE; --muted:#9AA6B1; --line:#2C3640;
+  --accent:#F0A640; --accent-ink:#F6C27A; --accent-soft:#33291A;
+  --ok:#5BC98A; --ok-soft:#173025; --warn:#E9B44C; --warn-soft:#332A15; --crit:#F07A6B; --crit-soft:#3A1F1C; --na:#8C98A3; --na-soft:#222B33;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body)}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;text-wrap:balance;margin:0}
+h1{font-size:20px;letter-spacing:.01em}
+h2{font-size:22px}
+h3{font-size:17px}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num,input[type=number]{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--f-mono)}
+
+header.top{position:sticky;top:0;padding-top:env(safe-area-inset-top);z-index:10;background:var(--panel);border-bottom:1px solid var(--line)}
+.top-row{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:10px 16px;flex-wrap:wrap}
+.brand{display:flex;gap:10px;align-items:center;min-width:0}
+.brand .tag{font-family:var(--f-mono);font-size:12px;background:var(--accent);color:#1A1200;padding:2px 6px;border-radius:4px;white-space:nowrap}
+.brand .sub{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}
+.top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.save{font-size:12px;color:var(--muted)}
+.save.err{color:var(--crit)}
+nav.steps{display:flex;gap:4px;overflow-x:auto;padding:0 12px 8px;scrollbar-width:thin}
+nav.steps button{flex:0 0 auto;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer;display:flex;gap:6px;align-items:center}
+nav.steps button .n{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+nav.steps button[aria-current="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+nav.steps button[aria-current="true"] .n{color:var(--accent)}
+.summary{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 10px}
+.chip{display:inline-flex;gap:6px;align-items:center;font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--panel);white-space:nowrap}
+.chip b{font-family:var(--f-mono);font-weight:500}
+.chip.crit{background:var(--crit-soft);border-color:transparent;color:var(--crit)}
+.chip.warn{background:var(--warn-soft);border-color:transparent;color:var(--warn)}
+.chip.ok{background:var(--ok-soft);border-color:transparent;color:var(--ok)}
+
+main{max-width:980px;margin:0 auto;padding:20px 16px 80px;display:grid;gap:18px}
+.banner{border-radius:var(--r);padding:10px 14px;font-size:14px;background:var(--warn-soft);color:var(--ink);border-left:4px solid var(--warn)}
+.banner.info{background:var(--accent-soft);border-left-color:var(--accent)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:14px}
+.card > header{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.lead{color:var(--muted);font-size:14px;max-width:68ch;margin:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+label.f{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+label.f > span b{color:var(--ink);font-weight:500}
+input[type=text],input[type=number],input[type=date],input[type=time],select,textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;color:var(--ink)}
+textarea{min-height:70px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:8px 14px;cursor:pointer;font-weight:500;display:inline-flex;gap:6px;align-items:center}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#1A1200}
+.btn.primary:hover{filter:brightness(1.05)}
+.btn.ghost{background:transparent}
+.btn.small{padding:5px 10px;font-size:13px}
+.btn.danger{color:var(--crit)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.row-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* escopo */
+.instr{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.instr .box{border:1px solid var(--line);border-radius:var(--r);padding:12px;display:grid;gap:10px;border-top:4px solid var(--accent)}
+.notdone{margin:0;padding-left:18px;display:grid;gap:2px;font-size:14px}
+.notdone li::marker{color:var(--crit)}
+.scope-text{background:var(--bg);border:1px dashed var(--line);border-radius:6px;padding:12px;font-size:14px;max-width:none}
+
+/* checklist */
+.etapa{display:grid;gap:0;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--panel)}
+.etapa > .eh{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;background:var(--bg);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.etapa > .eh h3 .n{font-family:var(--f-mono);color:var(--accent-ink);margin-right:6px}
+.etapa.off .item{display:none}
+.toggle{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
+.item{display:grid;grid-template-columns:1fr auto;gap:8px 14px;padding:12px 14px;border-bottom:1px solid var(--line);border-left:4px solid transparent}
+.item:last-child{border-bottom:0}
+.item[data-s="C"]{border-left-color:var(--ok)}
+.item[data-s="NC"]{border-left-color:var(--crit)}
+.item[data-s="NA"],.item[data-s="NV"]{border-left-color:var(--na)}
+.item .t{font-size:14.5px}
+.item .m{display:inline-block;font-family:var(--f-mono);font-size:11px;padding:1px 5px;border-radius:3px;margin-right:6px;background:var(--na-soft);color:var(--muted);vertical-align:1px}
+.item .m.T{background:var(--accent-soft);color:var(--accent-ink)}
+.item .m.A{background:var(--accent-soft);color:var(--accent-ink)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;height:fit-content}
+.seg button{border:0;background:var(--panel);padding:6px 9px;font-size:12.5px;cursor:pointer;border-right:1px solid var(--line);font-weight:500}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"][data-v="C"]{background:var(--ok);color:#fff}
+.seg button[aria-pressed="true"][data-v="NC"]{background:var(--crit);color:#fff}
+.seg button[aria-pressed="true"][data-v="NA"],.seg button[aria-pressed="true"][data-v="NV"]{background:var(--na);color:#fff}
+.item .more{grid-column:1/-1;display:grid;gap:8px}
+.item .more textarea{min-height:44px}
+.photos{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ph{position:relative;width:84px;height:84px;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:var(--bg)}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph button{position:absolute;top:2px;right:2px;border:0;background:rgba(0,0,0,.6);color:#fff;border-radius:4px;font-size:11px;padding:1px 5px;cursor:pointer}
+.ph .lbl{position:absolute;left:0;bottom:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:10px;padding:1px 4px;font-family:var(--f-mono)}
+.addph{width:84px;height:84px;border:1px dashed var(--muted);border-radius:6px;display:grid;place-items:center;font-size:12px;color:var(--muted);cursor:pointer;text-align:center;padding:4px;background:transparent}
+.addph input{display:none}
+
+/* tabelas */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r)}
+table.t{border-collapse:collapse;width:100%;min-width:860px;font-size:13.5px}
+table.t th{text-align:left;font-weight:500;color:var(--muted);font-size:12px;padding:8px 6px;border-bottom:1px solid var(--line);background:var(--bg);white-space:nowrap}
+table.t td{padding:4px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+table.t tr:last-child td{border-bottom:0}
+table.t input,table.t select{padding:6px 6px;font-size:13.5px}
+table.t input[type=number]{width:74px}
+table.t td.calc{font-family:var(--f-mono);font-size:12.5px;white-space:nowrap;padding:8px 6px}
+.pill{display:inline-block;font-size:11.5px;font-family:var(--f-body);font-weight:500;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.crit{background:var(--crit-soft);color:var(--crit)}
+.pill.na{background:var(--na-soft);color:var(--muted)}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;font-size:13px}
+.legend div{background:var(--bg);border-radius:6px;padding:8px 10px}
+.tcards{display:grid;gap:12px}
+.tcard{border:1px solid var(--line);border-radius:var(--r);padding:12px;display:grid;gap:10px;border-left:4px solid var(--line)}
+.tcard[data-sev="1"]{border-left-color:var(--warn)}
+.tcard[data-sev="2"]{border-left-color:var(--warn)}
+.tcard[data-sev="3"]{border-left-color:var(--crit)}
+.tcard[data-sev="4"]{border-left-color:var(--crit)}
+.tcard .res{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+
+/* pendências */
+.pend{display:grid;gap:10px}
+.pitem{border:1px solid var(--line);border-radius:var(--r);padding:12px;display:grid;gap:8px;border-left:4px solid var(--line)}
+.pitem[data-c="Grave"]{border-left-color:var(--crit)}
+.pitem[data-c="Moderada"]{border-left-color:var(--warn)}
+.pitem[data-c="Documental"]{border-left-color:var(--na)}
+.pitem .src{font-size:12px;color:var(--muted);font-family:var(--f-mono)}
+.pitem .g{display:grid;grid-template-columns:160px 1fr 120px;gap:8px}
+@media (max-width:640px){.pitem .g{grid-template-columns:1fr}}
+
+/* relatório */
+#rep{min-height:420px;font-family:var(--f-body);font-size:14px;line-height:1.55}
+.status{font-size:13px;color:var(--muted)}
+.empty{padding:16px;border:1px dashed var(--line);border-radius:var(--r);color:var(--muted);font-size:14px}
+
+/* lista de vistorias */
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);padding:0;max-width:560px;width:calc(100% - 32px)}
+dialog::backdrop{background:rgba(10,14,18,.55)}
+dialog .dh{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
+dialog .db{padding:12px 16px;display:grid;gap:8px;max-height:60vh;overflow:auto}
+.vrow{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:8px}
+.vrow.cur{border-color:var(--accent)}
+.vrow .meta{font-size:12px;color:var(--muted)}
+.vrow .acts{display:flex;gap:6px;flex-shrink:0}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-row">
+    <div class="brand">
+      <span class="tag">SEDUC-MT · CIPI-SNP</span>
+      <div style="min-width:0">
+        <h1>Vistoria Elétrica Básica</h1>
+        <div class="sub" id="subtitle">Nova vistoria</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span class="save" id="saveState" aria-live="polite">Carregando…</span>
+      <span class="chip" id="netSt">…</span>
+      <button class="btn small" id="btnList" type="button">Vistorias</button>
+      <button class="btn small" id="btnNew" type="button">Nova</button>
+    </div>
+  </div>
+  <nav class="steps" id="steps" aria-label="Etapas da vistoria"></nav>
+  <div class="summary" id="summary"></div>
+</header>
+
+<main id="main"></main>
+
+<dialog id="dlgList" aria-labelledby="dlgListT">
+  <div class="dh"><h3 id="dlgListT">Vistorias salvas</h3><button class="btn small ghost" id="dlgClose" type="button">Fechar</button></div>
+  <div class="db" id="dlgBody"></div>
+</dialog>
+<dialog id="dlgConfirm" aria-labelledby="dlgConfirmT">
+  <div class="dh"><h3 id="dlgConfirmT">Confirmar</h3></div>
+  <div class="db"><p id="dlgConfirmMsg" style="margin:0"></p>
+    <div class="row-actions" style="justify-content:flex-end"><button class="btn" id="cfNo" type="button">Cancelar</button><button class="btn primary" id="cfYes" type="button">Confirmar</button></div>
+  </div>
+</dialog>
+
+<script src="lib/docx.umd.js"></script>
+<script src="lib/exifr.lite.umd.js"></script>
+<script>
+"use strict";
+/* ============================== Conteúdo técnico ============================== */
+const ETAPAS = [
+  {id:"1", t:"Entrada de energia e medição", opc:false, itens:[
+    ["e1","V","Padrão de entrada conforme projeto aprovado (NDU-001 ou NDU-002 Energisa)"],
+    ["e2","V","Disjuntor geral com corrente nominal igual à do projeto (anotar a In)"],
+    ["e3","V","Caixa de medição fechada, medidor instalado e número da UC anotado"],
+    ["e4","V","Condutor de aterramento do padrão visível e conectado"],
+    ["e5","T","Conexões do disjuntor geral sem aquecimento anormal"]]},
+  {id:"2", t:"Subestação ou transformador", opc:true, pergunta:"A obra possui subestação ou transformador?", itens:[
+    ["s1","V","Dados de placa do transformador (potência, tensões, nº de série) conforme projeto"],
+    ["s2","V","Cercamento, acesso restrito e placas de advertência de risco elétrico"],
+    ["s3","V","Para-raios, chaves fusíveis e proteção geral conforme projeto aprovado"],
+    ["s4","V","Massas, neutro e estruturas metálicas com ligação visível à malha de aterramento"],
+    ["s5","T","Bornes e conexões de baixa tensão sem aquecimento anormal (inspeção à distância segura)"]]},
+  {id:"3", t:"Quadro geral e quadros de distribuição", opc:false, itens:[
+    ["q1","V","Diagrama unifilar ou quadro de cargas afixado; circuitos identificados"],
+    ["q2","V","Disjuntores com corrente nominal do quadro de cargas; nenhum maior que o previsto"],
+    ["q3","V","DR instalado nos circuitos de áreas molhadas, cozinha e tomadas externas, e onde o projeto indicar (presença apenas)"],
+    ["q4","V","Botão de teste do DR acionado pelo eletricista da executora, com desligamento (teste funcional, sem instrumento)"],
+    ["q5","V","DPS instalado conforme projeto e ligado ao barramento de terra"],
+    ["q6","V","Barramentos de neutro e de terra separados e identificados"],
+    ["q7","V","Cores dos condutores: neutro azul-claro, proteção verde-amarelo ou verde"],
+    ["q8","V","Conexões com terminais, sem emendas, cabos soltos ou sinais de queima"],
+    ["q9","V","Contra-tampa instalada, porta com fecho e placa de advertência"],
+    ["q10","V","Acesso livre ao quadro, sem uso do espaço como depósito"],
+    ["q11","T","Disjuntores, barramentos e conexões sem pontos quentes"]]},
+  {id:"4", t:"Linhas elétricas", opc:false, itens:[
+    ["l1","V","Bitola impressa no cabo conforme projeto e planilha medida"],
+    ["l2","V","Cabos com marcação do fabricante e certificação"],
+    ["l3","V","Eletrodutos, eletrocalhas e caixas fixados e com tampas; sem cabo exposto"],
+    ["l4","V","Sem emendas aparentes fora de caixas de passagem"],
+    ["l5","V","Circuitos de dados e telefonia separados dos de energia"]]},
+  {id:"5", t:"Pontos de utilização", opc:false, itens:[
+    ["p1","V","Tomadas no padrão NBR 14136 com pino terra; quantidade e posição conforme projeto"],
+    ["p2","V","Circuitos exclusivos para ar-condicionado, chuveiros e equipamentos de cozinha"],
+    ["p3","V","Luminárias, potência e comandos conforme projeto (salas, quadra, áreas externas)"],
+    ["p4","V","Iluminação de emergência instalada e acendendo ao desligar o circuito"],
+    ["p5","T","Pontos de ligação de equipamentos de maior carga sem aquecimento anormal"]]},
+  {id:"6", t:"Aterramento e equipotencialização (visual)", opc:false, itens:[
+    ["a1","V","Barramento de equipotencialização principal (BEP) instalado e acessível"],
+    ["a2","V","Caixa de inspeção do aterramento com haste e conexão visíveis"],
+    ["a3","V","Condutor de proteção presente nos circuitos e tomadas amostrados"]]},
+  {id:"7", t:"SPDA (visual)", opc:true, pergunta:"A obra possui SPDA?", itens:[
+    ["d1","V","Captação aparente conforme projeto (método e posição)"],
+    ["d2","V","Descidas em quantidade conforme projeto (mínimo duas), com conector de ensaio"],
+    ["d3","V","Material e seção aparente dos condutores conforme projeto (cobre ≥ 35 mm² na captação e descidas)"],
+    ["d4","V","Estruturas metálicas da cobertura e da quadra interligadas à captação"],
+    ["d5","V","Fixações e conexões sem corrosão, afrouxamento ou rompimento"]]},
+  {id:"8", t:"Sistema fotovoltaico", opc:true, pergunta:"A obra possui sistema fotovoltaico?", itens:[
+    ["f1","V","Módulos e inversor conforme projeto (dados de placa anotados)"],
+    ["f2","V","Caixas de proteção CC e CA com seccionamento e DPS"],
+    ["f3","V","Estruturas metálicas aterradas e placa de geração própria no padrão de entrada"],
+    ["f4","T","String box, inversor e conexões sem pontos quentes"]]}
+];
+const METODO = {V:"Visual", T:"Termovisor", A:"Alicate"};
+const NAO_REALIZADOS = [
+  "Continuidade dos condutores de proteção e das ligações equipotenciais",
+  "Resistência de isolamento",
+  "Ensaio de dispositivos DR com instrumento (corrente e tempo de atuação)",
+  "Verificação do seccionamento automático (impedância do percurso da corrente de falta)",
+  "Polaridade e sequência de fases com instrumento",
+  "Medição de tensão e qualidade de energia",
+  "Resistência de aterramento",
+  "Continuidade elétrica do SPDA e das armaduras"
+];
+const ESCOPO_TXT = "Vistoria in loco de caráter visual, complementada por medições pontuais de corrente elétrica com alicate amperímetro e por inspeção termográfica com câmera termovisora. Não foram realizados ensaios elétricos com instrumentos específicos, em especial: " +
+  NAO_REALIZADOS.map(s=>s.charAt(0).toLowerCase()+s.slice(1)).join("; ") +
+  ". Esses ensaios integram a verificação final prevista na seção 7 da ABNT NBR 5410:2004 e na ABNT NBR 5419:2015 e permanecem sob responsabilidade do responsável técnico da executora, a serem comprovados por laudo acompanhado de ART. As medições de corrente e temperatura refletem as condições de carga no momento da vistoria e não representam a demanda máxima da instalação. Esta vistoria não substitui o laudo técnico das instalações elétricas.";
+const TERMO_CRIT = "Critério de severidade térmica: ANSI/NETA MTS, Tabela 100.18, por diferença de temperatura (ΔT) em relação a componente similar sob carga similar ou em relação à temperatura do ar ambiente. O critério é considerado válido com carga igual ou superior a 40% da nominal; abaixo disso a anomalia pode estar subestimada.";
+
+/* ============================== Estado ============================== */
+const S = { v:null, list:[], idb:null, gps:null, gpsWatch:null, swReg:null,
+  store:"none", tab:"ident", saveTimer:null, saving:false, pendingSave:false, urls:{}, genAbort:null };
+const TABS = [["ident","Identificação"],["escopo","Escopo e equipamentos"],["visual","Inspeção visual"],["correntes","Correntes"],["termo","Termografia"],["pend","Pendências"],["rel","Relatório"]];
+
+function uid8(){ return Math.random().toString(36).slice(2,10); }
+function hojeISO(){ const d=new Date(); const z=n=>String(n).padStart(2,"0"); return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate()); }
+function novaVistoria(cfg){
+  return { id:"v-"+Date.now().toString(36)+uid8().slice(0,4), createdAt:Date.now(), updatedAt:Date.now(),
+    ident:{convenio:"",processo:"",municipio:"",escola:"",objeto:"",executora:"",rt:"",art:"",data:hojeISO(),horaIni:"",horaFim:"",
+      fiscal:(cfg&&cfg.fiscal)||"Marcelo Jose Paris",cargo:(cfg&&cfg.cargo)||"Engenheiro Eletricista – Fiscal de Convênio SEDUC-MT (CIPI-SNP)",acompanhantes:"",clima:"",tAmb:"",funcionamento:"",etapaObra:""},
+    instr:{alicate:{modelo:"",serie:"",calib:""}, termo:{modelo:"",serie:"",calib:"",emiss:"0,95",faixa:""}, obsLimit:""},
+    aplica:{"2":false,"7":true,"8":false}, local:{endereco:"",coords:"",lat:null,lon:null,fonte:""}, carimbo:true, check:{}, correntes:[], termo:[], fotosGerais:[], pend:{},
+    cfg:{deseq:10}, rel:{texto:"",geradoEm:0,fonte:""} };
+}
+function getPath(o,p){ return p.split(".").reduce((a,k)=>a==null?a:a[k],o); }
+function setPath(o,p,val){ const ks=p.split("."); let a=o; for(let i=0;i<ks.length-1;i++){ if(a[ks[i]]==null) a[ks[i]]={}; a=a[ks[i]]; } a[ks[ks.length-1]]=val; }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function n(v){ if(v===""||v==null) return null; const x=parseFloat(String(v).replace(",",".")); return isFinite(x)?x:null; }
+function fmt(x,d){ if(x==null) return "–"; return x.toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function maskConv(s){ const d=String(s).replace(/\D/g,"").slice(0,8); return d.length>4? d.slice(0,4)+"-"+d.slice(4) : d; }
+function dataBR(iso){ if(!iso) return ""; const [y,m,d]=iso.split("-"); return d+"/"+m+"/"+y; }
+function titulo(v){ const i=v.ident; const p=[]; if(i.convenio) p.push("Conv. "+i.convenio); if(i.escola) p.push(i.escola); if(i.municipio) p.push(i.municipio); return p.join(" · ")||"Nova vistoria"; }
+
+/* ============================== Cálculos ============================== */
+function calcCorrente(r, limDeseq){
+  const fases=[n(r.ia),n(r.ib),n(r.ic)].filter(x=>x!=null);
+  const imax = fases.length? Math.max(...fases) : null;
+  const inD = n(r.disjIn), iz=n(r.iz), ineu=n(r.ineutro);
+  const pctIn = (imax!=null && inD)? imax/inD*100 : null;
+  let deseq=null;
+  if(fases.length===3){ const m=(fases[0]+fases[1]+fases[2])/3; if(m>0) deseq=(imax-m)/m*100; }
+  const flags=[];
+  if(pctIn!=null && pctIn>100) flags.push({k:"in",sev:"crit",txt:"Corrente acima da nominal do disjuntor ("+fmt(pctIn,0)+"% de In)"});
+  if(iz && imax!=null && imax>iz) flags.push({k:"iz",sev:"crit",txt:"Corrente acima da capacidade de condução do cabo informada (Iz = "+fmt(iz,0)+" A)"});
+  if(deseq!=null && deseq>limDeseq) flags.push({k:"deseq",sev:"warn",txt:"Desequilíbrio entre fases de "+fmt(deseq,1)+"% (limite de atenção adotado: "+limDeseq+"%)"});
+  if(ineu!=null && imax!=null && fases.length>=2 && ineu>imax) flags.push({k:"neu",sev:"warn",txt:"Corrente no neutro maior que nas fases: investigar desequilíbrio ou harmônicos"});
+  return {imax,pctIn,deseq,flags};
+}
+function calcTermo(r){
+  const tm=n(r.tmax), tr=n(r.tref);
+  const iMed=n(r.iMed), iNom=n(r.iNom);
+  const carga = (iMed!=null && iNom)? iMed/iNom*100 : n(r.cargaPct);
+  if(tm==null||tr==null) return {dt:null,sev:-1,txt:"Informe as temperaturas",acao:"",carga};
+  const dt=tm-tr; let sev=0, txt="Sem anomalia relevante", acao="Nenhuma ação";
+  if(r.refTipo==="ambiente"){
+    if(dt>40){sev=4;txt="Discrepância grave";acao="Reparar imediatamente";}
+    else if(dt>20){sev=3;txt="Deficiência";acao="Monitorar até a correção";}
+    else if(dt>10){sev=2;txt="Provável deficiência";acao="Reparar quando possível";}
+    else if(dt>=1){sev=1;txt="Possível deficiência";acao="Investigar";}
+  } else {
+    if(dt>15){sev=4;txt="Discrepância grave";acao="Reparar imediatamente";}
+    else if(dt>3){sev=2;txt="Provável deficiência";acao="Reparar quando possível";}
+    else if(dt>=1){sev=1;txt="Possível deficiência";acao="Investigar";}
+  }
+  return {dt,sev,txt,acao,carga,baixaCarga:(carga!=null && carga<40)};
+}
+function itensAtivos(v){ const out=[]; ETAPAS.forEach(e=>{ if(e.opc && !v.aplica[e.id]) return; e.itens.forEach(([id,m,t])=>out.push({e,id,m,t,st:v.check[id]||{}})); }); return out; }
+function pendencias(v){
+  const L=[];
+  itensAtivos(v).forEach(x=>{ if(x.st.s==="NC") L.push({key:"chk:"+x.id, origem:"Inspeção – etapa "+x.e.id, desc:x.t+(x.st.obs? " — "+x.st.obs:""), sug:"Moderada"}); });
+  v.correntes.forEach(r=>{ const c=calcCorrente(r,v.cfg.deseq); c.flags.forEach(f=>L.push({key:"cor:"+r.id+":"+f.k, origem:"Correntes – "+(r.quadro||"quadro")+" / "+(r.circuito||"circuito"), desc:f.txt, sug:f.sev==="crit"?"Grave":"Moderada"})); });
+  v.termo.forEach(r=>{ const c=calcTermo(r); if(c.sev>=2) L.push({key:"ter:"+r.id, origem:"Termografia – "+(r.local||"ponto"), desc:(r.componente||"Componente")+": ΔT = "+fmt(c.dt,1)+" °C ("+(r.refTipo==="ambiente"?"vs. ambiente":"vs. similar")+") – "+c.txt, sug:c.sev>=3?"Grave":"Moderada"}); });
+  return L.map(p=>{ const s=v.pend[p.key]||{}; return Object.assign(p,{classe:s.classe||p.sug, prov:s.prov||"", prazo:s.prazo||""}); });
+}
+function resumo(v){
+  const it=itensAtivos(v); const feitos=it.filter(x=>x.st.s).length;
+  const nc=it.filter(x=>x.st.s==="NC").length;
+  let cor=0; v.correntes.forEach(r=>cor+=calcCorrente(r,v.cfg.deseq).flags.length);
+  let ter=0; v.termo.forEach(r=>{ if(calcTermo(r).sev>=2) ter++; });
+  return {total:it.length,feitos,nc,cor,ter};
+}
+
+/* ============================== Fotos ============================== */
+function fotoURL(f){ if(!S.urls[f.id]) carregarURL(f.id); return S.urls[f.id] || ""; }
+async function carregarURL(id){ if(S.urls[id]!==undefined) return; S.urls[id]=""; try{ const r=await idbGet("fotos",id); if(r&&r.blob){ S.urls[id]=URL.createObjectURL(r.blob); document.querySelectorAll(`img[data-fid="${id}"]`).forEach(im=>im.src=S.urls[id]); } }catch(e){} }
+async function reduzirImagem(file, max, linhas){
+  const bmp = await createImageBitmap(file);
+  const sc = Math.min(1, max/Math.max(bmp.width,bmp.height));
+  const w=Math.round(bmp.width*sc), h=Math.round(bmp.height*sc);
+  let fs=0, lh=0, pad=0, sh=0;
+  if(linhas&&linhas.length){ fs=Math.max(14,Math.round(w*0.026)); lh=Math.round(fs*1.35); pad=Math.round(fs*0.7); sh=pad*2+lh*linhas.length; }
+  const cv=document.createElement("canvas"); cv.width=w; cv.height=h+sh; const g=cv.getContext("2d");
+  g.drawImage(bmp,0,0,w,h);
+  if(sh){ g.fillStyle="#12171C"; g.fillRect(0,h,w,sh); g.fillStyle="#C27A00"; g.fillRect(0,h,w,Math.max(3,Math.round(fs*0.2)));
+    g.textBaseline="top"; linhas.forEach((t,k)=>{ g.font=(k===0?"600 ":"400 ")+fs+"px Arial, Helvetica, sans-serif"; g.fillStyle=k===0?"#FFFFFF":"#DDE3E8";
+      let s=t; const maxW=w-pad*2; if(g.measureText(s).width>maxW){ while(s.length>4 && g.measureText(s+"…").width>maxW) s=s.slice(0,-1); s+="…"; }
+      g.fillText(s,pad,h+pad+k*lh); }); }
+  return await new Promise(res=>cv.toBlob(b=>res({blob:b,w,h:h+sh}),"image/jpeg",0.85));
+}
+async function guardarFoto(file,tgt){
+  const meta = await lerMeta(file);
+  if(meta.lat==null){ const g=await posicaoAtual(); if(g){ meta.lat=g.lat; meta.lon=g.lon; meta.gpsFonte="GPS do aparelho, ±"+Math.round(g.acc)+" m"; } }
+  if(meta.lat==null && S.v.local.lat!=null){ meta.lat=S.v.local.lat; meta.lon=S.v.local.lon; meta.gpsFonte="informadas pelo fiscal"; }
+  if(meta.lat!=null && meta.gpsFonte!=="informadas pelo fiscal" && S.v.local.lat==null){ S.v.local.lat=meta.lat; S.v.local.lon=meta.lon; S.v.local.coords=meta.lat.toFixed(6)+", "+meta.lon.toFixed(6); S.v.local.fonte=meta.gpsFonte+" (primeira foto)"; }
+  const linhas = S.v.carimbo? linhasCarimbo(meta,tgt) : null;
+  const r = await reduzirImagem(file, 1600, linhas);
+  const m = {dt:meta.dt.getTime(), dtFonte:meta.dtFonte, lat:meta.lat, lon:meta.lon, gpsFonte:meta.gpsFonte, carimbo:!!linhas};
+  const fin = await guardarBlob(r);
+  return Object.assign(fin,{meta:m});
+}
+async function guardarBlob(r){
+  const id="f-"+Date.now().toString(36)+uid8();
+  await idbPut("fotos",{id,blob:r.blob,vid:S.v.id,criado:Date.now()});
+  S.urls[id]=URL.createObjectURL(r.blob);
+  return {id,w:r.w,h:r.h,leg:""};
+}
+async function fotoBlob(f){ const r=await idbGet("fotos",f.id); if(!r||!r.blob) throw new Error("foto não encontrada no aparelho"); return r.blob; }
+function metaTxt(f){ const m=f.meta; if(!m) return ""; const p=[]; if(m.dt) p.push(dtBR(new Date(m.dt))); if(m.lat!=null) p.push(fmtCoord(m.lat,m.lon)+" ("+m.gpsFonte+")"); return p.length?" – "+p.join(" – "):""; }
+function listaFotos(v){
+  const out=[]; let k=0;
+  itensAtivos(v).forEach(x=>{ (x.st.fotos||[]).forEach(f=>out.push({f, cap:"Item "+x.id.toUpperCase()+" – "+x.t+(f.leg?" ("+f.leg+")":""), ref:"chk:"+x.id})); });
+  v.termo.forEach((r,i)=>{ const c=calcTermo(r);
+    if(r.fotoIR) out.push({f:r.fotoIR, cap:"Termograma – "+(r.local||"ponto "+(i+1))+" / "+(r.componente||"")+(c.dt!=null?" (Tmáx "+fmt(n(r.tmax),1)+" °C; ΔT "+fmt(c.dt,1)+" °C)":""), ref:"ter:"+r.id});
+    if(r.fotoVis) out.push({f:r.fotoVis, cap:"Imagem visual – "+(r.local||"ponto "+(i+1))+" / "+(r.componente||""), ref:"ter:"+r.id}); });
+  (v.fotosGerais||[]).forEach(f=>out.push({f, cap:f.leg||"Vista geral", ref:"geral"}));
+  out.forEach(o=>{ o.num=++k; o.cap+=metaTxt(o.f); }); return out;
+}
+
+/* ============================== Persistência ============================== */
+function withTimeout(p,ms){ return Promise.race([p,new Promise(r=>setTimeout(()=>r(null),ms))]); }
+function idbOpen(){ return new Promise((res,rej)=>{ const rq=indexedDB.open("vistoriaEletrica-dados",1);
+  rq.onupgradeneeded=()=>{ const d=rq.result; if(!d.objectStoreNames.contains("vistorias")) d.createObjectStore("vistorias",{keyPath:"id"}); if(!d.objectStoreNames.contains("fotos")) d.createObjectStore("fotos",{keyPath:"id"}); };
+  rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error); }); }
+function idbReq(store,mode,fn){ return new Promise((res,rej)=>{ const tx=S.idb.transaction(store,mode); const st=tx.objectStore(store); const r=fn(st); tx.oncomplete=()=>res(r&&r.result); tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error); }); }
+const idbGet=(st,k)=>idbReq(st,"readonly",s=>s.get(k));
+const idbPut=(st,v)=>idbReq(st,"readwrite",s=>s.put(v));
+const idbDel=(st,k)=>idbReq(st,"readwrite",s=>s.delete(k));
+const idbAll=st=>idbReq(st,"readonly",s=>s.getAll());
+async function initCaps(){
+  try{ S.idb=await idbOpen(); S.store="idb"; }catch(e){ S.store="none"; toastSave("Este navegador bloqueou o armazenamento local; os dados não serão guardados.",true); }
+  try{ if(navigator.storage&&navigator.storage.persist) await navigator.storage.persist(); }catch(e){}
+  if("serviceWorker" in navigator){ try{ S.swReg=await navigator.serviceWorker.register("sw.js"); navigator.serviceWorker.addEventListener("message",ev=>{ if(ev.data&&ev.data.tipo==="atualizado"){ S.novaVersao=true; render(); } }); }catch(e){} }
+}
+async function carregar(){
+  let lista=[];
+  if(S.store==="idb"){ try{ lista=(await idbAll("vistorias"))||[]; }catch(e){ toastSave("Não foi possível ler as vistorias: "+(e&&e.message||e),true); } }
+  lista.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  S.list=lista;
+  let cur=null; try{ cur=localStorage.getItem("vistoriaEletrica.cur"); }catch(e){}
+  S.v = lista.find(x=>x.id===cur) || lista[0] || novaVistoria();
+  normalizar(S.v);
+}
+function normalizar(v){ const b=novaVistoria(); for(const k of Object.keys(b)){ if(v[k]==null) v[k]=b[k]; } ["ident","instr","cfg","rel","aplica","local"].forEach(k=>{ v[k]=Object.assign({},b[k],v[k]); }); }
+function agendarSalvar(){ S.v.updatedAt=Date.now(); toastSave("Alterações não salvas"); clearTimeout(S.saveTimer); S.saveTimer=setTimeout(salvar,600); renderTop(); }
+async function salvar(){
+  if(S.saving){ S.pendingSave=true; return; }
+  S.saving=true;
+  const v=S.v; const i=S.list.findIndex(x=>x.id===v.id); if(i<0) S.list.unshift(v); else S.list[i]=v;
+  try{ localStorage.setItem("vistoriaEletrica.cur",v.id); }catch(e){}
+  try{ if(S.store==="idb"){ await idbPut("vistorias",JSON.parse(JSON.stringify(v))); toastSave("Salvo no aparelho "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})); } }
+  catch(e){ toastSave("Erro ao salvar: "+(e&&e.message||e), true); }
+  S.saving=false; if(S.pendingSave){ S.pendingSave=false; salvar(); }
+}
+/* GPS do aparelho */
+function iniciarGPS(){ if(!("geolocation" in navigator) || S.gpsWatch!=null) return;
+  S.gpsWatch=navigator.geolocation.watchPosition(p=>{ S.gps={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()}; atualizarGPSst(); },
+    e=>{ S.gpsErro=e.code===1?"permissão negada":"sem sinal de GPS"; atualizarGPSst(); },{enableHighAccuracy:true,maximumAge:30000,timeout:30000}); }
+function atualizarGPSst(){ const el=document.getElementById("gpsSt"); if(!el) return; el.textContent = S.gps? "GPS ativo: "+fmtCoord(S.gps.lat,S.gps.lon)+" (±"+Math.round(S.gps.acc)+" m)" : (S.gpsErro? "GPS: "+S.gpsErro : "GPS: aguardando sinal…"); }
+function posicaoAtual(){ if(S.gps && Date.now()-S.gps.t<120000) return Promise.resolve(S.gps);
+  if(!("geolocation" in navigator)) return Promise.resolve(null);
+  return new Promise(res=>navigator.geolocation.getCurrentPosition(p=>{ S.gps={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy,t:Date.now()}; iniciarGPS(); res(S.gps); },()=>res(null),{enableHighAccuracy:true,maximumAge:60000,timeout:15000})); }
+async function buscarEndereco(){
+  const st=document.getElementById("endSt"); const L=S.v.local;
+  if(L.lat==null){ st.textContent="Informe ou capture as coordenadas primeiro."; return; }
+  if(!navigator.onLine){ st.textContent="Sem internet agora. Digite o endereço ou tente quando houver sinal."; return; }
+  st.textContent="Buscando endereço…";
+  try{ const r=await fetch("https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&addressdetails=1&accept-language=pt-BR&lat="+L.lat+"&lon="+L.lon);
+    const j=await r.json(); const a=j.address||{};
+    const txt=[[a.road,a.house_number].filter(Boolean).join(", "),a.suburb||a.neighbourhood,[a.city||a.town||a.village,a.state?(a.state==="Mato Grosso"?"MT":a.state):""].filter(Boolean).join("-"),a.postcode?"CEP "+a.postcode:""].filter(Boolean).join(", ")||j.display_name;
+    if(txt){ L.endereco=txt; agendarSalvar(); render(); const s2=document.getElementById("endSt"); if(s2) s2.textContent="Endereço aproximado do OpenStreetMap. Confira e corrija se preciso."; }
+    else st.textContent="Endereço não encontrado para essas coordenadas.";
+  }catch(e){ st.textContent="Não foi possível buscar: "+(e&&e.message||e); }
+}
+function toastSave(msg,err){ const el=document.getElementById("saveState"); el.textContent=msg; el.classList.toggle("err",!!err); }
+
+/* ============================== Render ============================== */
+const M = document.getElementById("main");
+function renderTop(){
+  document.getElementById("subtitle").textContent = titulo(S.v);
+  document.getElementById("steps").innerHTML = TABS.map(([k,l],i)=>`<button type="button" data-tab="${k}" aria-current="${S.tab===k}"><span class="n">${i+1}</span>${l}</button>`).join("");
+  const r=resumo(S.v);
+  document.getElementById("summary").innerHTML =
+    `<span class="chip"><b>${r.feitos}/${r.total}</b> itens avaliados</span>`+
+    `<span class="chip ${r.nc?"crit":"ok"}"><b>${r.nc}</b> não conformes</span>`+
+    `<span class="chip ${r.cor?"warn":""}"><b>${r.cor}</b> alertas de corrente</span>`+
+    `<span class="chip ${r.ter?"crit":""}"><b>${r.ter}</b> anomalias térmicas</span>`;
+}
+function field(path,label,opts={}){
+  const v=getPath(S.v,path)??""; const id="f_"+path.replace(/\./g,"_");
+  const type=opts.type||"text";
+  const inp = opts.area? `<textarea id="${id}" data-path="${path}" placeholder="${esc(opts.ph||"")}">${esc(v)}</textarea>`
+    : opts.sel? `<select id="${id}" data-path="${path}">${opts.sel.map(o=>`<option ${o===v?"selected":""}>${esc(o)}</option>`).join("")}</select>`
+    : `<input id="${id}" type="${type}" data-path="${path}" value="${esc(v)}" placeholder="${esc(opts.ph||"")}" ${opts.mode?`inputmode="${opts.mode}"`:""} ${opts.mask?`data-mask="${opts.mask}"`:""}>`;
+  return `<label class="f" for="${id}"><span>${label}</span>${inp}</label>`;
+}
+function render(){
+  renderTop();
+  const fn = {ident:rIdent, escopo:rEscopo, visual:rVisual, correntes:rCorrentes, termo:rTermo, pend:rPend, rel:rRel}[S.tab];
+  const banners = [];
+  if(S.novaVersao) banners.push(`<div class="banner info">Nova versão do app instalada. <button class="btn small" type="button" id="recarregar">Recarregar agora</button></div>`);
+  if(S.store==="none") banners.push(`<div class="banner">O armazenamento do aparelho não está disponível neste navegador. Nada será guardado: gere o .docx antes de fechar.</div>`);
+  if(S.v.carimbo && ["visual","termo","ident"].includes(S.tab) && (!S.v.ident.convenio || !S.v.ident.escola || !S.v.local.endereco)) banners.push(`<div class="banner info">Preencha convênio, unidade escolar e endereço em Identificação antes de tirar as fotos: o carimbo é gravado na foto no momento em que ela é adicionada.</div>`);
+  M.innerHTML = banners.join("") + fn();
+  if(S.tab==="ident") atualizarGPSst();
+}
+function rIdent(){
+  return `<section class="card"><header><div><h2>Identificação</h2><p class="lead">Dados do convênio e da visita. O número do convênio é formatado como 0000-0000.</p></div></header>
+  <div class="grid2">
+    ${field("ident.convenio","Convênio nº",{ph:"0000-0000",mask:"conv",mode:"numeric"})}
+    ${field("ident.processo","Processo SEDUC",{ph:"SEDUC-PRO-2026/00000"})}
+    ${field("ident.municipio","Município",{ph:"Sinop"})}
+    ${field("ident.escola","Unidade escolar",{ph:"E. E. …"})}
+  </div>
+  ${field("ident.objeto","Objeto do convênio",{area:true,ph:"Construção, reforma ou ampliação de …"})}
+  <div class="grid2">
+    ${field("ident.executora","Empresa executora")}
+    ${field("ident.etapaObra","Fase da obra",{sel:["","Em execução","Medição","Recebimento provisório","Recebimento definitivo","Prestação de contas final"]})}
+    ${field("ident.rt","Responsável técnico da executora")}
+    ${field("ident.art","ART de execução / laudo nº")}
+  </div></section>
+  <section class="card"><header><div><h2>Visita</h2></div></header>
+  <div class="grid2">
+    ${field("ident.data","Data",{type:"date"})}
+    <div class="grid2" style="gap:8px">${field("ident.horaIni","Início",{type:"time"})}${field("ident.horaFim","Término",{type:"time"})}</div>
+    ${field("ident.fiscal","Fiscal")}
+    ${field("ident.cargo","Cargo / função")}
+    ${field("ident.acompanhantes","Acompanharam a vistoria",{ph:"Nome – função – entidade"})}
+    ${field("ident.funcionamento","Condição de uso no momento",{sel:["","Escola em funcionamento (aulas)","Escola sem aulas, com cargas ligadas","Obra sem ocupação","Instalação desenergizada"]})}
+    ${field("ident.clima","Condições do tempo",{ph:"Ensolarado, nublado, chuva…"})}
+    ${field("ident.tAmb","Temperatura ambiente (°C)",{type:"text",mode:"decimal",ph:"32"})}
+  </div></section>
+  ${rLocal()}
+  ${rFotosGerais()}`;
+}
+function rLocal(){
+  const L=S.v.local; const ok=L.lat!=null&&L.lon!=null;
+  return `<section class="card"><header><div><h2>Local e carimbo das fotos</h2><p class="lead">Cada foto recebe uma faixa abaixo da imagem com data e hora, coordenadas, endereço e identificação (convênio, escola, item e fiscal). A faixa fica fora da imagem e não cobre a escala do termograma.</p></div>
+    <label class="toggle"><input type="checkbox" id="carimbo" ${S.v.carimbo?"checked":""}> Carimbar as fotos novas</label></header>
+  <div class="grid2">
+    ${field("local.endereco","Endereço da unidade escolar",{ph:"Rua…, nº…, bairro, Sinop-MT, CEP…"})}
+    <label class="f" for="f_local_coords"><span>Coordenadas da escola (latitude, longitude)</span><input id="f_local_coords" type="text" data-path="local.coords" value="${esc(L.coords||"")}" placeholder="-11.86412, -55.50321" inputmode="decimal"><span class="status" id="coordSt">${ok?"Lidas: "+fmtCoord(L.lat,L.lon)+(L.fonte?" ("+esc(L.fonte)+")":""):"Cole do Google Maps: toque e segure no local e copie os números."}</span></label>
+  </div>
+  <div class="row-actions"><button class="btn" type="button" id="usarGPS">Usar minha posição atual</button><button class="btn" type="button" id="buscarEnd">Buscar endereço pelas coordenadas</button><span class="status" id="gpsSt"></span></div>
+  <p class="status" id="endSt"></p>
+  <p class="lead">Ordem usada no carimbo de cada foto: GPS gravado na foto; se não houver, GPS do aparelho no momento (com a precisão em metros); se o GPS falhar, as coordenadas da escola acima, marcadas como "informadas pelo fiscal". O GPS funciona sem internet. A busca de endereço precisa de internet e usa o OpenStreetMap.</p>
+  </section>`;
+}
+function fmtCoord(lat,lon){ return lat.toFixed(6).replace(".",",")+"°, "+lon.toFixed(6).replace(".",",")+"°"; }
+function parseCoords(t){ const m=String(t).replace(/;/g," ").match(/-?\d+(?:[.,]\d+)?/g); if(!m||m.length<2) return null; const a=parseFloat(m[0].replace(",",".")), b=parseFloat(m[1].replace(",",".")); if(!(Math.abs(a)<=90&&Math.abs(b)<=180)) return null; return {lat:a,lon:b}; }
+function dtBR(d){ const z=x=>String(x).padStart(2,"0"); return z(d.getDate())+"/"+z(d.getMonth()+1)+"/"+d.getFullYear()+" "+z(d.getHours())+":"+z(d.getMinutes())+":"+z(d.getSeconds()); }
+function rotulo(tgt){ const v=S.v; const [k,a,b]=String(tgt).split(":");
+  if(k==="c"){ for(const e of ETAPAS) for(const [id,m,t] of e.itens) if(id===a) return "Item "+id.toUpperCase()+" – "+t; }
+  if(k==="t"){ const r=v.termo[+a]||{}; return (b==="ir"?"Termograma":"Foto visual")+" – "+(r.local||"ponto "+(+a+1))+(r.componente?" / "+r.componente:""); }
+  return "Vista geral"; }
+async function lerMeta(file){
+  const out={dt:null,dtFonte:"",lat:null,lon:null,gpsFonte:""};
+  try{ if(window.exifr){ const x=await exifr.parse(file,{tiff:true,exif:true,gps:true});
+    if(x){ const d=x.DateTimeOriginal||x.CreateDate; if(d instanceof Date && !isNaN(d)) {out.dt=d; out.dtFonte="metadados da câmera";}
+      if(typeof x.latitude==="number" && typeof x.longitude==="number"){ out.lat=x.latitude; out.lon=x.longitude; out.gpsFonte="GPS da foto"; } } } }catch(e){}
+  if(!out.dt){ const lm=file.lastModified? new Date(file.lastModified):null; if(lm && Date.now()-lm.getTime()<10*60*1000){ out.dt=lm; out.dtFonte="horário do arquivo"; } else { out.dt=new Date(); out.dtFonte="horário do registro no app"; } }
+  return out;
+}
+function linhasCarimbo(meta,tgt){
+  const v=S.v,i=v.ident; const L=[];
+  L.push(dtBR(meta.dt)+"  ("+meta.dtFonte+")");
+  L.push(meta.lat!=null? "Lat/Long: "+fmtCoord(meta.lat,meta.lon)+"  ("+meta.gpsFonte+")" : "Coordenadas não disponíveis");
+  L.push(v.local.endereco||"Endereço não informado");
+  L.push([i.convenio?"Convênio "+i.convenio:"", i.escola, i.municipio?i.municipio+"-MT":""].filter(Boolean).join(" · ")||"Identificação do convênio não preenchida");
+  L.push(rotulo(tgt));
+  if(i.fiscal) L.push("Fiscal: "+i.fiscal+(i.cargo?" – "+i.cargo:""));
+  return L;
+}
+function rFotosGerais(){
+  return `<section class="card"><header><div><h3>Fotos gerais</h3><p class="lead">Fachada, placa da obra, padrão de entrada visto de fora.</p></div></header>
+  <div class="photos">${(S.v.fotosGerais||[]).map((f,i)=>thumb(f,"g:"+i)).join("")}${addPh("g")}</div></section>`;
+}
+function thumb(f,ref,lbl){ return `<div class="ph"><img data-fid="${esc(f.id)}" src="${esc(fotoURL(f))}" alt="${esc(f.leg||"Foto")}" loading="lazy">${lbl?`<span class="lbl">${esc(lbl)}</span>`:""}<button type="button" data-delph="${esc(ref)}" aria-label="Remover foto">✕</button></div>`; }
+function addPh(target,txt){ return `<label class="addph">${txt||"+ Foto"}<input type="file" accept="image/*" capture="environment" data-addph="${esc(target)}"></label>`; }
+
+function rEscopo(){
+  const i=S.v.instr;
+  return `<section class="card"><header><div><h2>Escopo e equipamentos</h2><p class="lead">A vistoria usa só dois instrumentos. Este texto entra no relatório como limitação de escopo.</p></div></header>
+  <div class="instr">
+    <div class="box"><h3>Alicate amperímetro</h3><p class="lead">Corrente nas fases e no neutro dos alimentadores e circuitos, no momento da visita.</p>
+      ${field("instr.alicate.modelo","Marca e modelo")}<div class="grid2" style="gap:8px">${field("instr.alicate.serie","Nº de série")}${field("instr.alicate.calib","Certificado / data de calibração")}</div></div>
+    <div class="box"><h3>Câmera termográfica</h3><p class="lead">Temperatura de conexões, disjuntores e barramentos com a instalação sob carga.</p>
+      ${field("instr.termo.modelo","Marca e modelo")}<div class="grid2" style="gap:8px">${field("instr.termo.serie","Nº de série")}${field("instr.termo.calib","Certificado / data de calibração")}${field("instr.termo.emiss","Emissividade adotada")}${field("instr.termo.faixa","Faixa de medição (°C)")}</div></div>
+  </div></section>
+  <section class="card"><header><div><h3>Ensaios não realizados</h3><p class="lead">Ficam a cargo do responsável técnico da executora, a comprovar por laudo com ART.</p></div></header>
+    <ul class="notdone">${NAO_REALIZADOS.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
+    <p class="scope-text">${esc(ESCOPO_TXT)}</p>
+    ${field("instr.obsLimit","Outras limitações desta visita",{area:true,ph:"Ex.: cobertura sem acesso seguro, quadro da cozinha trancado, sem carga na quadra…"})}
+  </section>
+  <section class="card"><header><div><h3>Segurança</h3></div></header>
+    <ul class="notdone" style="list-style:square">
+      <li>Quadros abertos e manobrados só pelo eletricista ou RT da executora; o fiscal mede e fotografa, sem tocar partes vivas.</li>
+      <li>Alicate apenas em condutor isolado; termografia à distância segura, sem retirar proteções além da contra-tampa.</li>
+      <li>Sem subida em cobertura sem acesso seguro e proteção contra queda; SPDA observado do solo quando não houver.</li>
+    </ul></section>`;
+}
+function rVisual(){
+  return `<section class="card"><header><div><h2>Inspeção visual</h2><p class="lead">Marque cada item: <b>C</b> conforme, <b>NC</b> não conforme, <b>NA</b> não se aplica, <b>NV</b> não verificado. Itens marcados <span class="m T" style="font-family:var(--f-mono);font-size:11px;padding:1px 5px;border-radius:3px;background:var(--accent-soft);color:var(--accent-ink)">Termovisor</span> usam a câmera; registre os pontos na etapa Termografia.</p></div></header></section>
+  ${ETAPAS.map(e=>{ const on = !e.opc || S.v.aplica[e.id];
+    return `<section class="etapa ${on?"":"off"}"><div class="eh"><h3><span class="n">${e.id}</span>${esc(e.t)}</h3>
+      ${e.opc?`<label class="toggle"><input type="checkbox" data-aplica="${e.id}" ${on?"checked":""}> ${esc(e.pergunta)}</label>`:""}</div>
+      ${e.itens.map(([id,m,t])=>{ const st=S.v.check[id]||{};
+        return `<div class="item" data-s="${st.s||""}" id="it_${id}"><div class="t"><span class="m ${m}">${METODO[m]}</span>${esc(t)}</div>
+        <div class="seg" role="group" aria-label="Situação do item">${["C","NC","NA","NV"].map(s=>`<button type="button" data-item="${id}" data-v="${s}" aria-pressed="${st.s===s}">${s}</button>`).join("")}</div>
+        <div class="more"><textarea data-itemobs="${id}" placeholder="Observação (local, o que foi visto, valor de placa…)" aria-label="Observação do item ${id}">${esc(st.obs||"")}</textarea>
+        <div class="photos">${(st.fotos||[]).map((f,i)=>thumb(f,"c:"+id+":"+i)).join("")}${addPh("c:"+id)}</div></div></div>`; }).join("")}
+    </section>`; }).join("")}`;
+}
+function rCorrentes(){
+  const v=S.v;
+  const rows = v.correntes.map((r,i)=>{ const c=calcCorrente(r,v.cfg.deseq);
+    const st = c.flags.some(f=>f.sev==="crit")?`<span class="pill crit">Alerta</span>`: c.flags.length?`<span class="pill warn">Atenção</span>`: (c.imax!=null?`<span class="pill ok">OK</span>`:`<span class="pill na">–</span>`);
+    const inp=(k,ph,w)=>`<input type="${w?"number":"text"}" ${w?'step="0.1" inputmode="decimal"':""} data-cor="${i}" data-k="${k}" value="${esc(r[k]??"")}" placeholder="${ph||""}" aria-label="${k}">`;
+    return `<tr data-row="${i}"><td>${inp("quadro","QGBT")}</td><td>${inp("circuito","Alimentador")}</td><td>${inp("disjIn","",1)}</td><td>${inp("cabo","mm²")}</td><td>${inp("iz","",1)}</td>
+      <td>${inp("ia","",1)}</td><td>${inp("ib","",1)}</td><td>${inp("ic","",1)}</td><td>${inp("ineutro","",1)}</td>
+      <td class="calc" data-calc="${i}">${fmt(c.pctIn,0)}% · ${c.deseq!=null?fmt(c.deseq,1)+"%":"–"}</td><td class="calc" data-st="${i}">${st}</td>
+      <td><button class="btn small ghost danger" type="button" data-delcor="${i}" aria-label="Remover linha">✕</button></td></tr>
+      <tr data-rowobs="${i}"><td colspan="12" style="padding-top:0"><input type="text" data-cor="${i}" data-k="obs" value="${esc(r.obs||"")}" placeholder="Cargas ligadas no momento, observação" aria-label="Observação"><div class="status" data-flags="${i}">${c.flags.map(f=>esc(f.txt)).join(" · ")}</div></td></tr>`; }).join("");
+  return `<section class="card"><header><div><h2>Medições de corrente</h2><p class="lead">Uma linha por alimentador ou circuito medido com o alicate. O app calcula a corrente máxima em relação à In do disjuntor e o desequilíbrio entre fases, pela maior diferença em relação à média.</p></div>
+    <div class="row-actions">${field("cfg.deseq","Limite de atenção para desequilíbrio (%)",{type:"number"})}</div></header>
+  ${v.correntes.length? `<div class="tbl-wrap"><table class="t"><thead><tr><th>Quadro</th><th>Circuito</th><th>In disj. (A)</th><th>Cabo</th><th>Iz cabo (A)</th><th>Fase A (A)</th><th>Fase B (A)</th><th>Fase C (A)</th><th>Neutro (A)</th><th>% In · deseq.</th><th>Situação</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`
+    : `<div class="empty">Nenhuma medição ainda. Comece pelo alimentador do quadro geral.</div>`}
+  <div class="row-actions"><button class="btn primary" type="button" id="addCor">+ Adicionar medição</button></div>
+  <p class="lead">Iz é a capacidade de condução do cabo, tirada do projeto; deixe em branco se não souber. O limite de desequilíbrio é critério da fiscalização, não da norma. Uma leitura pontual não representa a demanda máxima.</p></section>`;
+}
+function rTermo(){
+  const v=S.v;
+  const cards=v.termo.map((r,i)=>{ const c=calcTermo(r);
+    const pill = c.sev<0?`<span class="pill na">${c.txt}</span>`: c.sev===0?`<span class="pill ok">${c.txt}</span>`: c.sev<=2?`<span class="pill warn">${c.txt}</span>`:`<span class="pill crit">${c.txt}</span>`;
+    const inp=(k,lbl,ph,num)=>`<label class="f"><span>${lbl}</span><input type="text" ${num?'inputmode="decimal"':""} data-ter="${i}" data-k="${k}" value="${esc(r[k]??"")}" placeholder="${ph||""}"></label>`;
+    return `<div class="tcard" data-sev="${c.sev}" data-tcard="${i}">
+      <div class="grid2">${inp("local","Local","QGBT – bloco administrativo")}${inp("componente","Componente","Borne do disjuntor geral, fase B")}</div>
+      <div class="grid4">${inp("tmax","T máx. (°C)","",1)}${inp("tref","T referência (°C)","",1)}
+        <label class="f"><span>Referência</span><select data-ter="${i}" data-k="refTipo"><option value="similar" ${r.refTipo!=="ambiente"?"selected":""}>Componente similar</option><option value="ambiente" ${r.refTipo==="ambiente"?"selected":""}>Ar ambiente</option></select></label>
+        ${inp("iMed","Corrente no momento (A)","",1)}${inp("iNom","Corrente nominal (A)","",1)}</div>
+      <div class="res" data-tres="${i}">${pill}${c.dt!=null?`<span class="mono">ΔT = ${fmt(c.dt,1)} °C</span><span>· ${esc(c.acao)}</span>`:""}${c.carga!=null?`<span class="mono">· carga ${fmt(c.carga,0)}%</span>`:""}${c.baixaCarga?`<span class="pill warn">Carga abaixo de 40%</span>`:""}</div>
+      <label class="f"><span>Observação</span><input type="text" data-ter="${i}" data-k="obs" value="${esc(r.obs||"")}" placeholder="Causa provável, condição da conexão"></label>
+      <div class="photos">${r.fotoIR?thumb(r.fotoIR,"t:"+i+":ir","IR"):addPh("t:"+i+":ir","+ Termograma")}${r.fotoVis?thumb(r.fotoVis,"t:"+i+":vis","Visual"):addPh("t:"+i+":vis","+ Foto visual")}
+        <button class="btn small ghost danger" type="button" data-delter="${i}">Remover ponto</button></div>
+      <div class="status" data-irst="${i}"></div></div>`; }).join("");
+  return `<section class="card"><header><div><h2>Termografia</h2><p class="lead">Registre cada ponto com a temperatura máxima e uma referência: o mesmo componente em outra fase (preferível) ou o ar ambiente. O app classifica pela Tabela 100.18 da ANSI/NETA MTS.</p></div></header>
+  <div class="legend">
+    <div><b>vs. componente similar</b><br>ΔT 1–3 °C: possível deficiência, investigar<br>ΔT 4–15 °C: provável deficiência, reparar quando possível<br>ΔT &gt; 15 °C: discrepância grave, reparar imediatamente</div>
+    <div><b>vs. ar ambiente</b><br>ΔT 1–10 °C: possível · 11–20 °C: provável<br>ΔT 21–40 °C: deficiência, monitorar até corrigir<br>ΔT &gt; 40 °C: discrepância grave, reparar imediatamente</div>
+    <div><b>Validade</b><br>Critério válido com carga ≥ 40% da nominal. Meça a corrente com o alicate no mesmo ponto para registrar a carga.</div>
+  </div>
+  ${v.termo.length? `<div class="tcards">${cards}</div>` : `<div class="empty">Nenhum ponto registrado. Fotografe primeiro o quadro geral sob carga.</div>`}
+  <div class="row-actions"><button class="btn primary" type="button" id="addTer">+ Adicionar ponto</button></div></section>`;
+}
+function rPend(){
+  const L=pendencias(S.v);
+  return `<section class="card"><header><div><h2>Pendências</h2><p class="lead">Lista montada a partir dos itens não conformes, dos alertas de corrente e das anomalias térmicas prováveis ou graves. Ajuste a classe e escreva a providência; tudo entra no relatório.</p></div></header>
+  <div class="legend"><div><b>Grave</b>: risco imediato de choque ou incêndio; impede o recebimento.</div><div><b>Moderada</b>: executado diferente do projeto, sem risco imediato; corrigir com prazo.</div><div><b>Documental</b>: falta de comprovação (as built, ART, laudo).</div></div>
+  ${L.length? `<div class="pend">${L.map(p=>`<div class="pitem" data-c="${esc(p.classe)}"><div class="src">${esc(p.origem)}</div><div>${esc(p.desc)}</div>
+    <div class="g"><select data-pend="${esc(p.key)}" data-k="classe" aria-label="Classe">${["Grave","Moderada","Documental"].map(c=>`<option ${c===p.classe?"selected":""}>${c}</option>`).join("")}</select>
+    <input type="text" data-pend="${esc(p.key)}" data-k="prov" value="${esc(p.prov)}" placeholder="Providência a exigir da executora" aria-label="Providência">
+    <input type="text" data-pend="${esc(p.key)}" data-k="prazo" value="${esc(p.prazo)}" placeholder="Prazo (dias)" inputmode="numeric" aria-label="Prazo"></div></div>`).join("")}</div>`
+    : `<div class="empty">Nenhuma pendência até agora. Itens marcados NC, alertas de corrente e anomalias térmicas aparecem aqui automaticamente.</div>`}</section>`;
+}
+function rRel(){
+  const r=S.v.rel; const share=!!(navigator.canShare && window.File);
+  return `<section class="card"><header><div><h2>Relatório</h2><p class="lead">O rascunho automático funciona sem internet. Para o Claude redigir, copie o pedido, cole numa conversa com o Claude quando houver sinal e cole a resposta no campo abaixo. Tabelas de medição, termografia, pendências e o registro fotográfico entram como anexos no .docx.</p></div></header>
+  <div class="row-actions">
+    <button class="btn primary" type="button" id="genDraft">Rascunho automático</button>
+    <button class="btn" type="button" id="cpPrompt">Copiar pedido para o Claude</button>
+    <span class="status" id="genSt">${r.geradoEm?("Texto de "+new Date(r.geradoEm).toLocaleString("pt-BR")+(r.fonte?" ("+esc(r.fonte)+")":"")):""}</span></div>
+  <textarea id="rep" data-path="rel.texto" placeholder="O texto do relatório aparece aqui. Títulos de seção começam com ##.">${esc(r.texto)}</textarea>
+  <div class="row-actions">
+    <button class="btn primary" type="button" id="dlDocx">Baixar .docx</button>
+    ${share?`<button class="btn" type="button" id="shDocx">Compartilhar .docx</button>`:""}
+    <button class="btn" type="button" id="cpTxt">Copiar texto</button>
+    <span class="status" id="dlSt"></span></div></section>`;
+}
+/* ============================== Relatório: rascunho ============================== */
+function dadosParaClaude(v){
+  const fotos=listaFotos(v); const fotosDe=ref=>fotos.filter(f=>f.ref===ref).map(f=>"Foto "+f.num);
+  return {
+    identificacao:v.ident,
+    instrumentos:{alicate:v.instr.alicate, camera_termografica:v.instr.termo},
+    outras_limitacoes:v.instr.obsLimit,
+    inspecao_visual: ETAPAS.map(e=>({etapa:e.id+" – "+e.t, aplica:(!e.opc||!!v.aplica[e.id]),
+      itens:(!e.opc||v.aplica[e.id])? e.itens.map(([id,m,t])=>{ const s=v.check[id]||{}; return {item:id.toUpperCase(), metodo:METODO[m], descricao:t, situacao:s.s||"sem registro", obs:s.obs||"", fotos:fotosDe("chk:"+id)}; }):[] })),
+    medicoes_corrente: v.correntes.map(r=>{ const c=calcCorrente(r,v.cfg.deseq); return {quadro:r.quadro,circuito:r.circuito,disjuntor_In_A:r.disjIn,cabo:r.cabo,Iz_A:r.iz,fase_A:r.ia,fase_B:r.ib,fase_C:r.ic,neutro:r.ineutro,pct_In:c.pctIn!=null?+c.pctIn.toFixed(0):null,desequilibrio_pct:c.deseq!=null?+c.deseq.toFixed(1):null,alertas:c.flags.map(f=>f.txt),obs:r.obs}; }),
+    limite_desequilibrio_adotado_pct:v.cfg.deseq,
+    termografia: v.termo.map(r=>{ const c=calcTermo(r); return {local:r.local,componente:r.componente,Tmax_C:r.tmax,Tref_C:r.tref,referencia:r.refTipo==="ambiente"?"ar ambiente":"componente similar",deltaT_C:c.dt!=null?+c.dt.toFixed(1):null,classificacao_NETA:c.txt,acao:c.acao,carga_pct:c.carga!=null?+c.carga.toFixed(0):null,carga_abaixo_40:!!c.baixaCarga,obs:r.obs,fotos:fotosDe("ter:"+r.id)}; }),
+    pendencias: pendencias(v).map(p=>({origem:p.origem,descricao:p.desc,classe:p.classe,providencia:p.prov,prazo_dias:p.prazo})),
+    total_fotos:fotos.length
+  };
+}
+function promptClaude(v){
+  return `Você é engenheiro eletricista e redige, em português formal, o RELATÓRIO DE VISTORIA TÉCNICA DAS INSTALAÇÕES ELÉTRICAS de uma obra escolar executada por Prefeitura por meio de convênio com a Secretaria de Estado de Educação de Mato Grosso (SEDUC-MT). O autor é o fiscal de convênio da SEDUC-MT.
+
+Regras obrigatórias:
+1. Use somente os dados do JSON abaixo. Não invente valores, nomes, datas, normas aplicadas ou constatações. Campo vazio: omita ou escreva "não informado".
+2. Deixe claro, em seção própria, que a vistoria foi visual, com medições pontuais de corrente por alicate amperímetro e inspeção por câmera termográfica, e que NÃO foram realizados os ensaios listados no texto de escopo abaixo. Reproduza o sentido desse texto de escopo integralmente.
+3. Nunca declare a instalação "conforme à NBR 5410" como um todo. Itens com situação "NV" ou "sem registro" são "não verificados"; não os trate como conformes.
+4. Número de convênio no formato 0000-0000.
+5. Termografia: cite o critério da ANSI/NETA MTS Tabela 100.18. Quando a carga for menor que 40% ou não informada, registre que a severidade pode estar subestimada.
+6. As tabelas de medição de corrente, de termografia, de pendências e o registro fotográfico são anexados automaticamente como Anexos A, B, C e D. Não reproduza essas tabelas; resuma os resultados e remeta aos anexos e às fotos pelo número (ex.: "Foto 3").
+7. Formato de saída: texto puro. Títulos de seção em linhas iniciadas por "## " (ex.: "## 1. IDENTIFICAÇÃO"). Listas com "- ". Sem negrito, sem tabelas, sem markdown além disso. Não inclua bloco de assinatura; ele é acrescentado no documento.
+8. Seções, nesta ordem: 1. IDENTIFICAÇÃO; 2. OBJETIVO; 3. ESCOPO, EQUIPAMENTOS E LIMITAÇÕES; 4. METODOLOGIA; 5. CONSTATAÇÕES DA INSPEÇÃO VISUAL (por etapa, destacando não conformidades); 6. MEDIÇÕES DE CORRENTE; 7. INSPEÇÃO TERMOGRÁFICA; 8. PENDÊNCIAS E PROVIDÊNCIAS (por classe: Grave, Moderada, Documental, com prazos quando informados); 9. CONCLUSÃO (se há impedimento ao recebimento/medição dos itens elétricos, e reiterar que os ensaios da seção 7 da NBR 5410 e o laudo com ART do RT da executora são exigíveis).
+9. Frases curtas e objetivas, tom de manifestação técnica.
+10. Na metodologia, informe que as fotos levam carimbo com data, hora, coordenadas, endereço e identificação, e que a origem de cada dado (metadados da câmera ou informado pelo fiscal) consta no próprio carimbo. Endereço da unidade: ${v.local.endereco||"não informado"}. Coordenadas: ${v.local.lat!=null?fmtCoord(v.local.lat,v.local.lon)+" ("+(v.local.fonte||"")+")":"não informadas"}.
+
+Texto de escopo:
+"""${ESCOPO_TXT}"""
+
+Critério termográfico:
+"""${TERMO_CRIT}"""
+
+Dados da vistoria (JSON):
+${JSON.stringify(dadosParaClaude(v),null,1)}`;
+}
+function rascunhoAuto(v){
+  const i=v.ident, L=[]; const P=s=>L.push(s); const H=s=>{ L.push(""); L.push("## "+s); };
+  P("RELATÓRIO DE VISTORIA TÉCNICA – INSTALAÇÕES ELÉTRICAS");
+  H("1. IDENTIFICAÇÃO");
+  [["Convênio nº",i.convenio],["Processo",i.processo],["Município",i.municipio],["Unidade escolar",i.escola],["Endereço",v.local.endereco],["Coordenadas",v.local.lat!=null?fmtCoord(v.local.lat,v.local.lon):""],["Objeto",i.objeto],["Executora",i.executora],["Responsável técnico",i.rt],["ART",i.art],["Fase da obra",i.etapaObra],["Data da vistoria",dataBR(i.data)+(i.horaIni?", das "+i.horaIni+(i.horaFim?" às "+i.horaFim:""):"")],["Fiscal",i.fiscal+(i.cargo?" – "+i.cargo:"")],["Acompanhantes",i.acompanhantes],["Condição de uso",i.funcionamento],["Tempo / temperatura ambiente",[i.clima,i.tAmb?i.tAmb+" °C":""].filter(Boolean).join(", ")]]
+    .forEach(([k,x])=>{ if(x) P("- "+k+": "+x); });
+  H("2. OBJETIVO");
+  P("Verificar in loco, de forma básica, as instalações elétricas executadas"+(i.escola?" na "+i.escola:"")+(i.convenio?", objeto do Convênio nº "+i.convenio:"")+", confrontando-as com o projeto e registrando não conformidades visíveis, correntes de carga e anomalias térmicas.");
+  H("3. ESCOPO, EQUIPAMENTOS E LIMITAÇÕES");
+  P(ESCOPO_TXT);
+  const a=v.instr.alicate, t=v.instr.termo;
+  P("- Alicate amperímetro: "+([a.modelo,a.serie?"nº de série "+a.serie:"",a.calib?"calibração "+a.calib:""].filter(Boolean).join(", ")||"não informado"));
+  P("- Câmera termográfica: "+([t.modelo,t.serie?"nº de série "+t.serie:"",t.calib?"calibração "+t.calib:"",t.emiss?"emissividade "+t.emiss:"",t.faixa?"faixa "+t.faixa+" °C":""].filter(Boolean).join(", ")||"não informado"));
+  if(v.instr.obsLimit) P("- Outras limitações: "+v.instr.obsLimit);
+  H("4. METODOLOGIA");
+  P("Inspeção visual por etapas (entrada de energia, quadros, linhas, pontos de utilização, aterramento"+(v.aplica["7"]?", SPDA":"")+(v.aplica["2"]?", subestação":"")+(v.aplica["8"]?", sistema fotovoltaico":"")+"), com registro fotográfico. Medição pontual de corrente nas fases e no neutro dos circuitos amostrados. "+TERMO_CRIT+(v.carimbo?" As fotos receberam carimbo com data e hora, coordenadas, endereço e identificação; o carimbo indica a origem de cada dado (metadados da câmera ou informação do fiscal).":""));
+  H("5. CONSTATAÇÕES DA INSPEÇÃO VISUAL");
+  const fotos=listaFotos(v); const fr=ref=>{ const x=fotos.filter(f=>f.ref===ref).map(f=>"Foto "+f.num); return x.length?" ("+x.join(", ")+")":""; };
+  ETAPAS.forEach(e=>{ if(e.opc && !v.aplica[e.id]) return;
+    const its=e.itens.map(([id,m,tx])=>({id,tx,s:(v.check[id]||{}).s,obs:(v.check[id]||{}).obs}));
+    const c=its.filter(x=>x.s==="C").length, nc=its.filter(x=>x.s==="NC"), nv=its.filter(x=>!x.s||x.s==="NV").length;
+    P("Etapa "+e.id+" – "+e.t+": "+c+" conforme(s), "+nc.length+" não conforme(s), "+nv+" não verificado(s).");
+    nc.forEach(x=>P("- "+x.id.toUpperCase()+" não conforme: "+x.tx+(x.obs?". "+x.obs:"")+fr("chk:"+x.id)));
+    its.filter(x=>x.s==="C"&&x.obs).forEach(x=>P("- "+x.id.toUpperCase()+": "+x.obs+fr("chk:"+x.id)));
+  });
+  H("6. MEDIÇÕES DE CORRENTE");
+  if(!v.correntes.length) P("Não foram registradas medições de corrente.");
+  else { P(v.correntes.length+" circuito(s) medido(s); valores no Anexo A."); v.correntes.forEach(r=>{ const c=calcCorrente(r,v.cfg.deseq); if(c.flags.length) P("- "+(r.quadro||"")+" / "+(r.circuito||"")+": "+c.flags.map(f=>f.txt).join("; ")+"."); }); if(!v.correntes.some(r=>calcCorrente(r,v.cfg.deseq).flags.length)) P("Nenhuma corrente acima da nominal dos disjuntores e nenhum desequilíbrio acima do limite de atenção de "+v.cfg.deseq+"%."); }
+  H("7. INSPEÇÃO TERMOGRÁFICA");
+  if(!v.termo.length) P("Não foram registrados pontos termográficos.");
+  else { P(v.termo.length+" ponto(s) inspecionado(s); valores no Anexo B."); v.termo.forEach(r=>{ const c=calcTermo(r); if(c.sev>=1) P("- "+(r.local||"")+" / "+(r.componente||"")+": ΔT "+fmt(c.dt,1)+" °C ("+(r.refTipo==="ambiente"?"vs. ambiente":"vs. similar")+"), "+c.txt.toLowerCase()+"; "+c.acao.toLowerCase()+"."+(c.baixaCarga||c.carga==null?" Carga abaixo de 40% ou não informada: severidade pode estar subestimada.":"")+fr("ter:"+r.id)); }); }
+  H("8. PENDÊNCIAS E PROVIDÊNCIAS");
+  const pend=pendencias(v);
+  if(!pend.length) P("Não foram identificadas pendências no escopo desta vistoria.");
+  ["Grave","Moderada","Documental"].forEach(cl=>{ const x=pend.filter(p=>p.classe===cl); if(!x.length) return; P(cl+":"); x.forEach(p=>P("- "+p.desc+(p.prov?". Providência: "+p.prov:"")+(p.prazo?". Prazo: "+p.prazo+" dias":"")+".")); });
+  H("9. CONCLUSÃO");
+  const g=pend.filter(p=>p.classe==="Grave").length;
+  P(g? "Foram constatadas "+g+" pendência(s) grave(s), que impedem o recebimento dos serviços elétricos até sua correção e nova verificação."
+     : "Não foram constatadas pendências graves no escopo desta vistoria.");
+  P("Os ensaios da seção 7 da ABNT NBR 5410:2004 e, quando houver SPDA, os da ABNT NBR 5419:2015 devem ser comprovados por laudo do responsável técnico da executora, com ART.");
+  return L.join("\n").trim();
+}
+
+/* ============================== .docx ============================== */
+async function gerarDocx(v){
+  const D=window.docx; if(!D) throw new Error("biblioteca de Word não carregou; verifique a conexão");
+  const {Document,Packer,Paragraph,TextRun,HeadingLevel,Table,TableRow,TableCell,WidthType,AlignmentType,ImageRun,BorderStyle,PageBreak}=D;
+  const p=(t,o={})=>new Paragraph(Object.assign({children:[new TextRun({text:t,bold:o.bold,size:o.size,italics:o.it})],spacing:{after:120},alignment:o.align},o.extra||{}));
+  const kids=[];
+  const linhas=(v.rel.texto||rascunhoAuto(v)).split(/\r?\n/);
+  linhas.forEach((ln,idx)=>{ const s=ln.trim(); if(!s) return;
+    if(idx===0 && !s.startsWith("## ")){ kids.push(new Paragraph({children:[new TextRun({text:s,bold:true,size:28})],alignment:AlignmentType.CENTER,spacing:{after:240}})); return; }
+    if(s.startsWith("## ")) kids.push(new Paragraph({text:s.slice(3),heading:HeadingLevel.HEADING_2,spacing:{before:240,after:120}}));
+    else if(s.startsWith("- ")) kids.push(new Paragraph({text:s.slice(2),bullet:{level:0},spacing:{after:60}}));
+    else kids.push(new Paragraph({text:s,spacing:{after:120},alignment:AlignmentType.JUSTIFIED}));
+  });
+  kids.push(p(""));
+  kids.push(p((v.ident.municipio||"Sinop")+"-MT, "+(dataBR(v.ident.data)||"")+".",{align:AlignmentType.RIGHT}));
+  kids.push(p("")); kids.push(p(""));
+  kids.push(p(v.ident.fiscal||"",{bold:true,align:AlignmentType.CENTER}));
+  kids.push(p(v.ident.cargo||"",{align:AlignmentType.CENTER}));
+  const bd={style:BorderStyle.SINGLE,size:4,color:"8C98A3"}; const borders={top:bd,bottom:bd,left:bd,right:bd};
+  const cell=(t,h)=>new TableCell({borders,shading:h?{fill:"D9DEE3"}:undefined,children:[new Paragraph({children:[new TextRun({text:String(t??""),bold:!!h,size:18})]})]});
+  const tabela=(head,rows)=>new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[new TableRow({tableHeader:true,children:head.map(h=>cell(h,true))}),...rows.map(r=>new TableRow({children:r.map(x=>cell(x))}))]});
+  const anexo=t=>{ kids.push(new Paragraph({children:[new PageBreak()]})); kids.push(new Paragraph({text:t,heading:HeadingLevel.HEADING_2,spacing:{after:160}})); };
+  anexo("ANEXO A – MEDIÇÕES DE CORRENTE (alicate amperímetro)");
+  if(v.correntes.length) kids.push(tabela(["Quadro","Circuito","In disj. (A)","Cabo","Iz (A)","A (A)","B (A)","C (A)","N (A)","% In","Deseq. (%)","Alertas"],
+    v.correntes.map(r=>{ const c=calcCorrente(r,v.cfg.deseq); return [r.quadro,r.circuito,r.disjIn,r.cabo,r.iz,r.ia,r.ib,r.ic,r.ineutro,c.pctIn!=null?fmt(c.pctIn,0):"–",c.deseq!=null?fmt(c.deseq,1):"–",c.flags.map(f=>f.txt).join("; ")||"–"]; })));
+  else kids.push(p("Sem medições registradas."));
+  kids.push(p("Leituras pontuais, nas condições de carga do momento da vistoria. Limite de atenção para desequilíbrio adotado pela fiscalização: "+v.cfg.deseq+"%.",{it:true,size:18}));
+  anexo("ANEXO B – INSPEÇÃO TERMOGRÁFICA");
+  if(v.termo.length) kids.push(tabela(["Local","Componente","T máx. (°C)","T ref. (°C)","Referência","ΔT (°C)","Carga (%)","Classificação (NETA 100.18)","Ação"],
+    v.termo.map(r=>{ const c=calcTermo(r); return [r.local,r.componente,r.tmax,r.tref,r.refTipo==="ambiente"?"Ambiente":"Similar",c.dt!=null?fmt(c.dt,1):"–",c.carga!=null?fmt(c.carga,0):"n.i.",c.txt,c.acao]; })));
+  else kids.push(p("Sem pontos registrados."));
+  kids.push(p(TERMO_CRIT,{it:true,size:18}));
+  anexo("ANEXO C – PENDÊNCIAS");
+  const pend=pendencias(v);
+  if(pend.length) kids.push(tabela(["Nº","Origem","Descrição","Classe","Providência","Prazo (dias)"],pend.map((x,k)=>[k+1,x.origem,x.desc,x.classe,x.prov,x.prazo])));
+  else kids.push(p("Sem pendências."));
+  anexo("ANEXO D – REGISTRO FOTOGRÁFICO");
+  const fotos=listaFotos(v); let falhas=0;
+  if(!fotos.length) kids.push(p("Sem fotos registradas."));
+  for(const fo of fotos){
+    try{ const b=await fotoBlob(fo.f); const buf=await b.arrayBuffer(); const w=fo.f.w||1600, h=fo.f.h||1200; let W=430, H=Math.round(W*h/w); if(H>560){ W=Math.round(W*560/H); H=560; }
+      kids.push(new Paragraph({children:[new ImageRun({data:buf,transformation:{width:W,height:H}})],alignment:AlignmentType.CENTER,spacing:{before:120}}));
+    }catch(e){ falhas++; }
+    kids.push(new Paragraph({children:[new TextRun({text:"Foto "+fo.num+" – "+fo.cap,size:18,italics:true})],alignment:AlignmentType.CENTER,spacing:{after:200}}));
+  }
+  const doc=new Document({creator:v.ident.fiscal||"Fiscal",title:"Relatório de vistoria elétrica"+(v.ident.convenio?" – Convênio "+v.ident.convenio:""),
+    styles:{default:{document:{run:{font:"Arial",size:22}}}},
+    sections:[{properties:{page:{margin:{top:1134,bottom:1134,left:1418,right:1134}}},children:kids}]});
+  return {blob:await Packer.toBlob(doc), falhas};
+}
+
+/* ============================== Eventos ============================== */
+document.addEventListener("click", async ev=>{
+  const b=ev.target.closest("button"); if(!b) return;
+  if(b.dataset.tab){ S.tab=b.dataset.tab; render(); window.scrollTo({top:0}); return; }
+  if(b.dataset.item){ const id=b.dataset.item; const st=S.v.check[id]||(S.v.check[id]={}); st.s = st.s===b.dataset.v? "" : b.dataset.v;
+    const it=document.getElementById("it_"+id); it.dataset.s=st.s; it.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.v===st.s))); agendarSalvar(); return; }
+  if(b.id==="addCor"){ S.v.correntes.push({id:uid8()}); agendarSalvar(); render(); return; }
+  if(b.dataset.delcor!=null){ const i=+b.dataset.delcor; if(await confirmar("Remover esta medição?")){ S.v.correntes.splice(i,1); agendarSalvar(); render(); } return; }
+  if(b.id==="addTer"){ S.v.termo.push({id:uid8(),refTipo:"similar"}); agendarSalvar(); render(); return; }
+  if(b.dataset.delter!=null){ const i=+b.dataset.delter; if(await confirmar("Remover este ponto termográfico e suas fotos?")){ S.v.termo.splice(i,1); agendarSalvar(); render(); } return; }
+  if(b.dataset.delph){ if(!(await confirmar("Remover esta foto do relatório?"))) return; removerFoto(b.dataset.delph); agendarSalvar(); render(); return; }
+  if(b.id==="genDraft"){ if(S.v.rel.texto && !(await confirmar("Substituir o texto atual pelo rascunho automático?"))) return; S.v.rel.texto=rascunhoAuto(S.v); S.v.rel.geradoEm=Date.now(); S.v.rel.fonte="rascunho automático"; agendarSalvar(); render(); return; }
+  if(b.id==="cpPrompt"){ const st=document.getElementById("genSt"); try{ await navigator.clipboard.writeText(promptClaude(S.v)); st.textContent="Pedido copiado. Cole numa conversa com o Claude e traga a resposta para o campo abaixo."; }catch(e){ st.textContent="Não foi possível copiar automaticamente."; } return; }
+  if(b.id==="dlDocx"){ baixarDocx(false); return; }
+  if(b.id==="shDocx"){ baixarDocx(true); return; }
+  if(b.id==="usarGPS"){ const st=document.getElementById("gpsSt"); st.textContent="Obtendo posição…"; const g=await posicaoAtual(); if(g){ const L=S.v.local; L.lat=g.lat; L.lon=g.lon; L.coords=g.lat.toFixed(6)+", "+g.lon.toFixed(6); L.fonte="GPS do aparelho, ±"+Math.round(g.acc)+" m"; agendarSalvar(); render(); } else st.textContent="Não foi possível obter a posição. Verifique se a localização está ligada e permitida para o navegador."; return; }
+  if(b.id==="buscarEnd"){ buscarEndereco(); return; }
+  if(b.id==="recarregar"){ location.reload(); return; }
+  if(b.id==="bkExp"){ exportarBackup(); return; }
+  if(b.id==="cpTxt"){ try{ await navigator.clipboard.writeText(S.v.rel.texto||rascunhoAuto(S.v)); document.getElementById("dlSt").textContent="Texto copiado."; }catch(e){ document.getElementById("dlSt").textContent="Não foi possível copiar; selecione o texto e copie manualmente."; } return; }
+  if(b.id==="btnNew"){ await salvarAgora(); S.v=novaVistoria({fiscal:S.v.ident.fiscal,cargo:S.v.ident.cargo}); S.list.unshift(S.v); S.tab="ident"; agendarSalvar(); render(); return; }
+  if(b.id==="btnList"){ abrirLista(); return; }
+  if(b.id==="dlgClose"){ document.getElementById("dlgList").close(); return; }
+  if(b.dataset.open){ await salvarAgora(); const x=S.list.find(v=>v.id===b.dataset.open); if(x){ S.v=x; normalizar(x); try{localStorage.setItem("vistoriaEletrica.cur",x.id);}catch(e){} } document.getElementById("dlgList").close(); S.tab="ident"; render(); return; }
+  if(b.dataset.dup){ const x=S.list.find(v=>v.id===b.dataset.dup); if(x){ const c=JSON.parse(JSON.stringify(x)); c.id="v-"+Date.now().toString(36)+uid8().slice(0,4); c.createdAt=Date.now(); c.ident.data=hojeISO(); c.check={}; c.correntes=[]; c.termo=[]; c.fotosGerais=[]; c.pend={}; c.rel={texto:"",geradoEm:0,fonte:""}; S.v=c; S.list.unshift(c); agendarSalvar(); document.getElementById("dlgList").close(); S.tab="ident"; render(); } return; }
+  if(b.dataset.delv){ if(!(await confirmar("Excluir esta vistoria? Esta ação não pode ser desfeita."))) return; await excluirVistoria(b.dataset.delv); abrirLista(); return; }
+});
+document.addEventListener("input", ev=>{
+  const el=ev.target;
+  if(el.dataset.path==="local.coords"){ S.v.local.coords=el.value; const c=parseCoords(el.value); const st=document.getElementById("coordSt");
+    if(c){ S.v.local.lat=c.lat; S.v.local.lon=c.lon; S.v.local.fonte="informadas pelo fiscal"; st.textContent="Lidas: "+fmtCoord(c.lat,c.lon); } else { S.v.local.lat=null; S.v.local.lon=null; st.textContent=el.value?"Não reconheci duas coordenadas válidas.":"Cole do Google Maps: toque e segure no local e copie os números."; }
+    agendarSalvar(); return; }
+  if(el.dataset.path){ let val=el.value; if(el.dataset.mask==="conv"){ val=maskConv(val); el.value=val; } if(el.dataset.path==="cfg.deseq"){ val=n(val)??10; } setPath(S.v,el.dataset.path,val); agendarSalvar(); if(el.dataset.path==="cfg.deseq") atualizarCorrentes(); return; }
+  if(el.dataset.itemobs){ const st=S.v.check[el.dataset.itemobs]||(S.v.check[el.dataset.itemobs]={}); st.obs=el.value; agendarSalvar(); return; }
+  if(el.dataset.cor!=null){ S.v.correntes[+el.dataset.cor][el.dataset.k]=el.value; agendarSalvar(); atualizarCorrentes(+el.dataset.cor); return; }
+  if(el.dataset.ter!=null){ S.v.termo[+el.dataset.ter][el.dataset.k]=el.value; agendarSalvar(); atualizarTermo(+el.dataset.ter); return; }
+  if(el.dataset.pend){ const k=el.dataset.pend; const p=S.v.pend[k]||(S.v.pend[k]={}); p[el.dataset.k]=el.value; if(el.dataset.k==="classe") el.closest(".pitem").dataset.c=el.value; agendarSalvar(); return; }
+});
+document.addEventListener("change", async ev=>{
+  const el=ev.target;
+  if(el.id==="bkImp" && el.files && el.files[0]){ importarBackup(el.files[0]); return; }
+  if(el.id==="carimbo"){ S.v.carimbo=el.checked; agendarSalvar(); return; }
+  if(el.dataset.aplica){ S.v.aplica[el.dataset.aplica]=el.checked; el.closest(".etapa").classList.toggle("off",!el.checked); agendarSalvar(); return; }
+  if(el.dataset.ter!=null && el.tagName==="SELECT"){ S.v.termo[+el.dataset.ter][el.dataset.k]=el.value; agendarSalvar(); atualizarTermo(+el.dataset.ter); return; }
+  if(el.dataset.addph && el.files && el.files[0]){
+    const tgt=el.dataset.addph; const file=el.files[0]; el.closest("label").textContent="Enviando…";
+    try{ const f=await guardarFoto(file,tgt); colocarFoto(tgt,f); agendarSalvar(); }catch(e){ toastSave("Não foi possível ler a imagem: "+(e&&e.message||e), true); }
+    render(); return; }
+});
+function colocarFoto(tgt,f){
+  const v=S.v; const [k,a,b]=tgt.split(":");
+  if(k==="g"){ v.fotosGerais.push(f); }
+  else if(k==="c"){ const st=v.check[a]||(v.check[a]={}); (st.fotos||(st.fotos=[])).push(f); }
+  else if(k==="t"){ const r=v.termo[+a]; if(b==="ir") r.fotoIR=f; else r.fotoVis=f; }
+}
+function removerFoto(ref){
+  const v=S.v; const [k,a,b]=ref.split(":"); let f=null;
+  try{ f = k==="g"? v.fotosGerais[+a] : k==="c"? v.check[a].fotos[+b] : (b==="ir"? v.termo[+a].fotoIR : v.termo[+a].fotoVis); }catch(e){}
+  if(f&&f.id&&S.idb) idbDel("fotos",f.id).catch(()=>{});
+  if(k==="g") v.fotosGerais.splice(+a,1);
+  else if(k==="c"){ v.check[a].fotos.splice(+b,1); }
+  else if(k==="t"){ const r=v.termo[+a]; if(b==="ir") delete r.fotoIR; else delete r.fotoVis; }
+}
+function atualizarCorrentes(only){
+  S.v.correntes.forEach((r,i)=>{ if(only!=null && i!==only) return; const c=calcCorrente(r,S.v.cfg.deseq);
+    const a=document.querySelector(`[data-calc="${i}"]`); if(a) a.textContent=fmt(c.pctIn,0)+"% · "+(c.deseq!=null?fmt(c.deseq,1)+"%":"–");
+    const s=document.querySelector(`[data-st="${i}"]`); if(s) s.innerHTML = c.flags.some(f=>f.sev==="crit")?`<span class="pill crit">Alerta</span>`: c.flags.length?`<span class="pill warn">Atenção</span>`: (c.imax!=null?`<span class="pill ok">OK</span>`:`<span class="pill na">–</span>`);
+    const fl=document.querySelector(`[data-flags="${i}"]`); if(fl) fl.textContent=c.flags.map(f=>f.txt).join(" · "); });
+}
+function atualizarTermo(i){
+  const r=S.v.termo[i]; const c=calcTermo(r); const el=document.querySelector(`[data-tres="${i}"]`); if(!el) return;
+  const pill = c.sev<0?`<span class="pill na">${c.txt}</span>`: c.sev===0?`<span class="pill ok">${c.txt}</span>`: c.sev<=2?`<span class="pill warn">${c.txt}</span>`:`<span class="pill crit">${c.txt}</span>`;
+  el.innerHTML = pill+(c.dt!=null?`<span class="mono">ΔT = ${fmt(c.dt,1)} °C</span><span>· ${esc(c.acao)}</span>`:"")+(c.carga!=null?`<span class="mono">· carga ${fmt(c.carga,0)}%</span>`:"")+(c.baixaCarga?`<span class="pill warn">Carga abaixo de 40%</span>`:"");
+  const card=document.querySelector(`[data-tcard="${i}"]`); if(card) card.dataset.sev=c.sev;
+}
+async function salvarAgora(){ if(S.saveTimer){ clearTimeout(S.saveTimer); S.saveTimer=null; await salvar(); } }
+function confirmar(msg){ return new Promise(res=>{ const d=document.getElementById("dlgConfirm"); document.getElementById("dlgConfirmMsg").textContent=msg;
+  const y=document.getElementById("cfYes"), no=document.getElementById("cfNo");
+  const done=v=>{ y.onclick=no.onclick=null; d.close(); res(v); }; y.onclick=()=>done(true); no.onclick=()=>done(false); d.showModal(); }); }
+function abrirLista(){
+  const body=document.getElementById("dlgBody");
+  body.innerHTML = S.list.length? S.list.map(v=>`<div class="vrow ${v.id===S.v.id?"cur":""}"><div><div>${esc(titulo(v))}</div><div class="meta">${esc(dataBR(v.ident&&v.ident.data))} · atualizada ${new Date(v.updatedAt||0).toLocaleString("pt-BR")}</div></div>
+    <div class="acts"><button class="btn small" type="button" data-open="${esc(v.id)}">Abrir</button><button class="btn small ghost" type="button" data-dup="${esc(v.id)}" title="Nova vistoria com os mesmos dados de identificação">Copiar dados</button><button class="btn small ghost danger" type="button" data-delv="${esc(v.id)}">Excluir</button></div></div>`).join("")
+    : `<div class="empty">Nenhuma vistoria salva ainda.</div>`;
+  body.innerHTML += `<div class="card" style="padding:12px"><h3>Backup</h3><p class="lead">As vistorias e fotos ficam só neste aparelho. Exporte um backup ao terminar cada vistoria e guarde no Drive ou no computador. O arquivo também serve para passar as vistorias para outro aparelho.</p>
+    <div class="row-actions"><button class="btn" type="button" id="bkExp">Exportar backup</button><label class="btn">Importar backup<input type="file" id="bkImp" accept="application/json,.json" hidden></label></div><span class="status" id="bkSt"></span></div>`;
+  const d=document.getElementById("dlgList"); if(!d.open) d.showModal();
+}
+async function excluirVistoria(id){
+  S.list=S.list.filter(v=>v.id!==id);
+  try{ await idbDel("vistorias",id); const fs=await idbAll("fotos"); for(const f of fs) if(f.vid===id) await idbDel("fotos",f.id); }catch(e){ toastSave("Erro ao excluir: "+(e&&e.message||e),true); }
+  if(S.v.id===id){ S.v=S.list[0]||novaVistoria(); normalizar(S.v); render(); }
+}
+function nomeDocx(){ return "Relatorio_vistoria_eletrica"+(S.v.ident.convenio?"_conv_"+S.v.ident.convenio:"")+"_"+(S.v.ident.data||hojeISO())+".docx"; }
+async function baixarDocx(share){
+  const st=document.getElementById("dlSt"); st.textContent="Montando o documento…";
+  try{ const {blob,falhas}=await gerarDocx(S.v); const nome=nomeDocx();
+    if(share){ const f=new File([blob],nome,{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"});
+      if(navigator.canShare({files:[f]})){ await navigator.share({files:[f],title:nome}); st.textContent="Compartilhado."+(falhas?" "+falhas+" foto(s) não incluídas.":""); return; } }
+    const u=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=u; a.download=nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),60000);
+    st.textContent="Arquivo gerado: "+nome+(falhas?". "+falhas+" foto(s) não puderam ser incluídas.":"");
+  }catch(e){ st.textContent = e&&e.name==="AbortError"? "Compartilhamento cancelado." : "Não foi possível gerar o .docx: "+(e&&e.message||e); }
+}
+/* Backup */
+function b64(blob){ return new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(blob); }); }
+async function exportarBackup(){
+  const st=document.getElementById("bkSt"); st.textContent="Preparando backup…";
+  try{ await salvarAgora(); const vist=await idbAll("vistorias"); const fotos=await idbAll("fotos"); const fo=[];
+    for(const f of fotos) fo.push({id:f.id,vid:f.vid,data:await b64(f.blob)});
+    const blob=new Blob([JSON.stringify({app:"vistoria-eletrica",versao:1,exportado:new Date().toISOString(),vistorias:vist,fotos:fo})],{type:"application/json"});
+    const nome="backup_vistorias_"+hojeISO()+".json";
+    const f=new File([blob],nome,{type:"application/json"});
+    if(navigator.canShare && navigator.canShare({files:[f]})){ try{ await navigator.share({files:[f],title:nome}); st.textContent="Backup compartilhado."; return; }catch(e){ if(e&&e.name==="AbortError"){ st.textContent="Cancelado."; return; } } }
+    const u=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=u; a.download=nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),60000);
+    st.textContent="Backup gerado: "+nome+" ("+vist.length+" vistorias, "+fo.length+" fotos).";
+  }catch(e){ st.textContent="Falha no backup: "+(e&&e.message||e); }
+}
+async function importarBackup(file){
+  const st=document.getElementById("bkSt"); st.textContent="Lendo backup…";
+  try{ const j=JSON.parse(await file.text()); if(j.app!=="vistoria-eletrica") throw new Error("arquivo não é um backup deste app");
+    let nf=0; for(const f of (j.fotos||[])){ if(await idbGet("fotos",f.id)) continue; const bl=await (await fetch(f.data)).blob(); await idbPut("fotos",{id:f.id,vid:f.vid,blob:bl,criado:Date.now()}); nf++; }
+    let nv=0; for(const v of (j.vistorias||[])){ const ex=await idbGet("vistorias",v.id); if(!ex || (v.updatedAt||0)>(ex.updatedAt||0)){ await idbPut("vistorias",v); nv++; } }
+    await carregar(); st.textContent="Importado: "+nv+" vistoria(s) e "+nf+" foto(s)."; render(); abrirLista();
+  }catch(e){ st.textContent="Não foi possível importar: "+(e&&e.message||e); }
+}
+function atualizarRede(){ const el=document.getElementById("netSt"); if(!el) return; const on=navigator.onLine; el.textContent=on?"Online":"Offline"; el.className="chip "+(on?"ok":"warn"); }
+window.addEventListener("online",atualizarRede); window.addEventListener("offline",atualizarRede);
+/* ============================== Início ============================== */
+(async function(){
+  S.v=novaVistoria(); render();
+  await initCaps();
+  await carregar();
+  render(); atualizarRede();
+  toastSave(S.store==="idb"?"Salvo no aparelho":"Sem armazenamento");
+  try{ if(navigator.permissions){ const p=await navigator.permissions.query({name:"geolocation"}); if(p.state==="granted") iniciarGPS(); } }catch(e){}
+})();
+</script>
+</body>
+</html>
