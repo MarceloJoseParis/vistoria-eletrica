@@ -1414,7 +1414,7 @@ function abrirLista(){
     <div class="row"><button class="btn sm pri" type="button" data-open="${esc(v.id)}">Abrir</button><button class="btn sm" type="button" data-dup="${esc(v.id)}">Nova com estes dados</button><button class="btn sm ghost danger" type="button" data-delv="${esc(v.id)}">Excluir</button></div></div>`).join("")
     : `<div class="empty">Nenhuma vistoria salva ainda.</div>`)
   + `<div class="card"><h3>Backup</h3><p class="lead">${NV.user&&NV.pronta?"As vistorias estão na nuvem da equipe; o backup é uma cópia extra deste aparelho.":"Vistorias e fotos ficam só neste aparelho."} Exporte um backup ao terminar cada vistoria; o arquivo também passa as vistorias para outro aparelho ou para o computador.</p>
-    <div class="row"><button class="btn" type="button" id="bkExp">Exportar backup</button><label class="btn">Importar backup<input type="file" id="bkImp" accept="application/json,.json" hidden></label></div><span class="status" id="bkSt"></span></div>`;
+    <div class="row"><button class="btn" type="button" id="bkExp">Exportar backup</button><label class="btn">Importar backup<input type="file" id="bkImp" accept="application/json,.json" hidden></label></div><span class="status" id="bkSt"></span></div><p class="status" style="text-align:center">Versão do app: ${APP_VER}</p>`;
   const d=document.getElementById("dlgList"); if(!d.open) d.showModal();
 }
 
@@ -2015,7 +2015,8 @@ function rDrive(){
 }
 window.addEventListener("online",()=>{ atualizarChipDrive(); agendarSync(500); });
 window.addEventListener("offline",atualizarChipDrive);
-document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible") agendarSync(800); });
+const APP_VER="2.0.1";
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"){ agendarSync(800); try{ S.swReg&&S.swReg.update(); }catch(e){} } });
 /* grava na hora se o app for para segundo plano ou fechado com alteração pendente */
 function gravarPendente(){ if(S.saveTimer){ clearTimeout(S.saveTimer); S.saveTimer=null; salvar(); } }
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="hidden") gravarPendente(); });
