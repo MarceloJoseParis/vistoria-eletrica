@@ -386,6 +386,23 @@ main.wide{max-width:none}
 .rap-st button.nc[aria-pressed="true"]{background:var(--crit);border-color:var(--crit);color:#fff}
 .rap-c.okc.on{background:var(--ok);border-color:var(--ok)}
 .okx{display:inline-block;background:var(--ok);color:#fff;border-radius:4px;padding:0 5px;font-size:12px;font-weight:700}
+
+/* ---- 2.3: roteiro ---- */
+.sec-t{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:6px 0 2px}
+.rot{display:flex;align-items:center;border-bottom:1px solid var(--line)}
+.rot-r{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:10px 2px;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.rot-r>svg{width:24px;height:24px;stroke:var(--muted);fill:none;stroke-width:1.8;flex:none}
+.rot .rt{flex:1;min-width:0}.rot .rt b{display:block;font-size:15px;font-weight:600}.rot .rt small{display:block;font-size:12.5px;color:var(--muted)}
+.dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:14px;font-weight:700;flex:none}
+.dot.c{background:var(--ok);border-color:var(--ok);color:#fff}.dot.nc{background:var(--crit);border-color:var(--crit);color:#fff}
+.dot.v{border-color:var(--ok);border-style:dashed;color:var(--ok)}.dot.na,.dot.nv{color:var(--muted)}
+.more{width:42px;height:42px;border:0;background:none;color:var(--muted);font-size:20px;cursor:pointer;flex:none;border-radius:8px}
+.rot-m{display:grid;gap:6px;padding:4px 0 10px 36px}
+.rot-m button{min-height:40px;border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:10px;font-size:14px;text-align:left;padding:6px 12px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.rot-m button svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+.rot-m .status{margin:0}
+.rot-obs{margin:4px 0 8px 36px;width:calc(100% - 36px);font-size:14.5px}
+.tagT{font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent-ink);border-radius:4px;padding:0 5px;margin-left:6px;vertical-align:1px}
 </style>
 </head>
 <body>
@@ -776,7 +793,7 @@ Regras obrigatórias:
 16. Legendas, observações e relatos foram escritos às pressas em campo. Reescreva-os em linguagem técnica formal, sem mudar os fatos (local, o que foi visto, quantidades). Fundamente cada não conformidade e cada recomendação com a norma e o requisito descumprido (ABNT NBR 5410, NBR 14136, NBR 5419, NBR IEC 60898, NR-10, NDU-001 da Energisa, conforme o caso), explicando em uma frase o risco (choque, sobreaquecimento, incêndio). Cite o número do item da norma só quando tiver certeza dele; senão, cite a norma e descreva o requisito.
 17. Se você tiver acesso às fotos (pasta da vistoria no Drive ou imagens anexadas), examine cada uma. Foto de item NC sem legenda: descreva no relatório o que é visível, com cautela ("a foto mostra…"), sem afirmar o que a imagem não permite ver (bitola, tensão, ligação ao terra). Foto com legenda: confira se a imagem confirma a legenda. Se a imagem contradizer a legenda ou mostrar outro problema não registrado, NÃO inclua no relatório: liste ao final, na sua resposta na conversa, fora do .docx, em "Para o vistoriador confirmar", com o número da foto e o que foi visto.
 18. Registros de campo com "sem_item": true vieram da foto rápida sem atalho: são ocorrências que o vistoriador não ligou a um item. Classifique cada um no item do checklist que corresponde ao problema, trate como não conformidade daquele item (com o local e a foto indicados) e diga na seção de achados em qual item foi enquadrado. Se não couber em nenhum item, registre como achado geral.
-19. Cada foto pode trazer "situacao_da_foto": "conforme" ou "não conforme", marcada pelo vistoriador no campo. Foto não conforme é ocorrência (ficha da regra 6). Foto conforme é evidência de que o item foi verificado e estava adequado naquele local: cite-a na tabela de itens conformes (6.3) e coloque-a no "Registro fotográfico complementar", sem transformá-la em achado. Um item pode ter fotos conformes em uns locais e não conformes em outros: a situação do item é não conforme, e a ficha cita só os locais com problema. Registros "sem_item" trazem a etapa (e o quadro) em que a foto foi tirada: use isso para enquadrar no item certo.
+19. Cada foto pode trazer "situacao_da_foto": "conforme" ou "não conforme", marcada pelo vistoriador no campo. Foto não conforme é ocorrência (ficha da regra 6). Foto conforme é evidência de que o item foi verificado e estava adequado naquele local: cite-a na tabela de itens conformes (6.3) e coloque-a no "Registro fotográfico complementar", sem transformá-la em achado. Um item pode ter fotos conformes em uns locais e não conformes em outros: a situação do item é não conforme, e a ficha cita só os locais com problema. Registros "sem_item" trazem a etapa (e o quadro) em que a foto foi tirada: use isso para enquadrar no item certo. Item com situação "C" e sem fotos foi visto pelo vistoriador e considerado sem problema, sem registro fotográfico: trate como conforme por inspeção visual, citando que não há foto.
 
 Texto de escopo:
 """${ESCOPO_TXT}"""
@@ -1687,18 +1704,33 @@ function cartaoFoto(f,pref,e,qd,itemSel){
       <select data-fmv="${esc(pref)}" data-et="${e.id}" data-qd="${esc(qd||"")}" aria-label="O que a foto mostra">${opcoesItens(e,qd,itemSel)}</select></div>
       <div class="fc-r"><textarea data-leg="${esc(pref)}" rows="2" placeholder="${f.st==="C"?"Local (ex.: Bloco B, sala 4)":"Onde e o quê (ex.: Bloco B, sala 4 – fio solto no forro)"}" aria-label="Legenda">${esc(f.leg||"")}</textarea>
       <button type="button" class="mini ic ${f.audio&&f.audio.id?"has":""}" data-mic="${esc(pref)}" aria-label="Gravar áudio desta foto">${ICON.mic}</button></div></div></div>`; }
+const ITEM_DESC={e1:"Poste ou pontalete, caixa, lacre, sem improvisos",e2:"Anote a In e a seção do cabo",e3:"Fechada, medidor instalado, nº da UC",e4:"Condutor e haste visíveis e conectados",e5:"Conexões sem aquecimento",
+  s1:"Potência, tensões, nº de série",s2:"Acesso restrito, placas de risco",s3:"Presentes e sem danos",s4:"Ligação visível à malha",s5:"Sem aquecimento (à distância segura)",
+  q1:"Diagrama ou quadro de cargas",q2:"In ≤ Iz, sem troca por maior",q3:"Áreas molhadas, cozinha, externas",q4:"Botão de teste desliga",q5:"Instalado e ligado ao terra",q6:"Separados e identificados",q7:"Neutro azul, terra verde-amarelo",q8:"Terminais, sem emendas ou queima",q9:"Contra-tampa, fecho, advertência",q10:"Livre, sem depósito",q12:"Dois cabos no borne, disjuntor solto",q11:"Disjuntores e barramentos",
+  l1:"Legível e compatível",l2:"Fabricante e Inmetro",l6:"Sem ressecamento ou derretimento",l3:"Fixados, com tampa, sem cabo exposto",l4:"Só dentro de caixas",l5:"Circuitos separados",
+  p1:"NBR 14136, sem benjamim ou extensão",p2:"Ar, chuveiro, cozinha",p3:"Fixados, sem partes vivas",p4:"Instalada e funcionando",p5:"Sem aquecimento",
+  a1:"Instalado e acessível",a2:"Haste e conexão visíveis",a3:"Presente nos circuitos e tomadas",
+  d1:"Íntegra e fixada",d2:"Mínimo duas, com conector de ensaio",d3:"Material e seção adequados",d4:"Cobertura e quadra",d5:"Sem corrosão ou rompimento",
+  f1:"Dados de placa, bom estado",f2:"Seccionamento e DPS",f3:"Estruturas aterradas, placa no padrão",f4:"Sem pontos quentes"};
 function corpoEtapa(e,qd){
-  const its=itensCtx(e,qd); const com=its.filter(y=>((S.v.check[y.id]||{}).fotos||[]).length); const sem=its.filter(y=>!((S.v.check[y.id]||{}).fotos||[]).length);
-  const nts=notasCtx(e,qd).filter(n=>(n.fotos||[]).length);
-  const nf=com.reduce((s,y)=>s+S.v.check[y.id].fotos.length,0)+nts.reduce((s,n)=>s+n.fotos.length,0);
-  return `<button type="button" class="ff-add" data-act="fotoEt" data-et="${e.id}" data-qd="${esc(qd||"")}">${CAM}<span><b>Tirar foto${e.id==="3"?" deste quadro":" desta etapa"}</b><small>Depois marque C ou NC e o que ela mostra</small></span></button>
-   ${com.map(y=>{ const st=S.v.check[y.id];
-     return `<div class="fg" id="it_${y.id}" data-s="${st.s||""}"><div class="fg-h"><span class="pill ${st.s==="NC"?"crit":st.s==="C"?"ok":""}">${st.s||"—"}</span><b>${esc(codItem(y.id))}</b> <span class="fg-t">${esc(curto(y.id))}</span><button type="button" class="mini" data-act="fotoEt" data-et="${e.id}" data-qd="${esc(qd||"")}" data-pre="${esc(y.base)}" aria-label="Outra foto de ${esc(curto(y.id))}">${ICON.cam}+ Foto</button></div>
-       ${defsHTML(y.id,st)}
-       ${st.fotos.map((f,i)=>cartaoFoto(f,"c:"+y.id+":"+i,e,qd,y.id)).join("")}
-       ${y.m==="T"? S.v.termo.map((r,i)=>r.item===y.id?cardTer(r,i):"").join("") : ""}</div>`; }).join("")}
-   ${nts.length?`<div class="fg"><div class="fg-h"><span class="pill">?</span><b>Sem item</b> · o Claude classifica no relatório</div>${nts.map(n=>n.fotos.map((f,i)=>cartaoFoto(f,"n:"+n.id+":"+i,e,qd,"")).join("")).join("")}</div>`:""}
-   ${sem.length?`<div class="ff-sub"><b>${nf?"Itens sem foto":"Itens da etapa"}</b><small>Marque o que viu sem fotografar. Sem marcação, o item fica como não verificado.</small></div>${sem.map(y=>itemHTML(y.id,y.m,y.t)).join("")}`:""}`; }
+  const its=itensCtx(e,qd);
+  const linhas=its.map(y=>{ const st=S.v.check[y.id]||{}; const nf=(st.fotos||[]).length; const nT= y.m==="T"? S.v.termo.filter(r=>r.item===y.id).length : 0;
+    const s=st.s||""; const cls= s==="NC"?"nc": s==="C"?(nf?"c":"v"): s==="NA"?"na": s==="NV"?"nv":"";
+    const icone= cls==="nc"?"✕": (cls==="c"||cls==="v")?"✓": cls==="na"?"–": cls==="nv"?"?":"";
+    const sub= nf? nf+(nf>1?" fotos":" foto")+(s==="NC"?" · não conforme":s==="C"?" · conforme":" · marque C ou NC")
+      : nT? nT+(nT>1?" pontos":" ponto")+" de termografia"+(s?" · "+({C:"conforme",NC:"não conforme",NA:"não se aplica",NV:"não verificado"}[s]||""):"")
+      : s==="C"? "Visto, sem problema (sem foto)" : s==="NA"? "Não se aplica" : s==="NV"? "Não verificado" : s==="NC"? "Não conforme (sem foto)" : (ITEM_DESC[y.base]||"");
+    const acao= y.m==="T"? `data-act="addTer" data-ponto="${esc(y.id)}"` : `data-act="fotoEt" data-et="${e.id}" data-qd="${esc(qd||"")}" data-pre="${esc(y.base)}"`;
+    const menu= S.rotMenu===y.id? `<div class="rot-m">${nf?`<p class="status">A situação deste item vem das fotos (C ou NC em cada uma).</p>`:`<button type="button" data-act="rotSet" data-id="${esc(y.id)}" data-v="C">✓ Visto, sem problema (sem foto)</button><button type="button" data-act="rotSet" data-id="${esc(y.id)}" data-v="NA">– Não se aplica</button><button type="button" data-act="rotSet" data-id="${esc(y.id)}" data-v="">Não verificado</button>`}<button type="button" data-act="rotObs" data-id="${esc(y.id)}">${ICON.obs}Observação do item</button></div>` : "";
+    const obs= (st.obs||S.obsOpen.has(y.id))? `<textarea class="rot-obs" data-itemobs="${esc(y.id)}" rows="2" placeholder="Observação geral do item">${esc(st.obs||"")}</textarea>` : "";
+    return `<div class="rot" id="it_${y.id}" data-s="${s}"><button type="button" class="rot-r" ${acao}><span class="dot ${cls}">${icone}</span><span class="rt"><b>${esc(curto(y.id))}${y.m==="T"?'<span class="tagT">câmera térmica</span>':""}</b><small>${esc(sub)}</small></span>${y.m==="T"?ICON.termo:CAM}</button><button type="button" class="more" data-act="rotMenu" data-id="${esc(y.id)}" aria-label="Mais opções para ${esc(curto(y.id))}">⋯</button></div>${menu}${obs}`; }).join("");
+  const cards=[];
+  its.forEach(y=>{ const st=S.v.check[y.id]; if(st&&st.fotos) st.fotos.forEach((f,i)=>cards.push(cartaoFoto(f,"c:"+y.id+":"+i,e,qd,y.id))); });
+  notasCtx(e,qd).forEach(n=>(n.fotos||[]).forEach((f,i)=>cards.push(cartaoFoto(f,"n:"+n.id+":"+i,e,qd,""))));
+  const termos=its.filter(y=>y.m==="T").map(y=>S.v.termo.map((r,i)=>r.item===y.id?cardTer(r,i):"").join("")).join("");
+  return `<div class="sec-t">Roteiro · toque para fotografar</div>${linhas}
+   <button type="button" class="ff-add" data-act="fotoEt" data-et="${e.id}" data-qd="${esc(qd||"")}">${CAM}<span><b>Foto de outra coisa</b><small>Fora do roteiro · o Claude classifica no relatório</small></span></button>
+   ${cards.length?`<div class="sec-t">Fotos (${cards.length})</div>${cards.join("")}`:""}${termos}`; }
 /* troca a classificação de uma foto (item, outro item ou "sem item") */
 function moverFoto(pref,destId,e,qd){
   const v=S.v; const [k,a,b]=pref.split(":"); let f=null;
@@ -1761,6 +1793,9 @@ document.addEventListener("click", async ev=>{
   if(act==="delNota"){ if(!(await confirmar("Excluir este registro de campo e suas fotos?"))) return; const i=S.v.notas.findIndex(x=>x.id===b.dataset.id); if(i>=0){ (S.v.notas[i].fotos||[]).forEach(f=>apagarMidia(f.id).catch(()=>{})); S.v.notas.splice(i,1); } agendarSalvar(); render(true); return; }
   if(b.id==="fab"){ document.getElementById("sheet").hidden=false; return; }
   if(act==="fecharSheet"){ fecharSheet(); return; }
+  if(act==="rotMenu"){ S.rotMenu= S.rotMenu===b.dataset.id? null : b.dataset.id; render(true); return; }
+  if(act==="rotSet"){ const id=b.dataset.id; const st=S.v.check[id]||(S.v.check[id]={}); st.s=b.dataset.v; st.auto=false; S.rotMenu=null; vib(); agendarSalvar(); agendarSync(2500); render(true); return; }
+  if(act==="rotObs"){ S.obsOpen.add(b.dataset.id); S.rotMenu=null; render(true); const t=document.querySelector(`textarea[data-itemobs="${b.dataset.id}"]`); if(t) t.focus(); return; }
   if(act==="fotoEt"){ S.rapCtx={et:b.dataset.et, qd:b.dataset.qd||null, item:b.dataset.pre||null}; S.fabMode="rapida"; document.getElementById("fabFile").click(); return; }
   if(act==="rapSt"){ S.rap.st= S.rap.st===b.dataset.v? null : b.dataset.v; abrirRapida(); return; }
   if(act==="rapItem"){ S.rap.item= S.rap.item===b.dataset.b? null : b.dataset.b; abrirRapida(); return; }
@@ -2146,7 +2181,7 @@ function rDrive(){
 }
 window.addEventListener("online",()=>{ atualizarChipDrive(); agendarSync(500); });
 window.addEventListener("offline",atualizarChipDrive);
-const APP_VER="2.2.0";
+const APP_VER="2.3.0";
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"){ agendarSync(800); try{ S.swReg&&S.swReg.update(); }catch(e){} } });
 /* grava na hora se o app for para segundo plano ou fechado com alteração pendente */
 function gravarPendente(){ if(S.saveTimer){ clearTimeout(S.saveTimer); S.saveTimer=null; salvar(); } }
