@@ -1,0 +1,16 @@
+{
+  "name": "Vistoria Elétrica 1.9.6",
+  "short_name": "Vistoria 1.9.6",
+  "description": "Vistoria elétrica básica de obras escolares de convênio (SEDUC-MT): inspeção visual, alicate amperímetro e termografia, com relatório .docx. Funciona sem internet.",
+  "id": "./vistoria.html",
+  "start_url": "./vistoria.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#12171C",
+  "theme_color": "#12171C",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
