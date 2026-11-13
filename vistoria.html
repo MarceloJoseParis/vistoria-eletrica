@@ -358,6 +358,34 @@ main.wide{max-width:none}
 .rv-th button[aria-current="true"]{border-color:var(--accent)}.rv-th img{width:64px;height:64px;object-fit:cover;display:block}
 .rv-aud{margin:0;font-size:14px;background:var(--soft);border-radius:8px;padding:8px 10px}
 .rv-st{max-width:360px}
+
+/* ---- 2.2: etapa por fotos ---- */
+.ff-add{display:flex;align-items:center;gap:12px;width:100%;min-height:62px;border:2px dashed var(--accent);background:var(--accent-soft);color:var(--ink);border-radius:12px;padding:8px 14px;cursor:pointer;text-align:left;margin-bottom:4px}
+.ff-add svg{width:30px;height:30px;flex:none;stroke:var(--accent-ink);fill:none;stroke-width:1.8;stroke-linejoin:round}
+.ff-add b{display:block;font-size:16px}.ff-add small{color:var(--muted);font-size:13px}
+.fg{border:1px solid var(--line);border-radius:10px;padding:8px;display:grid;gap:8px;background:var(--panel)}
+.fg-h{display:flex;align-items:center;gap:8px;font-size:14.5px}
+.fg-h .pill{min-width:34px;text-align:center}
+.fg-t{flex:1;min-width:0}
+.fc{display:grid;grid-template-columns:76px 1fr;gap:8px;align-items:start;border-left:3px solid var(--line);padding-left:6px}
+.fc.nc{border-left-color:var(--crit)}.fc.c{border-left-color:var(--ok)}
+.fc-b{display:grid;gap:6px;min-width:0}
+.fc-r{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px;align-items:center}
+.fc-r:last-child{grid-template-columns:minmax(0,1fr) 44px}
+.fc select{min-height:40px;font-size:14px;padding:6px 8px}
+.fc textarea{min-height:0;font-size:14.5px}
+.seg2{display:grid;grid-template-columns:44px 48px;gap:4px}
+.seg2 button{min-height:40px;border:1px solid var(--line);background:var(--soft);border-radius:8px;font-weight:700;cursor:pointer;color:var(--muted)}
+.seg2 button[aria-pressed="true"][data-v="C"]{background:var(--ok);color:#fff;border-color:transparent}
+.seg2 button[aria-pressed="true"][data-v="NC"]{background:var(--crit);color:#fff;border-color:transparent}
+.ff-sub{display:grid;gap:2px;margin:6px 0 2px;padding-top:8px;border-top:1px dashed var(--line)}
+.ff-sub small{color:var(--muted);font-size:13px}
+.rap-st{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rap-st button{min-height:52px;border:2px solid var(--line);background:var(--soft);border-radius:12px;font-weight:700;font-size:16px;cursor:pointer;color:var(--ink)}
+.rap-st button.ok[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:#fff}
+.rap-st button.nc[aria-pressed="true"]{background:var(--crit);border-color:var(--crit);color:#fff}
+.rap-c.okc.on{background:var(--ok);border-color:var(--ok)}
+.okx{display:inline-block;background:var(--ok);color:#fff;border-radius:4px;padding:0 5px;font-size:12px;font-weight:700}
 </style>
 </head>
 <body>
@@ -715,13 +743,13 @@ function dadosParaClaude(v){
     instrumentos:{alicate:v.instr.alicate, camera_termografica:v.instr.termo},
     outras_limitacoes:v.instr.obsLimit,
     inspecao_visual: ETAPAS.map(e=>({etapa:e.id+" – "+e.t, aplica:(!e.opc||!!v.aplica[e.id]),
-      itens:(!e.opc||v.aplica[e.id])? itensDaEtapa(v,e).map(({id,m,t,qn})=>{ const s=v.check[id]||{}; return {item:codItem(id,v), quadro:qn||undefined, metodo:METODO[m], descricao:t, situacao:s.s||"sem registro", obs:s.obs||"", fotos_e_ocorrencias:fotos.filter(f=>f.ref==="chk:"+id).map(f=>({foto:"Foto "+f.num, legenda:(f.f.leg||"").trim(), relato_audio:(f.f.audio&&f.f.audio.txt)||""}))}; }):[] })),
+      itens:(!e.opc||v.aplica[e.id])? itensDaEtapa(v,e).map(({id,m,t,qn})=>{ const s=v.check[id]||{}; return {item:codItem(id,v), quadro:qn||undefined, metodo:METODO[m], descricao:t, situacao:s.s||"sem registro", obs:s.obs||"", fotos_e_ocorrencias:fotos.filter(f=>f.ref==="chk:"+id).map(f=>Object.assign({foto:"Foto "+f.num, legenda:(f.f.leg||"").trim(), relato_audio:(f.f.audio&&f.f.audio.txt)||""}, f.f.st?{situacao_da_foto:f.f.st==="C"?"conforme":"não conforme"}:{}))}; }):[] })),
     medicoes_corrente: v.correntes.map(r=>{ const c=calcCorrente(r,v.cfg.deseq); return {quadro:r.quadro,circuito:r.circuito,disjuntor_In_A:r.disjIn,cabo_mm2:r.cabo,Iz_A:c.iz!=null?+c.iz.toFixed(1):null,Iz_min_A_se_agrupado:c.izMin!=null?+c.izMin.toFixed(1):null,Iz_origem:c.iz==null?"":(c.izEst?c.izDesc:"informada pelo vistoriador"),fase_A:r.ia,fase_B:r.ib,fase_C:r.ic,neutro:r.ineutro,pct_In:c.pctIn!=null?+c.pctIn.toFixed(0):null,desequilibrio_pct:c.deseq!=null?+c.deseq.toFixed(1):null,alertas:c.flags.map(f=>f.txt),obs:r.obs}; }),
     limite_desequilibrio_adotado_pct:v.cfg.deseq,
     termografia: v.termo.map(r=>{ const c=calcTermo(r); return {local:r.local,componente:r.componente,Tmax_C:r.tmax,Tref_C:r.tref,referencia:r.refTipo==="ambiente"?"ar ambiente":"componente similar",deltaT_C:c.dt!=null?+c.dt.toFixed(1):null,classificacao_NETA:c.txt,acao:c.acao,carga_pct:c.carga!=null?+c.carga.toFixed(0):null,carga_abaixo_40:!!c.baixaCarga,obs:r.obs,fotos:fotosDe("ter:"+r.id)}; }),
     achados_e_recomendacoes: pendencias(v).map(p=>{ const d=v.pend[p.key]||{}; return {origem:p.origem,descricao:p.desc,prioridade:p.classe,prioridade_definida_pelo_vistoriador:!!prio(d.classe),recomendacao:p.prov,prazo:p.prazo}; }),
     relatos_em_audio:todosAudios(v).map(x=>({vinculo:x.rot, duracao_s:x.a.dur, transcricao:x.a.txt||"", fonte_transcricao:x.a.txt?(x.a.fonte||""):"", situacao:x.a.txt?"transcrito":"PENDENTE: transcrever o arquivo de áudio no Drive", arquivo_audio_drive:x.a.driveId?"https://drive.google.com/file/d/"+x.a.driveId+"/view":"(ainda não enviado ao Drive)"})),
-    pasta_das_fotos_no_drive:(v.drive&&v.drive.pasta)?"https://drive.google.com/drive/folders/"+v.drive.pasta:"", registros_de_campo:(v.notas||[]).filter(nt=>!nt.prov).map((nt,k)=>Object.assign({registro:k+1,data_hora:dtBR(new Date(nt.t)),texto:nt.txt||"",fotos:fotosDe("nota:"+nt.id)}, nt.semItem?{sem_item:true,local:nt.amb||"",legendas:(nt.fotos||[]).map(f=>f.leg||"").filter(Boolean),relato_em_audio:(nt.fotos||[]).map(f=>f.audio&&f.audio.txt||"").filter(Boolean)}:{})),
+    pasta_das_fotos_no_drive:(v.drive&&v.drive.pasta)?"https://drive.google.com/drive/folders/"+v.drive.pasta:"", registros_de_campo:(v.notas||[]).filter(nt=>!nt.prov).map((nt,k)=>Object.assign({registro:k+1,data_hora:dtBR(new Date(nt.t)),texto:nt.txt||"",fotos:fotosDe("nota:"+nt.id)}, nt.semItem?{sem_item:true,etapa:nt.et?(ETAPAS.find(e=>e.id===nt.et)||{}).t||nt.et:"",quadro:nt.qd?((v.quadros||[]).find(q=>q.id===nt.qd)||{}).nome||"":"",situacao_da_foto:nt.st==="C"?"conforme":nt.st==="NC"?"não conforme":"",local:nt.amb||"",legendas:(nt.fotos||[]).map(f=>f.leg||"").filter(Boolean),relato_em_audio:(nt.fotos||[]).map(f=>f.audio&&f.audio.txt||"").filter(Boolean)}:{})),
     total_fotos:fotos.length
   };
 }
@@ -748,6 +776,7 @@ Regras obrigatórias:
 16. Legendas, observações e relatos foram escritos às pressas em campo. Reescreva-os em linguagem técnica formal, sem mudar os fatos (local, o que foi visto, quantidades). Fundamente cada não conformidade e cada recomendação com a norma e o requisito descumprido (ABNT NBR 5410, NBR 14136, NBR 5419, NBR IEC 60898, NR-10, NDU-001 da Energisa, conforme o caso), explicando em uma frase o risco (choque, sobreaquecimento, incêndio). Cite o número do item da norma só quando tiver certeza dele; senão, cite a norma e descreva o requisito.
 17. Se você tiver acesso às fotos (pasta da vistoria no Drive ou imagens anexadas), examine cada uma. Foto de item NC sem legenda: descreva no relatório o que é visível, com cautela ("a foto mostra…"), sem afirmar o que a imagem não permite ver (bitola, tensão, ligação ao terra). Foto com legenda: confira se a imagem confirma a legenda. Se a imagem contradizer a legenda ou mostrar outro problema não registrado, NÃO inclua no relatório: liste ao final, na sua resposta na conversa, fora do .docx, em "Para o vistoriador confirmar", com o número da foto e o que foi visto.
 18. Registros de campo com "sem_item": true vieram da foto rápida sem atalho: são ocorrências que o vistoriador não ligou a um item. Classifique cada um no item do checklist que corresponde ao problema, trate como não conformidade daquele item (com o local e a foto indicados) e diga na seção de achados em qual item foi enquadrado. Se não couber em nenhum item, registre como achado geral.
+19. Cada foto pode trazer "situacao_da_foto": "conforme" ou "não conforme", marcada pelo vistoriador no campo. Foto não conforme é ocorrência (ficha da regra 6). Foto conforme é evidência de que o item foi verificado e estava adequado naquele local: cite-a na tabela de itens conformes (6.3) e coloque-a no "Registro fotográfico complementar", sem transformá-la em achado. Um item pode ter fotos conformes em uns locais e não conformes em outros: a situação do item é não conforme, e a ficha cita só os locais com problema. Registros "sem_item" trazem a etapa (e o quadro) em que a foto foi tirada: use isso para enquadrar no item certo.
 
 Texto de escopo:
 """${ESCOPO_TXT}"""
@@ -950,7 +979,7 @@ function rQuadros(e){ const qs=S.v.quadros||[]; const ab=qdAberto();
       <button class="qd-h" type="button" data-act="toggleQd" data-qd="${q.id}" aria-expanded="${open}"><span class="n">Q${i+1}</span><span class="tt" id="qdn_${q.id}">${esc(nomeQd(q,i))}</span><span class="cnt" id="qdc_${q.id}">${cntQd(x)}</span><span class="chev">▾</span></button>
       ${open?`<div class="qd-b"><div class="qd-nome"><label class="f"><span>Nome do quadro</span><input type="text" data-qdnome="${q.id}" value="${esc(q.nome||"")}" placeholder="Ex.: QGBT, QD-01 Bloco A, QD Cozinha" autocomplete="off" enterkeyhint="done"></label>
         ${qs.length>1?`<button class="btn sm ghost danger" type="button" data-act="delQd" data-qd="${q.id}">Excluir quadro</button>`:""}</div>
-        ${its.map(y=>itemHTML(y.id,y.m,y.t)).join("")}${rCorQd(q)}</div>`:""}</div>`; }).join("")
+        ${corpoEtapa(e,q.id)}${rCorQd(q)}</div>`:""}</div>`; }).join("")
    + `<div class="qd-add"><button class="btn" type="button" data-act="addQd">+ Adicionar quadro</button></div>`; }
 
 /* ============================== Fotos: referências ============================== */
@@ -984,7 +1013,7 @@ function removerFoto(pref){
   if(f&&f.audio&&f.audio.id) esquecerAudio(f.audio).catch(()=>{});
   if(f&&f.id&&NV.b&&NV.user&&NV.pronta) Promise.resolve(NV.b.apagarFoto(f.id)).catch(()=>{});
   if(k==="g") v.fotosGerais.splice(+a,1);
-  else if(k==="c") v.check[a].fotos.splice(+b,1);
+  else if(k==="c"){ v.check[a].fotos.splice(+b,1); recomputar(a,v); }
   else if(k==="n"){ const nt=v.notas.find(x=>x.id===a); if(nt) nt.fotos.splice(+b,1); }
   else if(k==="t"){ const r=v.termo[+a]; if(b==="ir") delete r.fotoIR; else delete r.fotoVis; }
 }
@@ -1092,7 +1121,7 @@ function etapaAberta(){ if(S.openEt!==null) return S.openEt;
   const e=ETAPAS.find(e=>{ const x=etapaInfo(e); return x.on && x.feitos<x.total; }); return e? e.id : ""; }
 function rVisual(){
   const aberta=etapaAberta();
-  const notas=(S.v.notas||[]).filter(n=>!(S.rap&&S.rap.nid===n.id));
+  const notas=(S.v.notas||[]).filter(n=>!(S.rap&&S.rap.nid===n.id) && !n.et);
   return `${ambBar()}<div class="legend"><span><b>C</b> conforme</span><span><b>NC</b> não conforme</span><span><b>NA</b> não se aplica</span><span><b>NV</b> não verificado</span></div>
   ${notas.length?`<section class="card"><div class="card-h"><h3>Registros de campo</h3><button class="btn sm" type="button" data-act="novaNota">+ Registro</button></div>
     ${notas.slice().reverse().map(nt=>`<div class="nota" data-nota="${esc(nt.id)}"><div class="when"><span>${dtBR(new Date(nt.t)).slice(0,16)}${nt.semItem?` · <b class="semi">sem item · o Claude classifica</b>`:""}</span><button class="btn sm ghost danger" type="button" data-act="delNota" data-id="${esc(nt.id)}">Excluir</button></div>
@@ -1104,7 +1133,7 @@ function rVisual(){
         <span class="cnt" id="etc_${e.id}">${x.on?(x.nc?`<span class="pill crit">${x.nc} NC</span> `:"")+x.feitos+"/"+x.total:"não se aplica"}</span><span class="chev">▾</span></button>
       <div class="et-b">
         ${e.opc?`<div class="et-off"><label class="sw"><input type="checkbox" data-aplica="${e.id}" ${x.on?"checked":""}>${esc(e.pergunta)}</label></div>`:""}
-        ${x.on? (e.id==="3"? rQuadros(e) : e.itens.map(([id,m,t])=>itemHTML(id,m,t)).join("")+(COR_ET[e.id]?rCorEtapa(e.id):"")) : ""}
+        ${x.on? (e.id==="3"? rQuadros(e) : corpoEtapa(e,"")+(COR_ET[e.id]?rCorEtapa(e.id):"")) : ""}
       </div></section>`; }).join("")}
   ${rCorOutros()}
   ${rTermoOutros()}`;
@@ -1119,7 +1148,7 @@ function itemHTML(id,m,t){ const st=S.v.check[id]||{}; const nf=(st.fotos||[]).l
     ${ocorrencias(st.fotos,"c:"+id,st.s==="NC")}
     ${m==="T"? S.v.termo.map((r,i)=>r.item===id?cardTer(r,i):"").join("")+`<button type="button" class="mini" data-act="addTer" data-ponto="${id}">${ICON.termo}+ Ponto quente</button>` : ""}</div>`; }
 function marcar(id,val){
-  const st=S.v.check[id]||(S.v.check[id]={}); st.s = st.s===val? "" : val; vib();
+  const st=S.v.check[id]||(S.v.check[id]={}); st.s = st.s===val? "" : val; st.auto=false; vib();
   const it=document.getElementById("it_"+id); it.dataset.s=st.s;
   it.querySelectorAll(".seg4 button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===st.s)));
   { const lab=it.querySelector("label.mini"), inp=lab&&lab.querySelector("input[data-addph]"); if(lab&&inp){ const nf=(st.fotos||[]).length; lab.innerHTML=ICON.cam+(st.s==="NC"?"+ Ocorrência":"Foto")+(nf?` (${nf})`:""); lab.appendChild(inp); }
@@ -1451,42 +1480,58 @@ const PROBLEMAS=[
 ];
 function qdPadrao(){ const qs=S.v.quadros||[]; const a=ambAtual().toLowerCase();
   const q=qs.find(q=>a && String(q.nome||"").trim().toLowerCase()===a) || qs.find(q=>q.id===S.openQd) || qs[qs.length-1]; return q? q.id : ""; }
-function rapAlvo(){ const r=S.rap; if(!r||!r.chip) return null; const [g,i]=r.chip.split(":").map(Number); const p=PROBLEMAS[g]&&PROBLEMAS[g][1][i]; if(!p) return null;
+function rapAlvo(){ const r=S.rap; if(!r) return null;
+  if(r.et){ if(!r.item) return null; const base=r.item; const e=ETAPAS.find(e=>e.id===r.et); const id= e.id==="3"? base+"_"+(r.qd||qdPadrao()) : base; return {id,base,label:curto(base),e}; }
+  if(!r.chip) return null; const [g,i]=r.chip.split(":").map(Number); const p=PROBLEMAS[g]&&PROBLEMAS[g][1][i]; if(!p) return null;
   const [base,label]=p; const e=ETAPAS.find(e=>e.itens.some(x=>x[0]===base)); const id= e.id==="3"? base+"_"+(r.qd||qdPadrao()) : base; return {id,base,label,e}; }
-function rapLeg(){ const t=(S.rap.txt||"").trim(); const al=rapAlvo(); return [ambAtual(), t||(al?al.label:"")].filter(Boolean).join(" – "); }
+function rapSt(){ const r=S.rap; return r.et? r.st : (r.st||"NC"); }
+function rapLeg(){ const t=(S.rap.txt||"").trim(); const al=rapAlvo(); return [ambAtual(), t||(al?al.label+(rapSt()==="C"?" (conforme)":""):"")].filter(Boolean).join(" – "); }
 function rapNota(){ return (S.v.notas||[]).find(n=>n.id===(S.rap&&S.rap.nid)); }
 function abrirRapida(){
   const r=S.rap; const nt=rapNota(); if(!r||!nt){ document.getElementById("rapSheet").hidden=true; return; }
-  const foco=document.activeElement&&document.activeElement.id==="rapTxt"; const sc=(document.querySelector("#rapSheet .sheet")||{}).scrollTop||0;
+  const foco=document.activeElement&&document.activeElement.id==="rapTxt"; const sh0=document.querySelector("#rapSheet .s2"); const sc=sh0?sh0.scrollTop:0;
   const f=nt.fotos[0]; const al=rapAlvo(); const a=ambAtual(); const qs=S.v.quadros||[];
-  const temAud=!!(f&&f.audio&&f.audio.id);
+  const temAud=!!(f&&f.audio&&f.audio.id); const st=rapSt();
+  let meio;
+  if(r.et){ const e=ETAPAS.find(e=>e.id===r.et); const its=itensCtx(e,r.qd).filter(y=>y.m!=="T");
+    const q=e.id==="3"? qs.find(q=>q.id===r.qd) : null;
+    const defs=(st==="NC"&&r.item&&DEFEITOS[r.item])||[];
+    meio=`<h3 class="sh-t">${esc(e.id+" · "+e.t)}${q?" · "+esc(nomeQd(q,qs.indexOf(q))):""}</h3>
+    <div class="rap-st" role="group" aria-label="Situação"><button type="button" class="ok" data-act="rapSt" data-v="C" aria-pressed="${st==="C"}">Conforme</button><button type="button" class="nc" data-act="rapSt" data-v="NC" aria-pressed="${st==="NC"}">Não conforme</button></div>
+    <div class="rap-g"><span>O que a foto mostra</span><div class="rap-chips">${its.map(y=>`<button type="button" class="rap-c ${r.item===y.base?"on":""} ${st==="C"?"okc":""}" data-act="rapItem" data-b="${esc(y.base)}" aria-pressed="${r.item===y.base}">${esc(curto(y.base))}</button>`).join("")}</div></div>
+    ${defs.length?`<div class="rap-g"><span>Problema comum · toque para usar</span><div class="rap-chips">${defs.map(t=>`<button type="button" class="chip-s ${r.txt===t?"on":""}" data-act="rapDef" data-t="${esc(t)}">${esc(t)}</button>`).join("")}</div></div>`:""}`;
+  } else {
+    meio=`<h3 class="sh-t">O que é este problema?</h3>
+    ${PROBLEMAS.map(([g,L],gi)=>`<div class="rap-g"><span>${esc(g)}</span><div class="rap-chips">${L.map(([b,l],i)=>`<button type="button" class="rap-c ${r.chip===gi+":"+i?"on":""}" data-act="rapChip" data-k="${gi}:${i}" aria-pressed="${r.chip===gi+":"+i}">${esc(l)}</button>`).join("")}</div></div>`).join("")}
+    ${al&&al.e.id==="3"&&qs.length>1?`<label class="f"><span>Em qual quadro?</span><select id="rapQd">${qs.map((q,i)=>`<option value="${q.id}" ${q.id===(r.qd||qdPadrao())?"selected":""}>${esc(nomeQd(q,i))}</option>`).join("")}</select></label>`:""}`;
+  }
+  const prev= al? `<span><b class="${st==="C"?"okx":"ncx"}">${st||"?"}</b> em ${esc(codItem(al.id))} · ${esc(curto(al.id))}</span>` : `<span>${st?`<b class="${st==="C"?"okx":"ncx"}">${st}</b> `:""}Foto sem item${(r.txt||"").trim()||temAud?" (o Claude classifica no relatório)":""}</span>`;
   document.getElementById("rapBody").innerHTML=`
     <div class="rap-top">${f?`<img data-fid="${esc(f.id)}" src="${esc(fotoURL(f))}" alt="Foto recém-tirada">`:""}
       <div class="rap-loc">${PIN}<div><small>Local</small><b>${a?esc(a):"não definido"}</b></div><button type="button" class="btn sm" data-act="ambTrocar">${a?"Trocar":"Definir"}</button></div></div>
-    <h3 class="sh-t">O que é este problema?</h3>
-    ${PROBLEMAS.map(([g,L],gi)=>`<div class="rap-g"><span>${esc(g)}</span><div class="rap-chips">${L.map(([b,l],i)=>`<button type="button" class="rap-c ${r.chip===gi+":"+i?"on":""}" data-act="rapChip" data-k="${gi}:${i}" aria-pressed="${r.chip===gi+":"+i}">${esc(l)}</button>`).join("")}</div></div>`).join("")}
-    ${al&&al.e.id==="3"&&qs.length>1?`<label class="f"><span>Em qual quadro?</span><select id="rapQd">${qs.map((q,i)=>`<option value="${q.id}" ${q.id===(r.qd||qdPadrao())?"selected":""}>${esc(nomeQd(q,i))}</option>`).join("")}</select></label>`:""}
-    <div class="f"><label for="rapTxt">Ou descreva com suas palavras</label>
-      <div class="rap-txt"><input id="rapTxt" type="text" value="${esc(r.txt||"")}" placeholder="Ex.: disjuntor do ar esquentando" autocomplete="off" enterkeyhint="done">
+    ${meio}
+    <div class="f"><label for="rapTxt">${r.et?"Descrição (opcional)":"Ou descreva com suas palavras"}</label>
+      <div class="rap-txt"><input id="rapTxt" type="text" value="${esc(r.txt||"")}" placeholder="${st==="C"?"Ex.: padrão novo, lacrado":"Ex.: disjuntor do ar esquentando"}" autocomplete="off" enterkeyhint="done">
       <button type="button" class="mini ${temAud?"has":""}" data-mic="n:${esc(nt.id)}:0">${ICON.mic}${temAud?"Regravar":"Gravar"}</button></div>
       <small class="status">${temAud?"Áudio gravado"+(f.audio.txt?": “"+esc(f.audio.txt)+"”":" (será transcrito)"):"O áudio fica ligado à foto e vira a legenda."}</small></div>
-    <div class="rap-prev"><small>Vai registrar</small>${al?`<span><b class="ncx">NC</b> em ${esc(codItem(al.id))} · ${esc(al.e.itens.find(x=>x[0]===al.base)[2])}</span>`:`<span>Ocorrência sem item${(r.txt||"").trim()||temAud?" (o Claude classifica no relatório)":""}</span>`}
-      <span class="leg">Legenda: “${esc(rapLeg()||"…")}”</span></div>
+    <div class="rap-prev"><small>Vai registrar</small>${prev}<span class="leg">Legenda: “${esc(rapLeg()||"…")}”</span></div>
     <div class="row sh-a"><button type="button" class="btn ghost danger" data-act="rapDescartar">Descartar</button><button type="button" class="btn" data-act="rapSalvar">Salvar</button><button type="button" class="btn pri" data-act="rapProx">${ICON.cam}Salvar e próxima</button></div>`;
-  document.getElementById("rapSheet").hidden=false; const sh=document.querySelector("#rapSheet .sheet"); if(sh) sh.scrollTop=sc;
+  document.getElementById("rapSheet").hidden=false; const sh=document.querySelector("#rapSheet .s2"); if(sh) sh.scrollTop=sc;
   if(foco){ const i=document.getElementById("rapTxt"); i.focus(); i.setSelectionRange(i.value.length,i.value.length); }
 }
 function rapSalvar(proxima){
   const r=S.rap; const nt=rapNota(); if(!r||!nt){ S.rap=null; document.getElementById("rapSheet").hidden=true; return; }
-  if(r.chip){ const [g,i]=r.chip.split(":").map(Number); const base=PROBLEMAS[g][1][i][0]; if(/^q/.test(base) && !(S.v.quadros||[]).length){ (S.v.quadros||(S.v.quadros=[])).push({id:uid8().slice(0,5),nome:ambAtual()||"QGBT"}); } if(/^q/.test(base)&&!r.qd) r.qd=qdPadrao(); }
-  const f=nt.fotos[0]; const al=rapAlvo(); const leg=rapLeg(); const temAud=!!(f&&f.audio&&f.audio.id);
-  if(!al && !(r.txt||"").trim() && !temAud){ toastSave("Toque num problema, escreva ou grave um áudio.",true); return; }
-  if(al){ if(al.e.opc) S.v.aplica[al.e.id]=true; const st=S.v.check[al.id]||(S.v.check[al.id]={}); st.s="NC"; if(f){ f.leg=leg; (st.fotos||(st.fotos=[])).push(f); }
+  if(!r.et && r.chip){ const [g,i]=r.chip.split(":").map(Number); const base=PROBLEMAS[g][1][i][0]; if(/^q/.test(base) && !(S.v.quadros||[]).length){ (S.v.quadros||(S.v.quadros=[])).push({id:uid8().slice(0,5),nome:ambAtual()||"QGBT"}); } if(/^q/.test(base)&&!r.qd) r.qd=qdPadrao(); }
+  const f=nt.fotos[0]; const al=rapAlvo(); const leg=rapLeg(); const temAud=!!(f&&f.audio&&f.audio.id); const st=rapSt();
+  if(r.et && !st){ toastSave("Marque se a foto mostra algo conforme ou não conforme.",true); return; }
+  if(!al && !(r.txt||"").trim() && !temAud && !r.et){ toastSave("Toque num problema, escreva ou grave um áudio.",true); return; }
+  if(al){ if(al.e.opc) S.v.aplica[al.e.id]=true; const ck=S.v.check[al.id]||(S.v.check[al.id]={}); if(f){ f.leg=leg; f.st=st; (ck.fotos||(ck.fotos=[])).push(f); } recomputar(al.id);
     S.v.notas=S.v.notas.filter(n=>n!==nt); }
-  else { delete nt.prov; nt.semItem=true; nt.amb=ambAtual(); nt.txt=leg; if(f) f.leg=leg; }
+  else { delete nt.prov; nt.semItem=true; nt.amb=ambAtual(); nt.txt=leg; if(r.et){ nt.et=r.et; if(r.et==="3"&&r.qd) nt.qd=r.qd; nt.st=st; } if(f){ f.leg=leg; if(st) f.st=st; } }
+  const ctx= r.et? {et:r.et, qd:r.qd} : null;
   S.rap=null; document.getElementById("rapSheet").hidden=true; agendarSalvar(); agendarSync(2500);
   toastSave(al? "Registrado em "+codItem(al.id) : "Registrado sem item (o Claude classifica)");
-  if(proxima){ S.fabMode="rapida"; document.getElementById("fabFile").click(); }
+  if(proxima){ S.fabMode="rapida"; S.rapCtx=ctx; document.getElementById("fabFile").click(); }
   render(true);
 }
 function rapDescartar(){ const nt=rapNota(); if(nt){ (nt.fotos||[]).forEach(f=>{ apagarMidia(f.id).catch(()=>{}); if(f.audio&&f.audio.id) esquecerAudio(f.audio).catch(()=>{}); }); S.v.notas=S.v.notas.filter(n=>n!==nt); agendarSalvar(); }
@@ -1615,6 +1660,58 @@ function rvProxSemLeg(){ const L=rvTodasSemLeg(); if(!L.length){ toastSave("Toda
   setTimeout(()=>{ const t=document.querySelector(".rv-ft textarea[data-leg]"); t&&t.focus(); },50); }
 window.addEventListener("resize",()=>{ const l=largo(); if(l!==S.eraLargo){ S.eraLargo=l; if(!l&&S.tab==="rev") S.tab="inicio"; render(true); } });
 
+/* ============================== Etapa por fotos (2.2) ==============================
+   Em cada etapa o vistoriador tira as fotos livremente e, em cada uma, marca C ou NC e o que ela mostra.
+   A situação do item sai das fotos (qualquer foto NC deixa o item NC). Os itens sem foto aparecem depois,
+   para marcar o que foi visto sem fotografar; sem marcação continuam "não verificados". */
+const ITEM_CURTO={e1:"Padrão de entrada",e2:"Disjuntor geral x cabo",e3:"Caixa de medição",e4:"Aterramento do padrão",e5:"Termografia do disjuntor geral",
+  s1:"Dados do transformador",s2:"Cercamento e advertência",s3:"Para-raios e chaves",s4:"Aterramento da subestação",s5:"Termografia BT",
+  q1:"Identificação dos circuitos",q2:"Disjuntor x cabo",q3:"DR",q4:"Teste do DR",q5:"DPS",q6:"Barramentos N e PE",q7:"Cores dos condutores",q8:"Conexões",q9:"Tampa e contra-tampa",q10:"Acesso ao quadro",q12:"Improvisos",q11:"Termografia do quadro",
+  l1:"Seção dos cabos",l2:"Marcação dos cabos",l6:"Isolação",l3:"Eletrodutos e caixas",l4:"Emendas",l5:"Dados x energia",
+  p1:"Tomadas",p2:"Circuitos exclusivos",p3:"Luminárias e interruptores",p4:"Iluminação de emergência",p5:"Termografia de cargas",
+  a1:"BEP",a2:"Caixa de inspeção / haste",a3:"Condutor de proteção",
+  d1:"Captação",d2:"Descidas",d3:"Condutores do SPDA",d4:"Estruturas interligadas",d5:"Fixações e conexões",
+  f1:"Módulos e inversor",f2:"Proteções CC/CA",f3:"Aterramento e placa"};
+const curto=id=>ITEM_CURTO[String(id).split("_")[0]]||(infoItem(id)||{}).t||id;
+const CAM='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+/* situação do item a partir das fotos marcadas */
+function recomputar(id,v){ v=v||S.v; const st=v.check[id]; if(!st) return; const fs=(st.fotos||[]).filter(f=>f.st);
+  if(fs.length){ st.s= fs.some(f=>f.st==="NC")? "NC" : "C"; st.auto=true; }
+  else if(st.auto){ st.s=""; st.auto=false; } }
+function itensCtx(e,qd){ return itensDaEtapa(S.v,e).filter(y=>e.id!=="3"||y.qid===qd); }
+function notasCtx(e,qd){ return (S.v.notas||[]).filter(n=>n.et===e.id && (e.id!=="3"||n.qd===qd) && !(S.rap&&S.rap.nid===n.id)); }
+function opcoesItens(e,qd,sel){ return `<option value="">Sem item · o Claude classifica</option>`+itensCtx(e,qd).filter(y=>y.m!=="T").map(y=>`<option value="${esc(y.id)}" ${y.id===sel?"selected":""}>${esc(codBase(y.base)+" · "+curto(y.id))}</option>`).join(""); }
+function cartaoFoto(f,pref,e,qd,itemSel){
+  return `<div class="fc ${f.st==="NC"?"nc":f.st==="C"?"c":""}">${th(f,pref)}
+    <div class="fc-b"><div class="fc-r"><div class="seg2" role="group" aria-label="Situação da foto">${["C","NC"].map(x=>`<button type="button" data-fst="${esc(pref)}" data-v="${x}" aria-pressed="${f.st===x}">${x}</button>`).join("")}</div>
+      <select data-fmv="${esc(pref)}" data-et="${e.id}" data-qd="${esc(qd||"")}" aria-label="O que a foto mostra">${opcoesItens(e,qd,itemSel)}</select></div>
+      <div class="fc-r"><textarea data-leg="${esc(pref)}" rows="2" placeholder="${f.st==="C"?"Local (ex.: Bloco B, sala 4)":"Onde e o quê (ex.: Bloco B, sala 4 – fio solto no forro)"}" aria-label="Legenda">${esc(f.leg||"")}</textarea>
+      <button type="button" class="mini ic ${f.audio&&f.audio.id?"has":""}" data-mic="${esc(pref)}" aria-label="Gravar áudio desta foto">${ICON.mic}</button></div></div></div>`; }
+function corpoEtapa(e,qd){
+  const its=itensCtx(e,qd); const com=its.filter(y=>((S.v.check[y.id]||{}).fotos||[]).length); const sem=its.filter(y=>!((S.v.check[y.id]||{}).fotos||[]).length);
+  const nts=notasCtx(e,qd).filter(n=>(n.fotos||[]).length);
+  const nf=com.reduce((s,y)=>s+S.v.check[y.id].fotos.length,0)+nts.reduce((s,n)=>s+n.fotos.length,0);
+  return `<button type="button" class="ff-add" data-act="fotoEt" data-et="${e.id}" data-qd="${esc(qd||"")}">${CAM}<span><b>Tirar foto${e.id==="3"?" deste quadro":" desta etapa"}</b><small>Depois marque C ou NC e o que ela mostra</small></span></button>
+   ${com.map(y=>{ const st=S.v.check[y.id];
+     return `<div class="fg" id="it_${y.id}" data-s="${st.s||""}"><div class="fg-h"><span class="pill ${st.s==="NC"?"crit":st.s==="C"?"ok":""}">${st.s||"—"}</span><b>${esc(codItem(y.id))}</b> <span class="fg-t">${esc(curto(y.id))}</span><button type="button" class="mini" data-act="fotoEt" data-et="${e.id}" data-qd="${esc(qd||"")}" data-pre="${esc(y.base)}" aria-label="Outra foto de ${esc(curto(y.id))}">${ICON.cam}+ Foto</button></div>
+       ${defsHTML(y.id,st)}
+       ${st.fotos.map((f,i)=>cartaoFoto(f,"c:"+y.id+":"+i,e,qd,y.id)).join("")}
+       ${y.m==="T"? S.v.termo.map((r,i)=>r.item===y.id?cardTer(r,i):"").join("") : ""}</div>`; }).join("")}
+   ${nts.length?`<div class="fg"><div class="fg-h"><span class="pill">?</span><b>Sem item</b> · o Claude classifica no relatório</div>${nts.map(n=>n.fotos.map((f,i)=>cartaoFoto(f,"n:"+n.id+":"+i,e,qd,"")).join("")).join("")}</div>`:""}
+   ${sem.length?`<div class="ff-sub"><b>${nf?"Itens sem foto":"Itens da etapa"}</b><small>Marque o que viu sem fotografar. Sem marcação, o item fica como não verificado.</small></div>${sem.map(y=>itemHTML(y.id,y.m,y.t)).join("")}`:""}`; }
+/* troca a classificação de uma foto (item, outro item ou "sem item") */
+function moverFoto(pref,destId,e,qd){
+  const v=S.v; const [k,a,b]=pref.split(":"); let f=null;
+  if(k==="c"){ const st=v.check[a]; f=st&&st.fotos.splice(+b,1)[0]; recomputar(a); }
+  else if(k==="n"){ const nt=v.notas.find(x=>x.id===a); f=nt&&nt.fotos.splice(+b,1)[0]; if(nt&&!nt.fotos.length&&nt.semItem) v.notas=v.notas.filter(x=>x!==nt); }
+  if(!f) return;
+  if(destId){ const x=infoItem(destId); if(x&&x.e.opc) v.aplica[x.e.id]=true; const st=v.check[destId]||(v.check[destId]={}); (st.fotos||(st.fotos=[])).push(f); recomputar(destId); }
+  else { const nt=novaNota(); nt.semItem=true; nt.et=e; if(qd) nt.qd=qd; nt.amb=f.amb||""; nt.txt=f.leg||""; nt.fotos.push(f); }
+  agendarSalvar(); agendarSync(2500); render(true); }
+function marcarFoto(pref,val){ const f=fotoPorRef(pref); if(!f) return; f.st= f.st===val? "" : val; vib();
+  const [k,a]=pref.split(":"); if(k==="c") recomputar(a); else if(k==="n"){ const nt=S.v.notas.find(x=>x.id===a); if(nt) nt.st=f.st; }
+  agendarSalvar(); agendarSync(2500); render(true); }
+
 /* ============================== Eventos ============================== */
 document.addEventListener("click", async ev=>{
   const mic=ev.target.closest("[data-mic]"); if(mic){ const ref=alvoAudio(mic.dataset.mic); if(!ref){ toastSave("Tire a foto primeiro: o áudio fica vinculado a ela.",true); return; } iniciarGravacao(ref); return; }
@@ -1622,6 +1719,7 @@ document.addEventListener("click", async ev=>{
   const b=ev.target.closest("button"); if(!b) return;
   const act=b.dataset.act;
   if(b.dataset.tab){ irPara(b.dataset.tab); return; }
+  if(b.dataset.fst){ marcarFoto(b.dataset.fst,b.dataset.v); return; }
   if(b.dataset.item){ marcar(b.dataset.item,b.dataset.v); return; }
   if(act==="recStop"){ pararGravacao(false); return; }
   if(act==="recCancel"){ pararGravacao(true); return; }
@@ -1663,7 +1761,11 @@ document.addEventListener("click", async ev=>{
   if(act==="delNota"){ if(!(await confirmar("Excluir este registro de campo e suas fotos?"))) return; const i=S.v.notas.findIndex(x=>x.id===b.dataset.id); if(i>=0){ (S.v.notas[i].fotos||[]).forEach(f=>apagarMidia(f.id).catch(()=>{})); S.v.notas.splice(i,1); } agendarSalvar(); render(true); return; }
   if(b.id==="fab"){ document.getElementById("sheet").hidden=false; return; }
   if(act==="fecharSheet"){ fecharSheet(); return; }
-  if(act==="fabRapida"){ S.fabMode="rapida"; fecharSheet(); document.getElementById("fabFile").click(); return; }
+  if(act==="fotoEt"){ S.rapCtx={et:b.dataset.et, qd:b.dataset.qd||null, item:b.dataset.pre||null}; S.fabMode="rapida"; document.getElementById("fabFile").click(); return; }
+  if(act==="rapSt"){ S.rap.st= S.rap.st===b.dataset.v? null : b.dataset.v; abrirRapida(); return; }
+  if(act==="rapItem"){ S.rap.item= S.rap.item===b.dataset.b? null : b.dataset.b; abrirRapida(); return; }
+  if(act==="rapDef"){ S.rap.txt= S.rap.txt===b.dataset.t? "" : b.dataset.t; if(!S.rap.st) S.rap.st="NC"; abrirRapida(); return; }
+  if(act==="fabRapida"){ S.rapCtx=null; S.fabMode="rapida"; fecharSheet(); document.getElementById("fabFile").click(); return; }
   if(act==="ambTrocar"){ abrirAmb(); return; }
   if(act==="ambChip"){ const i=document.getElementById("ambIn"); if(i){ i.value=b.dataset.v; } fecharAmb(true); return; }
   if(act==="ambOk"){ fecharAmb(true); return; }
@@ -1713,7 +1815,7 @@ function fecharSheet(){ document.getElementById("sheet").hidden=true; }
 function novaNota(){ const nt={id:"n"+uid8(),t:Date.now(),txt:"",fotos:[]}; (S.v.notas||(S.v.notas=[])).push(nt); agendarSalvar(); return nt; }
 function focarNota(id){ const ta=document.querySelector(`textarea[data-notatxt="${id}"]`); if(ta){ ta.scrollIntoView({block:"center"}); ta.focus(); } }
 document.getElementById("fabFile").addEventListener("change",async e=>{ const file=e.target.files&&e.target.files[0]; e.target.value=""; if(!file) return;
-  let tgt="g", nid=null; const rap=S.fabMode==="rapida"; if(S.fabMode==="fabNota"||rap){ const nt=novaNota(); nid=nt.id; tgt="n:"+nt.id; if(rap){ nt.prov=true; nt.amb=ambAtual(); S.rap={nid,chip:null,txt:"",qd:qdPadrao()}; } }
+  let tgt="g", nid=null; const rap=S.fabMode==="rapida"; if(S.fabMode==="fabNota"||rap){ const nt=novaNota(); nid=nt.id; tgt="n:"+nt.id; if(rap){ nt.prov=true; nt.amb=ambAtual(); const cx=S.rapCtx||{}; S.rap={nid,chip:null,txt:"",qd:cx.qd||qdPadrao(),et:cx.et||null,st:null,item:cx.item||null}; S.rapCtx=null; } }
   toastSave("Processando foto…");
   try{ const f=await guardarFoto(file,tgt); if(rap) f.amb=ambAtual(); colocarFoto(tgt,f); agendarSalvar(); agendarSync(2500); }catch(er){ toastSave("Não foi possível ler a imagem: "+msgErro(er),true); if(rap){ S.v.notas=S.v.notas.filter(n=>n.id!==nid); S.rap=null; } render(true); return; }
   if(rap){ render(true); abrirRapida(); return; }
@@ -1740,6 +1842,7 @@ document.addEventListener("input", ev=>{
 });
 document.addEventListener("change", async ev=>{
   if(ev.target.id==="rapQd"&&S.rap){ S.rap.qd=ev.target.value; abrirRapida(); return; }
+  if(ev.target.dataset&&ev.target.dataset.fmv){ moverFoto(ev.target.dataset.fmv, ev.target.value, ev.target.dataset.et, ev.target.dataset.qd||null); return; }
   const el=ev.target;
   if(el.id==="bkImp" && el.files && el.files[0]){ importarBackup(el.files[0]); return; }
   if(el.id==="liberar"){ try{ localStorage.setItem(LS_LIB,el.checked?"1":"0"); }catch(e){} if(el.checked && tokenOk() && navigator.onLine) sincronizarDrive(true); return; }
@@ -2043,7 +2146,7 @@ function rDrive(){
 }
 window.addEventListener("online",()=>{ atualizarChipDrive(); agendarSync(500); });
 window.addEventListener("offline",atualizarChipDrive);
-const APP_VER="2.1.0";
+const APP_VER="2.2.0";
 document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"){ agendarSync(800); try{ S.swReg&&S.swReg.update(); }catch(e){} } });
 /* grava na hora se o app for para segundo plano ou fechado com alteração pendente */
 function gravarPendente(){ if(S.saveTimer){ clearTimeout(S.saveTimer); S.saveTimer=null; salvar(); } }
