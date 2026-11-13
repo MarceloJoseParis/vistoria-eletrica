@@ -70,7 +70,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 main{max-width:760px;margin:0 auto;padding:14px 12px;display:grid;gap:14px}
 
 /* navegação */
-.bn{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--panel);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);padding-bottom:env(safe-area-inset-bottom)}
+.bn{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--panel);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(var(--n,4),1fr);padding-bottom:env(safe-area-inset-bottom)}
 .bn button{border:0;background:none;height:var(--nav-h);display:grid;place-items:center;align-content:center;gap:2px;font-size:11.5px;color:var(--muted);cursor:pointer;position:relative}
 .bn button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .bn button[aria-current="true"]{color:var(--ink);font-weight:600}
@@ -111,6 +111,7 @@ textarea{min-height:52px;resize:vertical;line-height:1.4}
 input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;background:var(--panel)}
 .num input{font-family:var(--f-mono);font-size:18px;text-align:center;padding:8px 4px}
 .btn{min-height:46px;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 16px;cursor:pointer;font-weight:600;display:inline-flex;gap:8px;align-items:center;justify-content:center}
+.btn svg{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .btn.pri{background:var(--accent);border-color:var(--accent);color:#1A1200}
 .btn.sm{min-height:38px;padding:6px 12px;font-size:14px}
 .btn.ghost{background:transparent}
@@ -162,7 +163,8 @@ details.card > summary small{font-family:var(--f-body);font-weight:400;font-size
 .qd-nome label{flex:1}
 .qd-add{padding:12px 14px}
 .ocs{display:grid;gap:8px}
-.oc{display:grid;grid-template-columns:76px 1fr;gap:10px;align-items:center}
+.oc{display:grid;grid-template-columns:76px 1fr 44px;gap:8px;align-items:center}
+.mini.ic{padding:0;width:44px;height:44px;justify-content:center}
 .oc textarea{min-width:0;min-height:0;font-size:14.5px}
 details.pd summary{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-weight:400}
 details.pd summary small{color:var(--muted)}
@@ -293,6 +295,69 @@ dialog::backdrop{background:rgba(8,12,16,.55)}
 .vrow.cur{border-color:var(--accent)}
 .vrow .meta{font-size:12.5px;color:var(--muted)}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;scroll-behavior:auto!important}}
+
+/* ---- 2.0: local atual, foto rápida, defeitos, início, revisão ---- */
+.ambbar{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:8px 10px 8px 12px}
+.ambbar svg,.rap-loc svg{width:22px;height:22px;flex:none;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ambbar .t{flex:1;min-width:0;display:grid;line-height:1.2}
+.ambbar small,.rap-loc small{font-size:12px;color:var(--muted)}
+.ambbar b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s2{background:var(--panel);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:12px 14px calc(14px + env(safe-area-inset-bottom));display:grid;gap:12px;align-content:start}
+.sh-t{font-size:18px}
+.sh-a{justify-content:flex-end;flex-wrap:wrap;position:sticky;bottom:calc(-14px - env(safe-area-inset-bottom));background:var(--panel);padding:8px 0 4px;margin-top:2px}
+.rap-top{display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:center}
+.rap-top img{width:96px;height:96px;object-fit:cover;border-radius:10px;background:var(--soft)}
+.rap-loc{display:flex;gap:8px;align-items:center}.rap-loc>div{flex:1;display:grid;line-height:1.2;min-width:0}
+.rap-g{display:grid;gap:6px}.rap-g>span{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.rap-chips{display:flex;flex-wrap:wrap;gap:6px}
+.rap-c{min-height:40px;border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:6px 12px;font-size:14px;cursor:pointer;color:var(--ink);text-align:left}
+.rap-c.on{background:var(--crit);border-color:var(--crit);color:#fff;font-weight:600}
+.rap-txt{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.f>label{font-size:13px;color:var(--muted)} div.f{display:grid;gap:4px}
+.rap-prev{display:grid;gap:3px;background:var(--soft);border-radius:10px;padding:10px 12px;font-size:14px}
+.rap-prev small{font-size:12px;color:var(--muted)} .rap-prev .leg{color:var(--muted)}
+.ncx{display:inline-block;background:var(--crit);color:#fff;border-radius:4px;padding:0 5px;font-size:12px;font-weight:700}
+b.semi{color:var(--accent-ink);font-weight:600}
+.defs{display:grid;gap:6px;border-left:3px solid var(--crit);padding:2px 0 2px 10px}
+.defs[hidden]{display:none}
+.defs>span{font-size:12.5px;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media (max-width:520px){.tiles{grid-template-columns:repeat(2,1fr)}}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;display:grid}
+.tile b{font-family:var(--f-display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.tile span{font-size:13px;color:var(--muted)}
+.tile.crit b{color:var(--crit)} .tile.warn b{color:var(--warn)}
+.ini-ets{display:grid;gap:2px}
+.ini-et{display:grid;grid-template-columns:minmax(0,1fr) 90px 74px;gap:10px;align-items:center;border:0;background:none;padding:9px 2px;border-bottom:1px solid var(--line);cursor:pointer;text-align:left;font-size:14.5px;color:var(--ink)}
+.ini-et:last-child{border-bottom:0}
+.ini-et>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ini-et .bar{height:6px;border-radius:3px;background:var(--soft);overflow:hidden}.ini-et .bar i{display:block;height:100%;background:var(--accent)}.ini-et .bar i.ok{background:var(--ok)}
+.ini-et .n{text-align:right;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ini-av{border-left:4px solid var(--warn)}
+.ini-l{display:grid;gap:6px}
+.ini-l button{display:flex;justify-content:space-between;gap:10px;align-items:center;min-height:46px;border:1px solid var(--line);background:var(--soft);border-radius:10px;padding:6px 12px;text-align:left;cursor:pointer;color:var(--ink);font-size:14.5px}
+.ini-l .ir{color:var(--accent-ink);font-weight:600;flex:none}
+.ini-go{width:100%;min-height:54px;font-size:16px}
+main.wide{max-width:none}
+.rv-top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.rv-tt{font-size:24px}
+.rv{display:grid;grid-template-columns:230px minmax(260px,1fr) minmax(380px,1.4fr);gap:14px;align-items:start}
+.rv>*{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:8px;max-height:calc(100vh - 170px);overflow:auto}
+.rv-n,.rv-i{display:grid;gap:2px;width:100%;border:0;background:none;text-align:left;padding:9px 10px;border-radius:8px;cursor:pointer;color:var(--ink);font-size:14px}
+.rv-n span:last-child{font-size:12.5px;color:var(--muted)}
+.rv-n[aria-current="true"],.rv-i[aria-current="true"]{background:var(--accent-soft)}
+.rv-i{grid-template-columns:34px 1fr auto;align-items:center;gap:8px}
+.rv-i .tag{margin:0;text-align:center}.rv-i .tag.nc{background:var(--crit);color:#fff}.rv-i .tag.c{background:var(--ok-soft);color:var(--ok)}
+.rv-i .nf{font-size:12px;color:var(--muted);white-space:nowrap}.rv-i .nf b{color:var(--warn)}
+.rv-ft{display:grid;gap:12px;padding:14px!important}
+.rv-h{font-size:18px}
+.rv-big{position:relative;border:0;padding:0;background:var(--soft);border-radius:10px;overflow:hidden;cursor:zoom-in}
+.rv-big img{display:block;width:100%;min-height:200px;max-height:52vh;object-fit:contain}
+.rv-big .lbl{position:absolute;left:8px;top:8px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:2px 8px;border-radius:999px}
+.rv-th{display:flex;gap:6px;flex-wrap:wrap}.rv-th button{border:2px solid transparent;padding:0;border-radius:8px;overflow:hidden;cursor:pointer;background:none}
+.rv-th button[aria-current="true"]{border-color:var(--accent)}.rv-th img{width:64px;height:64px;object-fit:cover;display:block}
+.rv-aud{margin:0;font-size:14px;background:var(--soft);border-radius:8px;padding:8px 10px}
+.rv-st{max-width:360px}
 </style>
 </head>
 <body>
@@ -319,6 +384,7 @@ dialog::backdrop{background:rgba(8,12,16,.55)}
 <div class="sheet-bg" id="sheet" hidden>
   <div class="sheet" role="dialog" aria-label="Registro rápido">
     <div class="grab"></div>
+    <button type="button" data-act="fabRapida">Foto rápida de problema<small>Foto → toque no problema ou descreva/grave. Vai direto para o item.</small></button>
     <button type="button" data-act="fabNota">Registro de campo com foto<small>Abre a câmera; depois escreva a anotação</small></button>
     <button type="button" data-act="fabNotaTxt">Registro de campo só texto<small>Anotação livre, fora do checklist</small></button>
     <button type="button" data-act="fabGeral">Foto da vista geral<small>Fachada, placa da escola, padrão de entrada</small></button>
@@ -326,6 +392,8 @@ dialog::backdrop{background:rgba(8,12,16,.55)}
   </div>
 </div>
 
+<div class="sheet-bg" id="rapSheet" hidden style="z-index:70"><div class="s2" role="dialog" aria-label="Foto rápida" id="rapBody"></div></div>
+<div class="sheet-bg" id="ambSheet" hidden style="z-index:75"><div class="s2" role="dialog" aria-label="Local atual" id="ambBody"></div></div>
 <div class="sheet-bg" id="recSheet" hidden style="z-index:80">
   <div class="sheet" role="dialog" aria-label="Gravando relato em áudio">
     <div class="rec-top"><span class="rec-dot" aria-hidden="true"></span><b id="recTempo" class="mono">0:00</b><span class="status">máx. 3:00</span></div>
@@ -653,7 +721,7 @@ function dadosParaClaude(v){
     termografia: v.termo.map(r=>{ const c=calcTermo(r); return {local:r.local,componente:r.componente,Tmax_C:r.tmax,Tref_C:r.tref,referencia:r.refTipo==="ambiente"?"ar ambiente":"componente similar",deltaT_C:c.dt!=null?+c.dt.toFixed(1):null,classificacao_NETA:c.txt,acao:c.acao,carga_pct:c.carga!=null?+c.carga.toFixed(0):null,carga_abaixo_40:!!c.baixaCarga,obs:r.obs,fotos:fotosDe("ter:"+r.id)}; }),
     achados_e_recomendacoes: pendencias(v).map(p=>{ const d=v.pend[p.key]||{}; return {origem:p.origem,descricao:p.desc,prioridade:p.classe,prioridade_definida_pelo_vistoriador:!!prio(d.classe),recomendacao:p.prov,prazo:p.prazo}; }),
     relatos_em_audio:todosAudios(v).map(x=>({vinculo:x.rot, duracao_s:x.a.dur, transcricao:x.a.txt||"", fonte_transcricao:x.a.txt?(x.a.fonte||""):"", situacao:x.a.txt?"transcrito":"PENDENTE: transcrever o arquivo de áudio no Drive", arquivo_audio_drive:x.a.driveId?"https://drive.google.com/file/d/"+x.a.driveId+"/view":"(ainda não enviado ao Drive)"})),
-    registros_de_campo:(v.notas||[]).map((nt,k)=>({registro:k+1,data_hora:dtBR(new Date(nt.t)),texto:nt.txt||"",fotos:fotosDe("nota:"+nt.id)})),
+    registros_de_campo:(v.notas||[]).filter(nt=>!nt.prov).map((nt,k)=>Object.assign({registro:k+1,data_hora:dtBR(new Date(nt.t)),texto:nt.txt||"",fotos:fotosDe("nota:"+nt.id)}, nt.semItem?{sem_item:true,local:nt.amb||"",legendas:(nt.fotos||[]).map(f=>f.leg||"").filter(Boolean),relato_em_audio:(nt.fotos||[]).map(f=>f.audio&&f.audio.txt||"").filter(Boolean)}:{})),
     total_fotos:fotos.length
   };
 }
@@ -679,6 +747,7 @@ Regras obrigatórias:
 15. Na inspeção visual, cada foto de um item pode ter legenda com o local e a descrição da ocorrência ("fotos_e_ocorrencias"). Para itens NC, liste as ocorrências com o local e o número da foto; ocorrências do mesmo problema em vários locais ficam no mesmo item. Nas recomendações, cite os locais afetados.
 16. Legendas, observações e relatos foram escritos às pressas em campo. Reescreva-os em linguagem técnica formal, sem mudar os fatos (local, o que foi visto, quantidades). Fundamente cada não conformidade e cada recomendação com a norma e o requisito descumprido (ABNT NBR 5410, NBR 14136, NBR 5419, NBR IEC 60898, NR-10, NDU-001 da Energisa, conforme o caso), explicando em uma frase o risco (choque, sobreaquecimento, incêndio). Cite o número do item da norma só quando tiver certeza dele; senão, cite a norma e descreva o requisito.
 17. Se você tiver acesso às fotos (pasta da vistoria no Drive ou imagens anexadas), examine cada uma. Foto de item NC sem legenda: descreva no relatório o que é visível, com cautela ("a foto mostra…"), sem afirmar o que a imagem não permite ver (bitola, tensão, ligação ao terra). Foto com legenda: confira se a imagem confirma a legenda. Se a imagem contradizer a legenda ou mostrar outro problema não registrado, NÃO inclua no relatório: liste ao final, fora do relatório, em "Para o vistoriador confirmar", com o número da foto e o que foi visto.
+18. Registros de campo com "sem_item": true vieram da foto rápida sem atalho: são ocorrências que o vistoriador não ligou a um item. Classifique cada um no item do checklist que corresponde ao problema, trate como não conformidade daquele item (com o local e a foto indicados) e diga na seção de achados em qual item foi enquadrado. Se não couber em nenhum item, registre como achado geral.
 
 Texto de escopo:
 """${ESCOPO_TXT}"""
@@ -834,6 +903,8 @@ function atualizarRede(){ const el=document.getElementById("netSt"); if(!el) ret
 const S = { v:null, list:[], idb:null, gps:null, gpsWatch:null, swReg:null, store:"none", tab:"visual",
   saveTimer:null, saving:false, pendingSave:false, urls:{}, openEt:null, openQd:null, openCor:null, openTer:null, obsOpen:new Set(), novaVersao:false, fabMode:null, vw:null };
 const ICON = {
+  inicio:'<svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg>',
+  rev:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="13" rx="2"/><path d="M9 5v13M15 5v13M8 21h8"/></svg>',
   dados:'<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM8.5 11h7M8.5 15h5"/></svg>',
   visual:'<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12l3 3 5-6"/></svg>',
   cor:'<svg viewBox="0 0 24 24"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></svg>',
@@ -843,7 +914,8 @@ const ICON = {
   obs:'<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
   mic:'<svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/></svg>'
 };
-const TABS = [["dados","Dados"],["visual","Inspeção"],["rel","Relatório"]];
+const TABS_ALL = [["inicio","Início"],["dados","Dados"],["visual","Inspeção"],["rev","Revisão"],["rel","Relatório"]];
+function tabsVis(){ return TABS_ALL.filter(([k])=>k!=="rev"||largo()); }
 
 function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function vib(){ try{ navigator.vibrate && navigator.vibrate(8); }catch(e){} }
@@ -919,27 +991,28 @@ function audBadge(a){ return a&&a.id? `<span class="aud">● ${fmtDur(a.dur)}</s
 function fmtDur(s){ s=Math.max(0,Math.round(s||0)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
 function th(f,pref,lbl){ return `<button type="button" class="th" data-ver="${esc(pref)}" aria-label="Ampliar foto"><img data-fid="${esc(f.id)}" src="${esc(fotoURL(f))}" alt="">${lbl?`<span class="lbl">${esc(lbl)}</span>`:""}${audBadge(f.audio)}</button>`; }
 /* fotos de um item do checklist: cada uma é uma ocorrência, com legenda (local e o que foi visto) */
-function ocorrencias(fotos,prefixo,nc){ return (fotos||[]).length? `<div class="ocs">${fotos.map((f,i)=>`<div class="oc">${th(f,prefixo+":"+i,String(i+1))}<textarea data-leg="${esc(prefixo+":"+i)}" rows="2" placeholder="${nc?"Onde e o quê (ex.: Bloco B, sala 4 – fio solto no forro)":"Legenda: local e o que mostra"}" aria-label="Legenda da foto ${i+1}">${esc(f.leg||"")}</textarea></div>`).join("")}</div>` : ""; }
+function ocorrencias(fotos,prefixo,nc){ return (fotos||[]).length? `<div class="ocs">${fotos.map((f,i)=>`<div class="oc">${th(f,prefixo+":"+i,String(i+1))}<textarea data-leg="${esc(prefixo+":"+i)}" rows="2" placeholder="${nc?"Onde e o quê (ex.: Bloco B, sala 4 – fio solto no forro)":"Legenda: local e o que mostra"}" aria-label="Legenda da foto ${i+1}">${esc(f.leg||"")}</textarea><button type="button" class="mini ic ${f.audio&&f.audio.id?"has":""}" data-mic="${esc(prefixo+":"+i)}" aria-label="Gravar áudio da foto ${i+1}" title="Áudio desta foto">${ICON.mic}</button></div>`).join("")}</div>` : ""; }
 function strip(fotos,prefixo){ return `<div class="strip">${(fotos||[]).map((f,i)=>th(f,prefixo+":"+i)).join("")}</div>`; }
 function camBtn(tgt,txt,n){ return `<label class="mini ${n?"has":""}">${ICON.cam}${txt||"Foto"}${n?` (${n})`:""}<input type="file" accept="image/*" capture="environment" data-addph="${esc(tgt)}"></label>`; }
 
 /* ============================== Cabeçalho e navegação ============================== */
 function agendarSalvar(){ S.v.updatedAt=Date.now(); toastSave("Salvando…"); clearTimeout(S.saveTimer); S.saveTimer=setTimeout(()=>{ S.saveTimer=null; salvar(); },500); atualizarChrome(); }
+const M=document.getElementById("main");
 function atualizarChrome(){
   document.getElementById("hdTitle").textContent=titulo(S.v);
   const r=resumo(S.v); document.getElementById("progBar").style.width=(r.total?Math.round(r.feitos/r.total*100):0)+"%";
   const np=pendencias(S.v).length;
   const bd={visual:(r.nc+r.ter+r.cor)?`<span class="bdg">${r.nc+r.ter+r.cor}</span>`:"", rel:np?`<span class="bdg warn">${np}</span>`:""};
-  document.getElementById("bnav").innerHTML=TABS.map(([k,l])=>`<button type="button" data-tab="${k}" aria-current="${S.tab===k}">${ICON[k]}<span>${l}</span>${bd[k]||""}</button>`).join("");
-  document.getElementById("fab").hidden = !(S.tab==="visual"||S.tab==="dados");
+  const TB=tabsVis(); document.getElementById("bnav").style.setProperty("--n",TB.length); document.getElementById("bnav").innerHTML=TB.map(([k,l])=>`<button type="button" data-tab="${k}" aria-current="${S.tab===k}">${ICON[k]}<span>${l}</span>${bd[k]||""}</button>`).join("");
+  document.getElementById("fab").hidden = !(S.tab==="visual"||S.tab==="dados"||S.tab==="inicio");
+  M.classList.toggle("wide",S.tab==="rev");
   atualizarChipDrive();
 }
-const M=document.getElementById("main");
 function render(keep){
   const y=window.scrollY;
   atualizarChrome();
-  if(S.tab==="termo"||S.tab==="cor") S.tab="visual";
-  const fn={dados:rDados,visual:rVisual,rel:rRel}[S.tab];
+  if(S.tab==="termo"||S.tab==="cor") S.tab="visual"; if(S.tab==="rev"&&!largo()) S.tab="inicio";
+  const fn={inicio:rInicio,dados:rDados,visual:rVisual,rev:rRev,rel:rRel}[S.tab]||rInicio;
   const ban=[];
   if(S.novaVersao) ban.push(`<div class="banner info row">Nova versão do app instalada. <button class="btn sm" type="button" data-act="recarregar">Recarregar</button></div>`);
   if(S.tab==="dados" && /iP(hone|ad|od)/.test(navigator.userAgent) && !navigator.standalone && !(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)) ban.push(`<div class="banner info">No iPhone, use o app instalado: abra este endereço no Safari normal (não em aba privada), toque em Compartilhar e em <b>Adicionar à Tela de Início</b>. Em aba privada o Safari apaga tudo ao fechar.</div>`);
@@ -952,6 +1025,7 @@ function render(keep){
   if(S.tab==="rel") mostrarUso();
   ligarAudios(M);
   if(keep) window.scrollTo(0,y);
+  if(S.rap && !document.getElementById("rapSheet").hidden) abrirRapida();
 }
 function autoGrow(t){ t.style.height="auto"; t.style.height=Math.min(t.scrollHeight+2,420)+"px"; }
 function irPara(tab){ S.tab=tab; render(); window.scrollTo(0,0); }
@@ -1017,10 +1091,10 @@ function etapaAberta(){ if(S.openEt!==null) return S.openEt;
   const e=ETAPAS.find(e=>{ const x=etapaInfo(e); return x.on && x.feitos<x.total; }); return e? e.id : ""; }
 function rVisual(){
   const aberta=etapaAberta();
-  const notas=S.v.notas||[];
-  return `<div class="legend"><span><b>C</b> conforme</span><span><b>NC</b> não conforme</span><span><b>NA</b> não se aplica</span><span><b>NV</b> não verificado</span></div>
+  const notas=(S.v.notas||[]).filter(n=>!(S.rap&&S.rap.nid===n.id));
+  return `${ambBar()}<div class="legend"><span><b>C</b> conforme</span><span><b>NC</b> não conforme</span><span><b>NA</b> não se aplica</span><span><b>NV</b> não verificado</span></div>
   ${notas.length?`<section class="card"><div class="card-h"><h3>Registros de campo</h3><button class="btn sm" type="button" data-act="novaNota">+ Registro</button></div>
-    ${notas.slice().reverse().map(nt=>`<div class="nota" data-nota="${esc(nt.id)}"><div class="when"><span>${dtBR(new Date(nt.t)).slice(0,16)}</span><button class="btn sm ghost danger" type="button" data-act="delNota" data-id="${esc(nt.id)}">Excluir</button></div>
+    ${notas.slice().reverse().map(nt=>`<div class="nota" data-nota="${esc(nt.id)}"><div class="when"><span>${dtBR(new Date(nt.t)).slice(0,16)}${nt.semItem?` · <b class="semi">sem item · o Claude classifica</b>`:""}</span><button class="btn sm ghost danger" type="button" data-act="delNota" data-id="${esc(nt.id)}">Excluir</button></div>
       <textarea data-notatxt="${esc(nt.id)}" placeholder="O que foi observado, onde" rows="2">${esc(nt.txt||"")}</textarea>
       <div class="it-x">${camBtn("n:"+nt.id,"Foto",(nt.fotos||[]).length)}<button type="button" class="mini ${(nt.fotos||[]).some(f=>f.audio&&f.audio.id)?"has":""}" data-mic="n:${esc(nt.id)}">${ICON.mic}Áudio</button></div>${strip(nt.fotos,"n:"+nt.id)}</div>`).join("")}</section>`:""}
   ${ETAPAS.map(e=>{ const x=etapaInfo(e); const open=e.id===aberta;
@@ -1040,6 +1114,7 @@ function itemHTML(id,m,t){ const st=S.v.check[id]||{}; const nf=(st.fotos||[]).l
     <div class="seg4" role="group" aria-label="Situação">${["C","NC","NA","NV"].map(s=>`<button type="button" data-item="${id}" data-v="${s}" aria-pressed="${st.s===s}">${s}</button>`).join("")}</div>
     <div class="it-x"><button type="button" class="mini ${st.obs?"has":""}" data-act="obs" data-id="${id}">${ICON.obs}Obs</button>${camBtn("c:"+id,st.s==="NC"?"+ Ocorrência":"Foto",nf)}<button type="button" class="mini ${(st.fotos||[]).some(f=>f.audio&&f.audio.id)?"has":""}" data-mic="c:${id}">${ICON.mic}Áudio</button></div>
     <textarea data-itemobs="${id}" placeholder="Observação geral do item (o local de cada problema vai na legenda da foto)" rows="2" ${showObs?"":"hidden"}>${esc(st.obs||"")}</textarea>
+    ${defsHTML(id,st)}
     ${ocorrencias(st.fotos,"c:"+id,st.s==="NC")}
     ${m==="T"? S.v.termo.map((r,i)=>r.item===id?cardTer(r,i):"").join("")+`<button type="button" class="mini" data-act="addTer" data-ponto="${id}">${ICON.termo}+ Ponto quente</button>` : ""}</div>`; }
 function marcar(id,val){
@@ -1048,6 +1123,7 @@ function marcar(id,val){
   it.querySelectorAll(".seg4 button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.v===st.s)));
   { const lab=it.querySelector("label.mini"), inp=lab&&lab.querySelector("input[data-addph]"); if(lab&&inp){ const nf=(st.fotos||[]).length; lab.innerHTML=ICON.cam+(st.s==="NC"?"+ Ocorrência":"Foto")+(nf?` (${nf})`:""); lab.appendChild(inp); }
     it.querySelectorAll("textarea[data-leg]").forEach(x=>x.placeholder=st.s==="NC"?"Onde e o quê (ex.: Bloco B, sala 4 – fio solto no forro)":"Legenda: local e o que mostra"); }
+  { const d=it.querySelector(".defs"); if(d) d.hidden=st.s!=="NC"; }
   if(st.s==="NC"){ const ta=it.querySelector("textarea[data-itemobs]"); ta.hidden=false; S.obsOpen.add(id); if(!ta.value) ta.focus({preventScroll:false}); }
   agendarSalvar();
   const inf=infoItem(id); const e=inf.e; const x=etapaInfo(e);
@@ -1342,6 +1418,202 @@ function abrirLista(){
   const d=document.getElementById("dlgList"); if(!d.open) d.showModal();
 }
 
+/* ============================== Local atual (ambiente) ==============================
+   Cada aparelho guarda onde o vistoriador está agora (não sincroniza: dois colegas podem estar em salas diferentes).
+   Os nomes usados ficam na vistoria (v.ambientes) para virar atalho. */
+function ambKey(){ return "vistoriaEletrica.amb."+S.v.id; }
+function ambAtual(){ try{ return localStorage.getItem(ambKey())||""; }catch(e){ return S.ambMem||""; } }
+function setAmb(t){ t=String(t||"").trim(); S.ambMem=t; try{ localStorage.setItem(ambKey(),t); }catch(e){}
+  if(t){ const L=S.v.ambientes||(S.v.ambientes=[]); const i=L.indexOf(t); if(i>=0) L.splice(i,1); L.unshift(t); if(L.length>40) L.length=40; agendarSalvar(); } }
+const PIN='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0114 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+function ambBar(){ const a=ambAtual(); return `<div class="ambbar">${PIN}<div class="t"><small>Você está em</small><b>${a?esc(a):"local não definido"}</b></div><button type="button" class="btn sm" data-act="ambTrocar">${a?"Trocar local":"Definir local"}</button></div>`; }
+function abrirAmb(){
+  const L=[...new Set([...(S.v.ambientes||[]),...(S.v.quadros||[]).map(q=>String(q.nome||"").trim())])].filter(Boolean).slice(0,24);
+  document.getElementById("ambBody").innerHTML=`<h3 class="sh-t">Onde você está?</h3>
+    <input id="ambIn" type="text" value="${esc(ambAtual())}" placeholder="Ex.: Bloco B · Sala 4, Cozinha, Quadra" autocomplete="off" enterkeyhint="done" aria-label="Local atual">
+    ${L.length?`<div class="chips">${L.map(x=>`<button type="button" class="chip-s" data-act="ambChip" data-v="${esc(x)}">${esc(x)}</button>`).join("")}</div>`:""}
+    <div class="row sh-a"><button type="button" class="btn" data-act="ambCancel">Cancelar</button><button type="button" class="btn pri" data-act="ambOk">Usar este local</button></div>`;
+  document.getElementById("ambSheet").hidden=false; setTimeout(()=>{ const i=document.getElementById("ambIn"); if(i){ i.focus(); i.select(); } },60);
+}
+function fecharAmb(ok){ const i=document.getElementById("ambIn"); if(ok&&i) setAmb(i.value); document.getElementById("ambSheet").hidden=true;
+  if(S.rap) abrirRapida(); else render(true); }
+
+/* ============================== Foto rápida ==============================
+   Foto → toque no problema (cada atalho já sabe o item do checklist) ou descreva/grave.
+   Com atalho: o item vira NC e a foto entra como ocorrência, com legenda "local – problema".
+   Sem atalho: fica como ocorrência sem item (registro de campo marcado), e o Claude classifica no relatório. */
+const PROBLEMAS=[
+  ["Quadros",[["q9","Quadro sem tampa ou contra-tampa"],["q8","Conexão solta ou queimada"],["q12","Circuito improvisado no quadro"],["q2","Disjuntor maior que o cabo"],["q3","Sem DR"],["q5","Sem DPS"],["q1","Circuitos sem identificação"],["q10","Quadro obstruído ou depósito"]]],
+  ["Linhas",[["l3","Fio solto, sem eletroduto"],["l4","Emenda fora de caixa"],["l6","Isolação ressecada ou derretida"],["l2","Cabo sem marcação"]]],
+  ["Tomadas e iluminação",[["p1","Benjamim ou extensão"],["p1","Tomada quebrada ou sem terra"],["p3","Luminária ou interruptor solto"],["p4","Sem iluminação de emergência"],["p2","Ar ou chuveiro sem circuito próprio"]]],
+  ["Entrada, terra e SPDA",[["e1","Padrão de entrada danificado"],["e4","Aterramento do padrão sem conexão"],["a2","Caixa de aterramento sem haste visível"],["d5","SPDA com corrosão ou cabo rompido"]]]
+];
+function qdPadrao(){ const qs=S.v.quadros||[]; const a=ambAtual().toLowerCase();
+  const q=qs.find(q=>a && String(q.nome||"").trim().toLowerCase()===a) || qs.find(q=>q.id===S.openQd) || qs[qs.length-1]; return q? q.id : ""; }
+function rapAlvo(){ const r=S.rap; if(!r||!r.chip) return null; const [g,i]=r.chip.split(":").map(Number); const p=PROBLEMAS[g]&&PROBLEMAS[g][1][i]; if(!p) return null;
+  const [base,label]=p; const e=ETAPAS.find(e=>e.itens.some(x=>x[0]===base)); const id= e.id==="3"? base+"_"+(r.qd||qdPadrao()) : base; return {id,base,label,e}; }
+function rapLeg(){ const t=(S.rap.txt||"").trim(); const al=rapAlvo(); return [ambAtual(), t||(al?al.label:"")].filter(Boolean).join(" – "); }
+function rapNota(){ return (S.v.notas||[]).find(n=>n.id===(S.rap&&S.rap.nid)); }
+function abrirRapida(){
+  const r=S.rap; const nt=rapNota(); if(!r||!nt){ document.getElementById("rapSheet").hidden=true; return; }
+  const foco=document.activeElement&&document.activeElement.id==="rapTxt"; const sc=(document.querySelector("#rapSheet .sheet")||{}).scrollTop||0;
+  const f=nt.fotos[0]; const al=rapAlvo(); const a=ambAtual(); const qs=S.v.quadros||[];
+  const temAud=!!(f&&f.audio&&f.audio.id);
+  document.getElementById("rapBody").innerHTML=`
+    <div class="rap-top">${f?`<img data-fid="${esc(f.id)}" src="${esc(fotoURL(f))}" alt="Foto recém-tirada">`:""}
+      <div class="rap-loc">${PIN}<div><small>Local</small><b>${a?esc(a):"não definido"}</b></div><button type="button" class="btn sm" data-act="ambTrocar">${a?"Trocar":"Definir"}</button></div></div>
+    <h3 class="sh-t">O que é este problema?</h3>
+    ${PROBLEMAS.map(([g,L],gi)=>`<div class="rap-g"><span>${esc(g)}</span><div class="rap-chips">${L.map(([b,l],i)=>`<button type="button" class="rap-c ${r.chip===gi+":"+i?"on":""}" data-act="rapChip" data-k="${gi}:${i}" aria-pressed="${r.chip===gi+":"+i}">${esc(l)}</button>`).join("")}</div></div>`).join("")}
+    ${al&&al.e.id==="3"&&qs.length>1?`<label class="f"><span>Em qual quadro?</span><select id="rapQd">${qs.map((q,i)=>`<option value="${q.id}" ${q.id===(r.qd||qdPadrao())?"selected":""}>${esc(nomeQd(q,i))}</option>`).join("")}</select></label>`:""}
+    <div class="f"><label for="rapTxt">Ou descreva com suas palavras</label>
+      <div class="rap-txt"><input id="rapTxt" type="text" value="${esc(r.txt||"")}" placeholder="Ex.: disjuntor do ar esquentando" autocomplete="off" enterkeyhint="done">
+      <button type="button" class="mini ${temAud?"has":""}" data-mic="n:${esc(nt.id)}:0">${ICON.mic}${temAud?"Regravar":"Gravar"}</button></div>
+      <small class="status">${temAud?"Áudio gravado"+(f.audio.txt?": “"+esc(f.audio.txt)+"”":" (será transcrito)"):"O áudio fica ligado à foto e vira a legenda."}</small></div>
+    <div class="rap-prev"><small>Vai registrar</small>${al?`<span><b class="ncx">NC</b> em ${esc(codItem(al.id))} · ${esc(al.e.itens.find(x=>x[0]===al.base)[2])}</span>`:`<span>Ocorrência sem item${(r.txt||"").trim()||temAud?" (o Claude classifica no relatório)":""}</span>`}
+      <span class="leg">Legenda: “${esc(rapLeg()||"…")}”</span></div>
+    <div class="row sh-a"><button type="button" class="btn ghost danger" data-act="rapDescartar">Descartar</button><button type="button" class="btn" data-act="rapSalvar">Salvar</button><button type="button" class="btn pri" data-act="rapProx">${ICON.cam}Salvar e próxima</button></div>`;
+  document.getElementById("rapSheet").hidden=false; const sh=document.querySelector("#rapSheet .sheet"); if(sh) sh.scrollTop=sc;
+  if(foco){ const i=document.getElementById("rapTxt"); i.focus(); i.setSelectionRange(i.value.length,i.value.length); }
+}
+function rapSalvar(proxima){
+  const r=S.rap; const nt=rapNota(); if(!r||!nt){ S.rap=null; document.getElementById("rapSheet").hidden=true; return; }
+  if(r.chip){ const [g,i]=r.chip.split(":").map(Number); const base=PROBLEMAS[g][1][i][0]; if(/^q/.test(base) && !(S.v.quadros||[]).length){ (S.v.quadros||(S.v.quadros=[])).push({id:uid8().slice(0,5),nome:ambAtual()||"QGBT"}); } if(/^q/.test(base)&&!r.qd) r.qd=qdPadrao(); }
+  const f=nt.fotos[0]; const al=rapAlvo(); const leg=rapLeg(); const temAud=!!(f&&f.audio&&f.audio.id);
+  if(!al && !(r.txt||"").trim() && !temAud){ toastSave("Toque num problema, escreva ou grave um áudio.",true); return; }
+  if(al){ if(al.e.opc) S.v.aplica[al.e.id]=true; const st=S.v.check[al.id]||(S.v.check[al.id]={}); st.s="NC"; if(f){ f.leg=leg; (st.fotos||(st.fotos=[])).push(f); }
+    S.v.notas=S.v.notas.filter(n=>n!==nt); }
+  else { delete nt.prov; nt.semItem=true; nt.amb=ambAtual(); nt.txt=leg; if(f) f.leg=leg; }
+  S.rap=null; document.getElementById("rapSheet").hidden=true; agendarSalvar(); agendarSync(2500);
+  toastSave(al? "Registrado em "+codItem(al.id) : "Registrado sem item (o Claude classifica)");
+  if(proxima){ S.fabMode="rapida"; document.getElementById("fabFile").click(); }
+  render(true);
+}
+function rapDescartar(){ const nt=rapNota(); if(nt){ (nt.fotos||[]).forEach(f=>{ idbDel("fotos",f.id).catch(()=>{}); if(f.audio&&f.audio.id) idbDel("fotos",f.audio.id).catch(()=>{}); }); S.v.notas=S.v.notas.filter(n=>n!==nt); agendarSalvar(); }
+  S.rap=null; document.getElementById("rapSheet").hidden=true; render(true); }
+
+/* ============================== Defeitos comuns por item ============================== */
+const DEFEITOS={
+  e1:["caixa do padrão danificada","poste ou pontalete inclinado","ligação improvisada no padrão","sem lacre"],
+  e2:["disjuntor geral maior que o cabo de entrada","disjuntor geral danificado"],
+  e3:["caixa de medição sem tampa","caixa com infiltração ou ninho"],
+  e4:["condutor de aterramento rompido","sem haste visível","conexão oxidada"],
+  s2:["sem cerca ou portão aberto","sem placa de advertência","mato e objetos no recinto"],
+  s3:["para-raios danificado","chave fusível com improviso"], s4:["sem ligação visível à malha"],
+  q1:["sem diagrama ou quadro de cargas","circuitos sem identificação"],
+  q2:["disjuntor maior que a seção do cabo","sinais de troca por disjuntor maior"],
+  q3:["sem DR","DR só em parte dos circuitos de áreas molhadas"],
+  q4:["DR não desarmou no botão de teste","DR jumpeado ou fora de uso"],
+  q5:["sem DPS","DPS sem ligação ao terra","DPS com indicação de fim de vida"],
+  q6:["neutro e terra no mesmo barramento","barramentos sem identificação"],
+  q7:["neutro em cor diferente de azul-claro","terra em cor diferente de verde-amarelo"],
+  q8:["cabo solto no borne","sinais de aquecimento ou queima","emenda dentro do quadro"],
+  q9:["sem contra-tampa, partes vivas expostas","porta sem fecho","sem placa de advertência"],
+  q10:["quadro usado como depósito","acesso bloqueado por móveis"],
+  q12:["dois cabos no mesmo borne","disjuntor solto, fora do trilho","ligação direto no barramento"],
+  l1:["seção ilegível nos cabos","cabo fino para o disjuntor do circuito"],
+  l2:["cabo sem marcação do fabricante","cabo sem certificação Inmetro"],
+  l3:["fio singelo solto no forro","eletroduto quebrado","caixa de passagem sem tampa","cabo exposto ao alcance","cabo grampeado na parede"],
+  l4:["emenda fora de caixa","emenda só com fita isolante"],
+  l5:["cabo de rede no mesmo eletroduto da energia"],
+  l6:["isolação ressecada","isolação derretida ou escurecida","excesso de fita isolante"],
+  p1:["benjamim ou T","extensão de uso permanente","tomada quebrada","tomada sem pino terra (padrão antigo)","tomada solta da parede"],
+  p2:["ar-condicionado no circuito de tomadas","chuveiro sem circuito exclusivo","equipamentos da cozinha no mesmo circuito"],
+  p3:["luminária solta","interruptor sem espelho","fios aparentes no ponto de luz","iluminação insuficiente"],
+  p4:["sem iluminação de emergência","bloco autônomo não acende"],
+  a1:["sem BEP","BEP inacessível"], a2:["caixa de inspeção sem tampa","sem haste visível","conexão oxidada"], a3:["tomadas sem condutor de proteção","condutor de proteção interrompido"],
+  d1:["captação danificada","captação solta"], d2:["menos de duas descidas","sem conector de ensaio"], d3:["condutor de seção insuficiente"],
+  d4:["estrutura metálica sem ligação à captação"], d5:["corrosão nas conexões","cabo rompido","fixação solta"],
+  f1:["módulos danificados","inversor sem identificação"], f2:["sem seccionamento CC","sem DPS na string box"], f3:["estrutura sem aterramento","sem placa de geração própria"]
+};
+function defsHTML(id,st){ const L=DEFEITOS[String(id).split("_")[0]]; if(!L) return "";
+  return `<div class="defs" ${st.s==="NC"?"":"hidden"}><span>Defeitos comuns · toque para usar</span><div class="chips">${L.map(t=>`<button type="button" class="chip-s" data-act="defeito" data-id="${esc(id)}" data-t="${esc(t)}">${esc(t)}</button>`).join("")}</div></div>`; }
+function usarDefeito(id,t){ const st=S.v.check[id]||(S.v.check[id]={}); const fs=st.fotos||[]; const txt=[ambAtual(),t].filter(Boolean).join(" – ");
+  const alvo=[...fs].reverse().find(f=>!(f.leg||"").trim());
+  if(alvo) alvo.leg=txt; else { const o=(st.obs||"").trim(); if(!o.includes(t)) st.obs= o? o+"; "+t : txt; S.obsOpen.add(id); }
+  agendarSalvar(); render(true); toastSave(alvo? "Legenda da foto preenchida" : (fs.length? "Fotos já legendadas: anotado na observação" : "Anotado na observação; tire a foto em + Ocorrência")); }
+
+/* ============================== Início (painel de andamento) ============================== */
+function rInicio(){
+  const v=S.v; const R=resumo(v); const fotos=listaFotos(v);
+  const alertas=v.correntes.reduce((s,r)=>s+calcCorrente(r,v.cfg.deseq).flags.length,0);
+  const quentes=v.termo.filter(r=>calcTermo(r).sev>=2).length;
+  const etapas=ETAPAS.map(e=>{ const x=etapaInfo(e); const pct=x.on&&x.total? Math.round(x.feitos/x.total*100) : 0;
+    return `<button type="button" class="ini-et" data-act="irEt" data-et="${e.id}"><span>${e.id} · ${esc(e.t)}${e.id==="3"?" ("+(v.quadros||[]).length+")":""}</span>
+      <span class="bar" aria-hidden="true"><i style="width:${pct}%" class="${x.on&&x.feitos===x.total?"ok":""}"></i></span>
+      <span class="n">${x.on? (x.nc?`<b class="ncx">${x.nc} NC</b> `:"")+x.feitos+"/"+x.total : "NA"}</span></button>`; }).join("");
+  const av=[];
+  if(!v.ident.escola||!v.ident.municipio) av.push(["Escola ou município sem nome","irTab","dados"]);
+  const semLeg=fotos.filter(o=>(o.ref.startsWith("chk:") && (v.check[o.ref.slice(4)]||{}).s==="NC") && !(o.f.leg||"").trim()).length;
+  if(semLeg) av.push([semLeg+" foto(s) de NC sem legenda (local)", largo()?"irTab":"irEt", largo()?"rev":primeiraSemLeg()]);
+  const ncSemFoto=itensAtivos(v).filter(x=>x.st.s==="NC"&&!(x.st.fotos||[]).length);
+  if(ncSemFoto.length) av.push([ncSemFoto.length+" item(ns) NC sem foto ("+ncSemFoto.slice(0,3).map(x=>codItem(x.id,v)).join(", ")+(ncSemFoto.length>3?"…":"")+")","irEt",ncSemFoto[0].e.id]);
+  if(!v.correntes.some(r=>r.et==="1")) av.push(["Corrente do disjuntor geral não medida","irEt","1"]);
+  (v.quadros||[]).forEach((q,i)=>{ if(!v.correntes.some(r=>r.qd===q.id)) av.push([nomeQd(q,i)+" sem medição de corrente","irEt","3"]); });
+  ETAPAS.forEach(e=>{ const x=etapaInfo(e); if(x.on&&x.feitos===0) av.push(["Etapa "+e.id+" não iniciada: "+e.t,"irEt",e.id]); });
+  if(!String(v.ident.tAmb||"").trim() && v.correntes.some(r=>calcCorrente(r,v.cfg.deseq).izEst)) av.push(["Temperatura ambiente não anotada (usada na Iz)","irTab","dados"]);
+  const semItem=(v.notas||[]).filter(n=>n.semItem).length;
+  const prox=ETAPAS.find(e=>{ const x=etapaInfo(e); return x.on&&x.feitos<x.total; });
+  return `${ambBar()}
+  <div class="tiles"><div class="tile ${R.nc?"crit":""}"><b>${R.nc}</b><span>não conformes</span></div><div class="tile"><b>${fotos.length}</b><span>fotos</span></div><div class="tile ${alertas?"warn":""}"><b>${v.correntes.length}</b><span>medições${alertas?", "+alertas+" alerta(s)":""}</span></div><div class="tile ${quentes?"warn":""}"><b>${quentes}</b><span>pontos quentes</span></div></div>
+  <section class="card"><div class="card-h"><h2>Andamento</h2><span class="status">${R.feitos}/${R.total} itens</span></div><div class="ini-ets">${etapas}</div></section>
+  <section class="card ${av.length?"ini-av":""}"><div class="card-h"><h2>Antes de sair da escola</h2><span class="status">${av.length? av.length+" ponto(s)" : "tudo certo"}</span></div>
+    ${av.length? `<div class="ini-l">${av.map(([t,a,x])=>`<button type="button" data-act="${a}" ${a==="irTab"?`data-tab="${x}"`:`data-et="${x}"`}><span>${esc(t)}</span><span class="ir">Ir</span></button>`).join("")}</div>`
+      : `<p class="lead">Nada pendente no que o app consegue conferir. Pode gerar o relatório.</p>`}
+    ${semItem?`<p class="status">${semItem} ocorrência(s) da foto rápida sem item: o Claude classifica no relatório${largo()?" (ou classifique na Revisão)":""}.</p>`:""}
+  </section>
+  ${prox?`<button type="button" class="btn pri ini-go" data-act="irEt" data-et="${prox.id}">Continuar: ${prox.id} · ${esc(prox.t)}</button>`:`<button type="button" class="btn pri ini-go" data-act="irTab" data-tab="rel">Ir para o relatório</button>`}`;
+}
+function primeiraSemLeg(){ const o=listaFotos(S.v).find(o=>o.ref.startsWith("chk:")&&(S.v.check[o.ref.slice(4)]||{}).s==="NC"&&!(o.f.leg||"").trim()); const x=o&&infoItem(o.ref.slice(4)); return x? x.e.id : "1"; }
+function irEtapa(et){ S.tab="visual"; S.openEt=et; render(); const el=document.getElementById("et_"+et); if(el) el.scrollIntoView({block:"start"}); }
+
+/* ============================== Revisão (computador) ============================== */
+function largo(){ return !!(window.matchMedia&&matchMedia("(min-width:1000px)").matches); }
+function rvFotosDe(sel){ if(!sel) return []; if(sel.startsWith("n:")){ const nt=(S.v.notas||[]).find(n=>n.id===sel.slice(2)); return ((nt&&nt.fotos)||[]).map((f,i)=>({f,pref:"n:"+nt.id+":"+i})); }
+  return ((S.v.check[sel]||{}).fotos||[]).map((f,i)=>({f,pref:"c:"+sel+":"+i})); }
+function rvTodasSemLeg(){ const L=[]; itensAtivos(S.v).forEach(x=>{ if(x.st.s==="NC") rvFotosDe(x.id).forEach((o,i)=>{ if(!(o.f.leg||"").trim()) L.push([x.e.id,x.id,i]); }); });
+  (S.v.notas||[]).forEach(n=>{ if(n.semItem) rvFotosDe("n:"+n.id).forEach((o,i)=>{ if(!(o.f.leg||"").trim()) L.push(["sem","n:"+n.id,i]); }); }); return L; }
+function rRev(){
+  const v=S.v; S.rv=S.rv||{et:"",sel:"",i:0};
+  const ets=ETAPAS.filter(e=>etapaInfo(e).on); if(!S.rv.et) S.rv.et=(ets.find(e=>etapaInfo(e).nc)||ets[0]||{}).id||"1";
+  const semItem=(v.notas||[]).filter(n=>n.semItem);
+  const nav=ets.map(e=>{ const x=etapaInfo(e); const sl=itensDaEtapa(v,e).reduce((s,y)=>s+((v.check[y.id]||{}).s==="NC"? ((v.check[y.id].fotos||[]).filter(f=>!(f.leg||"").trim()).length):0),0);
+    return `<button type="button" class="rv-n" data-act="rvEt" data-et="${e.id}" aria-current="${S.rv.et===e.id}"><span>${e.id} · ${esc(e.t)}</span><span>${x.nc?`<b class="ncx">${x.nc} NC</b>`:x.feitos+"/"+x.total}${sl?` · ${sl} sem legenda`:""}</span></button>`; }).join("")
+    + (semItem.length?`<button type="button" class="rv-n" data-act="rvEt" data-et="sem" aria-current="${S.rv.et==="sem"}"><span>Ocorrências sem item</span><span>${semItem.length}</span></button>`:"");
+  let itens;
+  if(S.rv.et==="sem") itens=semItem.map(n=>({sel:"n:"+n.id,tag:"—",cls:"",txt:n.txt||"(sem texto)",nf:(n.fotos||[]).length,sl:(n.fotos||[]).filter(f=>!(f.leg||"").trim()).length}));
+  else { const e=ETAPAS.find(e=>e.id===S.rv.et); itens=itensDaEtapa(v,e).map(y=>{ const st=v.check[y.id]||{}; const fs=st.fotos||[];
+    return {sel:y.id,tag:st.s||"—",cls:st.s==="NC"?"nc":st.s==="C"?"c":"",txt:codItem(y.id,v)+" · "+y.t,nf:fs.length,sl:st.s==="NC"?fs.filter(f=>!(f.leg||"").trim()).length:0}; }); }
+  if(!S.rv.sel || !itens.some(x=>x.sel===S.rv.sel)){ const p=itens.find(x=>x.cls==="nc"&&x.nf)||itens.find(x=>x.nf)||itens[0]; S.rv.sel=p?p.sel:""; S.rv.i=0; }
+  const lista=itens.map(x=>`<button type="button" class="rv-i" data-act="rvSel" data-sel="${esc(x.sel)}" aria-current="${S.rv.sel===x.sel}"><span class="tag ${x.cls}">${esc(x.tag)}</span><span class="tx">${esc(x.txt)}</span><span class="nf">${x.sl?`<b>${x.sl} sem legenda</b>`:x.nf?x.nf+" foto(s)":""}</span></button>`).join("") || `<p class="lead">Nada nesta etapa.</p>`;
+  const fs=rvFotosDe(S.rv.sel); if(S.rv.i>=fs.length) S.rv.i=Math.max(0,fs.length-1); const o=fs[S.rv.i];
+  const st=S.rv.sel&&!S.rv.sel.startsWith("n:")? (v.check[S.rv.sel]||{}) : null; const nt=S.rv.sel.startsWith("n:")? (v.notas||[]).find(n=>"n:"+n.id===S.rv.sel) : null;
+  const titulo2=nt? "Ocorrência sem item" : (S.rv.sel? codItem(S.rv.sel,v)+" · "+(infoItem(S.rv.sel)||{}).t : "");
+  const painel=!S.rv.sel? `<p class="lead">Escolha um item.</p>` : `
+    <h2 class="rv-h">${esc(titulo2)}</h2>
+    ${st?`<div class="seg4 rv-st">${["C","NC","NA","NV"].map(x=>`<button type="button" data-act="rvStatus" data-v="${x}" aria-pressed="${st.s===x}">${x}</button>`).join("")}</div>`:""}
+    ${o? `<button type="button" class="rv-big" data-ver="${esc(o.pref)}" aria-label="Ampliar foto"><img data-fid="${esc(o.f.id)}" src="${esc(fotoURL(o.f))}" alt=""><span class="lbl">Foto ${S.rv.i+1} de ${fs.length}</span></button>
+      <label class="f"><span>Legenda (local e o que foi visto)</span><textarea data-leg="${esc(o.pref)}" rows="2" placeholder="Onde e o quê (ex.: Bloco B, sala 4 – fio solto no forro)">${esc(o.f.leg||"")}</textarea></label>
+      ${o.f.audio&&o.f.audio.id? `<p class="rv-aud"><b>Relato em áudio:</b> ${o.f.audio.txt? "“"+esc(o.f.audio.txt)+"”" : "ainda não transcrito"}</p>`:""}
+      ${fs.length>1?`<div class="rv-th">${fs.map((x,i)=>`<button type="button" data-act="rvFoto" data-i="${i}" aria-current="${i===S.rv.i}" aria-label="Foto ${i+1}"><img data-fid="${esc(x.f.id)}" src="${esc(fotoURL(x.f))}" alt=""></button>`).join("")}</div>`:""}`
+      : `<p class="lead">Sem fotos neste item.</p>`}
+    ${st?`<label class="f"><span>Observação geral do item</span><textarea data-itemobs="${esc(S.rv.sel)}" rows="2">${esc(st.obs||"")}</textarea></label>`:""}
+    ${nt?`<label class="f"><span>Texto do registro</span><textarea data-notatxt="${esc(nt.id)}" rows="2">${esc(nt.txt||"")}</textarea></label>`:""}
+    ${nt?`<div class="f"><label for="rvMov">Enquadrar no item do checklist (vira NC com esta foto)</label><div class="rap-txt"><select id="rvMov">${itensAtivos(v).map(x=>`<option value="${esc(x.id)}">${esc(codItem(x.id,v)+" · "+x.t)}</option>`).join("")}</select><button type="button" class="btn" data-act="rvMover">Mover</button></div></div>`:""}
+    <div class="row"><button type="button" class="btn" data-act="rvAnt">Anterior</button><button type="button" class="btn" data-act="rvProx">Próxima</button><button type="button" class="btn pri" data-act="rvSemLeg">Próxima sem legenda</button></div>`;
+  const pend=rvTodasSemLeg().length; const pasta=v.drive&&v.drive.pasta;
+  return `<div class="rv-top"><div><h1 class="rv-tt">Revisão</h1><span class="status">${resumo(v).nc} NC · ${listaFotos(v).length} fotos · ${pend} de NC sem legenda</span></div>
+    <div class="row">${pasta?`<a class="btn" href="https://drive.google.com/drive/folders/${esc(pasta)}" target="_blank" rel="noopener">Abrir pasta no Drive</a>`:""}<button type="button" class="btn pri" data-act="cpPrompt">Copiar pedido para o Claude</button><span class="status" id="genSt"></span></div></div>
+  <div class="rv"><nav class="rv-ets" aria-label="Etapas">${nav}</nav><section class="rv-its" aria-label="Itens">${lista}</section><section class="rv-ft" aria-label="Fotos e legendas">${painel}</section></div>`;
+}
+function rvIr(passo){ const fs=rvFotosDe(S.rv.sel); if(S.rv.i+passo>=0 && S.rv.i+passo<fs.length){ S.rv.i+=passo; render(true); return; }
+  /* muda de item dentro da etapa */
+  const e=ETAPAS.find(e=>e.id===S.rv.et); const ids= S.rv.et==="sem"? (S.v.notas||[]).filter(n=>n.semItem).map(n=>"n:"+n.id) : (e? itensDaEtapa(S.v,e).map(y=>y.id).filter(id=>((S.v.check[id]||{}).fotos||[]).length) : []);
+  const k=ids.indexOf(S.rv.sel)+passo; if(k>=0&&k<ids.length){ S.rv.sel=ids[k]; S.rv.i= passo<0? Math.max(0,rvFotosDe(ids[k]).length-1) : 0; render(true); } }
+function rvProxSemLeg(){ const L=rvTodasSemLeg(); if(!L.length){ toastSave("Todas as fotos de NC estão com legenda."); return; }
+  const cur=L.findIndex(([et,sel,i])=>sel===S.rv.sel&&i===S.rv.i); const n=L[(cur+1)%L.length]; S.rv.et=n[0]; S.rv.sel=n[1]; S.rv.i=n[2]; render(true);
+  setTimeout(()=>{ const t=document.querySelector(".rv-ft textarea[data-leg]"); t&&t.focus(); },50); }
+window.addEventListener("resize",()=>{ const l=largo(); if(l!==S.eraLargo){ S.eraLargo=l; if(!l&&S.tab==="rev") S.tab="inicio"; render(true); } });
+
 /* ============================== Eventos ============================== */
 document.addEventListener("click", async ev=>{
   const mic=ev.target.closest("[data-mic]"); if(mic){ const ref=alvoAudio(mic.dataset.mic); if(!ref){ toastSave("Tire a foto primeiro: o áudio fica vinculado a ela.",true); return; } iniciarGravacao(ref); return; }
@@ -1390,6 +1662,27 @@ document.addEventListener("click", async ev=>{
   if(act==="delNota"){ if(!(await confirmar("Excluir este registro de campo e suas fotos?"))) return; const i=S.v.notas.findIndex(x=>x.id===b.dataset.id); if(i>=0){ (S.v.notas[i].fotos||[]).forEach(f=>idbDel("fotos",f.id).catch(()=>{})); S.v.notas.splice(i,1); } agendarSalvar(); render(true); return; }
   if(b.id==="fab"){ document.getElementById("sheet").hidden=false; return; }
   if(act==="fecharSheet"){ fecharSheet(); return; }
+  if(act==="fabRapida"){ S.fabMode="rapida"; fecharSheet(); document.getElementById("fabFile").click(); return; }
+  if(act==="ambTrocar"){ abrirAmb(); return; }
+  if(act==="ambChip"){ const i=document.getElementById("ambIn"); if(i){ i.value=b.dataset.v; } fecharAmb(true); return; }
+  if(act==="ambOk"){ fecharAmb(true); return; }
+  if(act==="ambCancel"){ fecharAmb(false); return; }
+  if(act==="rapChip"){ S.rap.chip = S.rap.chip===b.dataset.k? null : b.dataset.k; abrirRapida(); return; }
+  if(act==="rapSalvar"){ rapSalvar(false); return; }
+  if(act==="rapProx"){ rapSalvar(true); return; }
+  if(act==="rapDescartar"){ rapDescartar(); return; }
+  if(act==="defeito"){ usarDefeito(b.dataset.id,b.dataset.t); return; }
+  if(act==="irEt"){ irEtapa(b.dataset.et); return; }
+  if(act==="rvEt"){ S.rv.et=b.dataset.et; S.rv.sel=""; S.rv.i=0; render(true); return; }
+  if(act==="rvSel"){ S.rv.sel=b.dataset.sel; S.rv.i=0; render(true); return; }
+  if(act==="rvFoto"){ S.rv.i=+b.dataset.i; render(true); return; }
+  if(act==="rvStatus"){ const st=S.v.check[S.rv.sel]||(S.v.check[S.rv.sel]={}); st.s= st.s===b.dataset.v? "" : b.dataset.v; agendarSalvar(); agendarSync(2500); render(true); return; }
+  if(act==="rvMover"){ const id=document.getElementById("rvMov").value; const nt=(S.v.notas||[]).find(n=>"n:"+n.id===S.rv.sel); if(!nt||!id) return; const x=infoItem(id); if(x&&x.e.opc) S.v.aplica[x.e.id]=true;
+    const st=S.v.check[id]||(S.v.check[id]={}); st.s="NC"; (nt.fotos||[]).forEach(f=>{ if(!(f.leg||"").trim()) f.leg=nt.txt||""; (st.fotos||(st.fotos=[])).push(f); });
+    S.v.notas=S.v.notas.filter(n=>n!==nt); agendarSalvar(); agendarSync(2500); toastSave("Movido para "+codItem(id)); S.rv.et=x?x.e.id:S.rv.et; S.rv.sel=id; S.rv.i=Math.max(0,st.fotos.length-1); render(true); return; }
+  if(act==="rvAnt"){ rvIr(-1); return; }
+  if(act==="rvProx"){ rvIr(1); return; }
+  if(act==="rvSemLeg"){ rvProxSemLeg(); return; }
   if(act==="fabNota"||act==="fabGeral"){ S.fabMode=act; fecharSheet(); document.getElementById("fabFile").click(); return; }
   if(act==="usarGPS"){ const st=document.getElementById("gpsSt"); st.textContent="Obtendo posição…"; const g=await posicaoAtual();
     if(g){ const L=S.v.local; L.lat=g.lat; L.lon=g.lon; L.coords=g.lat.toFixed(6)+", "+g.lon.toFixed(6); L.fonte="GPS do aparelho, ±"+Math.round(g.acc)+" m"; agendarSalvar(); render(true); if(navigator.onLine && !L.endereco) buscarEndereco(); }
@@ -1419,9 +1712,10 @@ function fecharSheet(){ document.getElementById("sheet").hidden=true; }
 function novaNota(){ const nt={id:"n"+uid8(),t:Date.now(),txt:"",fotos:[]}; (S.v.notas||(S.v.notas=[])).push(nt); agendarSalvar(); return nt; }
 function focarNota(id){ const ta=document.querySelector(`textarea[data-notatxt="${id}"]`); if(ta){ ta.scrollIntoView({block:"center"}); ta.focus(); } }
 document.getElementById("fabFile").addEventListener("change",async e=>{ const file=e.target.files&&e.target.files[0]; e.target.value=""; if(!file) return;
-  let tgt="g", nid=null; if(S.fabMode==="fabNota"){ const nt=novaNota(); nid=nt.id; tgt="n:"+nt.id; }
+  let tgt="g", nid=null; const rap=S.fabMode==="rapida"; if(S.fabMode==="fabNota"||rap){ const nt=novaNota(); nid=nt.id; tgt="n:"+nt.id; if(rap){ nt.prov=true; nt.amb=ambAtual(); S.rap={nid,chip:null,txt:"",qd:qdPadrao()}; } }
   toastSave("Processando foto…");
-  try{ const f=await guardarFoto(file,tgt); colocarFoto(tgt,f); agendarSalvar(); agendarSync(2500); }catch(er){ toastSave("Não foi possível ler a imagem: "+msgErro(er),true); }
+  try{ const f=await guardarFoto(file,tgt); if(rap) f.amb=ambAtual(); colocarFoto(tgt,f); agendarSalvar(); agendarSync(2500); }catch(er){ toastSave("Não foi possível ler a imagem: "+msgErro(er),true); if(rap){ S.v.notas=S.v.notas.filter(n=>n.id!==nid); S.rap=null; } render(true); return; }
+  if(rap){ render(true); abrirRapida(); return; }
   if(nid){ S.tab="visual"; render(); focarNota(nid); } else render(true);
 });
 document.addEventListener("input", ev=>{
@@ -1432,6 +1726,8 @@ document.addEventListener("input", ev=>{
     agendarSalvar(); return; }
   if(el.dataset.path){ let val=el.value; if(el.dataset.mask==="conv"){ val=maskConv(val); el.value=val; } if(el.dataset.path==="cfg.deseq") val=n(val)??10; setPath(S.v,el.dataset.path,val); agendarSalvar(); return; }
   if(el.dataset.qdnome){ const q=S.v.quadros.find(q=>q.id===el.dataset.qdnome); if(!q) return; q.nome=el.value; const i=S.v.quadros.indexOf(q); const h=document.getElementById("qdn_"+q.id); if(h) h.textContent=nomeQd(q,i); S.v.correntes.forEach(r=>{ if(r.qd===q.id) r.quadro=nomeQd(q,i); }); agendarSalvar(); return; }
+  if(el.id==="rapTxt"&&S.rap){ S.rap.txt=el.value; const pv=document.querySelector(".rap-prev .leg"); if(pv) pv.textContent="Legenda: “"+(rapLeg()||"…")+"”"; return; }
+  if(el.id==="rapQd"&&S.rap){ S.rap.qd=el.value; abrirRapida(); return; }
   if(el.dataset.leg){ const f=fotoPorRef(el.dataset.leg); if(f){ f.leg=el.value; agendarSalvar(); } return; }
   if(el.dataset.itemobs){ const id=el.dataset.itemobs; const st=S.v.check[id]||(S.v.check[id]={}); st.obs=el.value; const btn=document.querySelector(`button[data-act="obs"][data-id="${id}"]`); btn&&btn.classList.toggle("has",!!el.value); agendarSalvar(); return; }
   if(el.dataset.audtxt){ const h=holderPorRef(el.dataset.audtxt); if(h&&h.audio){ h.audio.txt=el.value; h.audio.fonte=el.value?"editada":""; h.audio.st=el.value?"ok":"fila"; agendarSalvar(); } return; }
@@ -1442,6 +1738,7 @@ document.addEventListener("input", ev=>{
   if(el.dataset.pend){ const k=el.dataset.pend; const p=S.v.pend[k]||(S.v.pend[k]={}); p[el.dataset.k]=el.value; if(el.dataset.k==="classe") el.closest(".pend").dataset.c=el.value; agendarSalvar(); return; }
 });
 document.addEventListener("change", async ev=>{
+  if(ev.target.id==="rapQd"&&S.rap){ S.rap.qd=ev.target.value; abrirRapida(); return; }
   const el=ev.target;
   if(el.id==="bkImp" && el.files && el.files[0]){ importarBackup(el.files[0]); return; }
   if(el.id==="liberar"){ try{ localStorage.setItem(LS_LIB,el.checked?"1":"0"); }catch(e){} if(el.checked && tokenOk() && navigator.onLine) sincronizarDrive(true); return; }
@@ -1735,7 +2032,7 @@ const LS_STT="vistoriaEletrica.sttKey";
 function sttKey(){ try{ return (localStorage.getItem(LS_STT)||"").trim(); }catch(e){ return ""; } }
 function holderPorRef(ref){ const v=S.v; const [k,a]=String(ref).split(":");
   if(k==="cor") return v.correntes[+a]||null; if(k==="ter") return v.termo[+a]||null; return fotoPorRef(ref); }
-function alvoAudio(ctx){ const v=S.v; const [k,a]=ctx.split(":");
+function alvoAudio(ctx){ const v=S.v; const [k,a]=ctx.split(":"); if(ctx.split(":").length===3 && (k==="c"||k==="n")) return fotoPorRef(ctx)? ctx : null;
   if(k==="cor"||k==="ter") return ctx;
   if(k==="c"){ const fs=(v.check[a]||{}).fotos||[]; return fs.length? "c:"+a+":"+(fs.length-1) : null; }
   if(k==="n"){ const nt=(v.notas||[]).find(x=>x.id===a); const fs=(nt&&nt.fotos)||[]; return fs.length? "n:"+a+":"+(fs.length-1) : null; }
@@ -1821,7 +2118,13 @@ async function pararGravacao(cancelar){
 }
 /* preenche a observação vazia com a transcrição (medição, ponto termográfico, item da inspeção, registro de campo) */
 function aplicarTranscricao(ref,txt,v){
-  v=v||S.v; const [k,a]=String(ref).split(":");
+  v=v||S.v; const [k,a,b]=String(ref).split(":");
+  if((k==="c"||k==="n") && b!=null){ let f=null; try{ f= k==="c"? v.check[a].fotos[+b] : v.notas.find(x=>x.id===a).fotos[+b]; }catch(e){}
+    if(f && (!(f.leg||"").trim() || f.leg===f.amb)){ f.leg=[f.amb,txt].filter(Boolean).join(" – ");
+      if(k==="n"){ const nt=v.notas.find(x=>x.id===a); if(nt&&(!nt.txt||nt.txt===f.amb)) nt.txt=f.leg; } }
+    else if(k==="c"){ const st=v.check[a]; if(st&&!st.obs) st.obs=txt; }
+    if(S.rap&&k==="n"&&S.rap.nid===a&&!S.rap.txt) S.rap.txt=txt;
+    return; }
   if(k==="cor"){ const r=v.correntes[+a]; if(r&&!r.obs) r.obs=txt; }
   else if(k==="ter"){ const r=v.termo[+a]; if(r&&!r.obs) r.obs=txt; }
   else if(k==="c"){ const st=v.check[a]||(v.check[a]={}); if(!st.obs) st.obs=txt; }
@@ -2080,7 +2383,7 @@ window.addEventListener("offline",()=>{ if(NV.pronta){ NV.estado="offline"; atua
   S.v=novaVistoria(); render();
   await initCaps();
   await carregar();
-  if(!S.v.ident.escola) S.tab="dados";
+  S.tab = S.v.ident.escola? "inicio" : "dados"; S.eraLargo=largo();
   render(); atualizarRede();
   toastSave(S.store==="idb"?"Salvo no aparelho":"Sem armazenamento");
   try{ if(navigator.permissions){ const p=await navigator.permissions.query({name:"geolocation"}); if(p.state==="granted") iniciarGPS(); } }catch(e){}
